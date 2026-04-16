@@ -1,0 +1,77 @@
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+	}
+}
+
+plugins {
+	id 'com.gradle.develocity' version '4.5.0'
+}
+
+rootProject.name = "hibernate-accessor-group"
+
+dependencyResolutionManagement {
+	repositories {
+		mavenCentral()
+		if (rootProject.hasProperty("enableSnapshotRepositories")) {
+			maven {
+				// temporary - Maven Central snapshots repo for ORM snapshots
+				url = "https://central.sonatype.com/repository/maven-snapshots/"
+				mavenContent {
+					snapshotsOnly()
+				}
+			}
+		}
+		// Needed for RC versions of Jakarta Persistence
+		maven {
+			url = "https://jakarta.oss.sonatype.org/content/repositories/releases/"
+		}
+		// Needed for Beta versions of Jakarta Persistence
+		maven {
+			url = "https://jakarta.oss.sonatype.org/content/groups/staging/"
+		}
+		if (rootProject.hasProperty("enableSnapshotRepositories")) {
+			// Needed for SNAPSHOT versions of Jakarta Persistence (wtf)
+			maven {
+				url = "https://jakarta.oss.sonatype.org/content/repositories/snapshots/"
+			}
+		}
+	}
+}
+
+develocity {
+	server = 'https://develocity.commonhaus.dev'
+
+	buildScan {
+		capture {
+			fileFingerprints = true
+		}
+		publishing.onlyIf { it.authenticated }
+
+		obfuscation {
+			// Don't share ip addresses
+			ipAddresses { addresses -> addresses.collect { address -> "0.0.0.0" } }
+		}
+
+//			uploadInBackground = !settings.ext.isCiEnvironment
+//
+//			tag "jdk-${settings.extensions.jdkVersions.test.launcher}"
+//			tag settings.extensions.db
+//			value 'database', settings.extensions.db
+//
+//			if ( settings.extensions.findByName( 'ci.node' ) ) {
+//				tag settings.extensions.findByName( 'ci.node' )
+//			}
+	}
+}
+
+include 'reporting'
+
+include 'hibernate-accessor'
+include 'hibernate-accessor-asm'
+include 'hibernate-accessor-tck'
+include 'hibernate-accessor-tck-reflection'
+include 'hibernate-accessor-tck-methodhandle'
+include 'hibernate-accessor-tck-lambda'
+include 'hibernate-accessor-tck-asm'

@@ -1,0 +1,18 @@
+plugins {
+    id 'jacoco-report-aggregation'
+}
+
+description = 'Reporting module'
+
+dependencies {
+}
+
+tasks.register('mergeCodeCoverageReport', JacocoReport) {
+    executionData fileTree(rootProject.layout.projectDirectory.asFile).include("**/build/jacoco/*.exec")
+
+    reports {
+        xml.required = true
+    }
+
+    dependsOn rootProject.subprojects.collect { p -> p.tasks.matching { it.name == 'compileJava' } }
+}

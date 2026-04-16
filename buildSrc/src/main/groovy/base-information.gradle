@@ -1,0 +1,22 @@
+
+group = "org.hibernate.accessor"
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Version handling
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def versionFile = rootProject.file( "version.txt" )
+def versionFileVersion = extractVersionFileVersion(versionFile)
+
+project.version = versionFileVersion
+
+ext.versionFile = versionFile
+
+
+private static String extractVersionFileVersion(File versionFile) {
+	def versionFileVersion = versionFile.text.trim()
+	if ( versionFileVersion.length() <= 0 ) {
+		throw new RuntimeException("Project version unknown")
+	}
+	return versionFileVersion
+}

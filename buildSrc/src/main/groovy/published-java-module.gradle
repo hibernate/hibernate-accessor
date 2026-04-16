@@ -1,0 +1,45 @@
+plugins {
+	id "java-module"
+	id "testing"
+	id "code-quality"
+
+	id "maven-publish"
+	id "publishing-config"
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Java handling
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+java {
+	withJavadocJar()
+	withSourcesJar()
+}
+
+tasks.named("jar") {
+	metaInf {
+		from(rootProject.projectDir, {
+			include "LICENSE"
+		})
+	}
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Javadoc
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+tasks.named( "javadoc", Javadoc ) {
+	options {
+		use = true
+		encoding = "UTF-8"
+
+		addStringOption( "Xdoclint:none", "-quiet" )
+
+		tags(
+				"todo:X",
+				"apiNote:a:API Note:",
+				"implSpec:a:Implementation Specification:",
+				"implNote:a:Implementation Note:"
+		)
+	}
+}

@@ -1,0 +1,13 @@
+plugins {
+    id "java-module"
+}
+
+description = "TCK tests for hibernate-accessor implementations"
+
+dependencies {
+    api project( ":hibernate-accessor" )
+
+    api libs.test.junitJupiterApi
+    api libs.test.junitJupiterParams
+    api libs.test.assertjCore
+}

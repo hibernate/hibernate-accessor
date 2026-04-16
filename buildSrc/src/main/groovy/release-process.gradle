@@ -1,0 +1,23 @@
+plugins {
+	id "base-information"
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Release processing
+//
+// Processes should execute the following tasks in order
+//		- releasePrepare 				    (this script)
+//		- Release scripts do the rest       (see ci/release/Jenkinsfile)
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Release processing - preparation
+//		- releasePreparation (task)
+//			- clean & compile
+//			- stage all artifacts at "build/staging-deploy"
+//
+// Processes should execute `releasePrepare`
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+tasks.register("releasePrepare") {
+	// do nothing, actual work is done in publishing-config.gradle
+}

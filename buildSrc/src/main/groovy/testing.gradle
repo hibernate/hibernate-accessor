@@ -1,0 +1,46 @@
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Module that need testing
+//		- automatically applied by published-java-module
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+plugins {
+	id "java-module"
+	id "jacoco"
+}
+
+dependencies {
+	testImplementation libs.test.assertjCore
+
+	testImplementation libs.test.junitJupiterApi
+	testImplementation libs.test.junitJupiterEngine
+	testImplementation libs.test.junitJupiterParams
+	testRuntimeOnly libs.test.junitPlatformLauncher
+
+	testImplementation libs.test.log4jCore
+}
+
+test {
+	useJUnitPlatform()
+}
+
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// JaCoCo
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def jacocoReportTask = tasks.named( "jacocoTestReport" ) {
+	dependsOn tasks.named( "test" )
+}
+
+jacocoTestReport {
+	reports {
+		xml.required = false
+		csv.required = false
+		html.outputLocation = layout.buildDirectory.dir( "jacocoHtml" )
+	}
+}
+
+tasks.named( "check" ) {
+	dependsOn jacocoReportTask
+}
