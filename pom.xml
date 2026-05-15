@@ -12,10 +12,12 @@
     <modules>
         <module>parents/hibernate-accessor-build-parent</module>
         <module>hibernate-accessor-core</module>
+        <module>hibernate-accessor-asm</module>
         <module>tests/hibernate-accessor-tck</module>
         <module>tests/hibernate-accessor-tck-reflection</module>
         <module>tests/hibernate-accessor-tck-methodhandle</module>
         <module>tests/hibernate-accessor-tck-lambda</module>
+        <module>tests/hibernate-accessor-tck-asm</module>
     </modules>
 
     <properties>

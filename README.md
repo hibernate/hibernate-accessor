@@ -19,11 +19,21 @@ Add the core module to your project:
 </dependency>
 ```
 
+For the ASM-based strategy, add the ASM module instead (it transitively includes the core):
+
+```xml
+<dependency>
+    <groupId>org.hibernate.accessor</groupId>
+    <artifactId>hibernate-accessor-asm</artifactId>
+    <version>${hibernate-accessor.version}</version>
+</dependency>
+```
+
 ## Usage
 
 ### Obtaining a factory
 
-Two built-in strategies are available:
+Three built-in strategies are available:
 
 ```java
 // Reflection-based (simplest, no extra setup)
@@ -31,6 +41,9 @@ HibernateAccessorFactory factory = HibernateAccessorFactory.reflection();
 
 // Lambda-based (better performance, requires a MethodHandles.Lookup)
 HibernateAccessorFactory factory = HibernateAccessorFactory.lambda(MethodHandles.lookup());
+
+// ASM-based (generates one bulk accessor class per entity with switch-based dispatch)
+HibernateAccessorFactory factory = HibernateAccessorAsmFactory.factory(MethodHandles.lookup());
 ```
 
 ### Reading and writing fields
@@ -84,6 +97,7 @@ Person person = instantiator.create("Alice", 30);
 |---|---|---|---|
 | Reflection | `HibernateAccessorFactory.reflection()` | `java.lang.reflect` | Simplest. Shared singleton instance. Serializable. |
 | Lambda | `HibernateAccessorFactory.lambda(lookup)` | `LambdaMetafactory` | Better throughput after warm-up. Requires a `MethodHandles.Lookup` with appropriate access. |
+| ASM | `HibernateAccessorAsmFactory.factory(lookup)` | ASM bytecode generation | Generates one class per entity with `TABLESWITCH` dispatch on field/method index. Requires `org.ow2.asm:asm` and a `MethodHandles.Lookup`. |
 
 ## License
 
