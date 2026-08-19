@@ -71,12 +71,21 @@ include 'reporting'
 include 'hibernate-accessor'
 include 'hibernate-accessor-asm'
 include 'hibernate-accessor-bytebuddy'
+
 include 'hibernate-accessor-tck'
+project(':hibernate-accessor-tck').projectDir = file( 'testing/hibernate-accessor-tck' )
 include 'hibernate-accessor-tck-reflection'
+project(':hibernate-accessor-tck-reflection').projectDir = file( 'testing/hibernate-accessor-tck-reflection' )
 include 'hibernate-accessor-tck-methodhandle'
+project(':hibernate-accessor-tck-methodhandle').projectDir = file( 'testing/hibernate-accessor-tck-methodhandle' )
 include 'hibernate-accessor-tck-lambda'
+project(':hibernate-accessor-tck-lambda').projectDir = file( 'testing/hibernate-accessor-tck-lambda' )
 include 'hibernate-accessor-tck-asm'
+project(':hibernate-accessor-tck-asm').projectDir = file( 'testing/hibernate-accessor-tck-asm' )
 include 'hibernate-accessor-tck-bytebuddy'
+project(':hibernate-accessor-tck-bytebuddy').projectDir = file( 'testing/hibernate-accessor-tck-bytebuddy' )
 
 include 'hibernate-accessor-tck-jpms-entities'
+project(':hibernate-accessor-tck-jpms-entities').projectDir = file( 'testing/hibernate-accessor-tck-jpms-entities' )
 include 'hibernate-accessor-tck-jpms'
+project(':hibernate-accessor-tck-jpms').projectDir = file( 'testing/hibernate-accessor-tck-jpms' )
