@@ -3,4 +3,5 @@ module org.hibernate.accessor {
 	requires static org.jboss.logging.annotations;
 
 	exports org.hibernate.accessor;
+	exports org.hibernate.accessor.spi;
 }
