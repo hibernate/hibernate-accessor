@@ -4,6 +4,36 @@ plugins {
 
 description = "hibernate-accessor based on ByteBuddy (shaded ASM) generated implementation"
 
+def transformSharedSources = tasks.register( 'transformSharedSources', Copy ) {
+    from project( ':hibernate-accessor-asm' ).file( 'src/shared/java' )
+    into layout.buildDirectory.dir( 'generated-sources/shared' )
+
+    filter { line ->
+        line.replace( 'org.objectweb.asm', 'net.bytebuddy.jar.asm' )
+            .replace( 'org/hibernate/accessor/asm/', 'org/hibernate/accessor/bytebuddy/' )
+            .replace( 'org.hibernate.accessor.asm', 'org.hibernate.accessor.bytebuddy' )
+            .replace( 'HibernateAccessorAsm', 'HibernateAccessorByteBuddy' )
+            .replace( 'standalone ASM', "ByteBuddy's shaded ASM" )
+            .replace( ' ASM ', ' ByteBuddy ' )
+    }
+
+    eachFile { details ->
+        details.path = details.path
+            .replace( 'org/hibernate/accessor/asm/', 'org/hibernate/accessor/bytebuddy/' )
+            .replace( 'HibernateAccessorAsm', 'HibernateAccessorByteBuddy' )
+    }
+
+    includeEmptyDirs = false
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir transformSharedSources
+        }
+    }
+}
+
 dependencies {
     api project( ":hibernate-accessor" )
 

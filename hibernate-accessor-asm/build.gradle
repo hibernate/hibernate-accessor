@@ -4,6 +4,14 @@ plugins {
 
 description = "hibernate-accessor based on ASM generated implementation"
 
+sourceSets {
+    main {
+        java {
+            srcDir 'src/shared/java'
+        }
+    }
+}
+
 dependencies {
     api project( ":hibernate-accessor" )
 
