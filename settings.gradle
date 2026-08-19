@@ -79,3 +79,6 @@ include 'hibernate-accessor-tck-lambda'
 include 'hibernate-accessor-tck-asm'
 include 'hibernate-accessor-tck-generator'
 include 'hibernate-accessor-tck-bytebuddy'
+
+include 'hibernate-accessor-tck-jpms-entities'
+include 'hibernate-accessor-tck-jpms'

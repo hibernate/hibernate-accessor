@@ -6,6 +6,7 @@ package org.hibernate.accessor.asm.impl;
 
 import org.hibernate.accessor.HibernateAccessorMultiValueReader;
 import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
+import org.hibernate.accessor.asm.spi.HibernateAccessorAsmBulkAccessor;
 import org.hibernate.accessor.asm.spi.MultiValueAccessorPointcuts;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -17,7 +18,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
-import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.*;
+import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.emitBox;
+import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.emitIntConstant;
+import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.emitUnboxOrCast;
 
 /**
  * For the single-class case ({@link #generateReader}/{@link #generateWriter}),

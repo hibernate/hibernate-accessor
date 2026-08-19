@@ -5,6 +5,7 @@
 package org.hibernate.accessor.bytebuddy.impl;
 
 import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
 
 record HibernateAccessorByteBuddyInstantiator<T>(HibernateAccessorByteBuddyBulkAccessor accessor, int index) implements HibernateAccessorInstantiator<T> {
 

@@ -5,6 +5,7 @@
 package org.hibernate.accessor.asm.impl;
 
 import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.asm.spi.HibernateAccessorAsmBulkAccessor;
 
 record HibernateAccessorAsmMethodValueWriter(HibernateAccessorAsmBulkAccessor accessor, int index) implements HibernateAccessorValueWriter {
 

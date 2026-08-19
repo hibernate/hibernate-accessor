@@ -10,6 +10,7 @@ import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.HibernateAccessorValueReader;
 import org.hibernate.accessor.HibernateAccessorValueWriter;
 import org.hibernate.accessor.MultiValueAccessorGenerationException;
+import org.hibernate.accessor.asm.spi.HibernateAccessorAsmBulkAccessor;
 import org.hibernate.accessor.asm.spi.MultiValueAccessorPointcuts;
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
 import org.hibernate.accessor.spi.MemberValidation;

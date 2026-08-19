@@ -5,6 +5,8 @@
 package org.hibernate.accessor.asm.impl;
 
 import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.asm.spi.HibernateAccessorAsmBulkAccessor;
+
 
 record HibernateAccessorAsmInstantiator<T>(HibernateAccessorAsmBulkAccessor accessor, int index) implements HibernateAccessorInstantiator<T> {
 

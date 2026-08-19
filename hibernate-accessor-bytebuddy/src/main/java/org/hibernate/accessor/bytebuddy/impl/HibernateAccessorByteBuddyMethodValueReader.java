@@ -5,6 +5,7 @@
 package org.hibernate.accessor.bytebuddy.impl;
 
 import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
 
 record HibernateAccessorByteBuddyMethodValueReader<T>(HibernateAccessorByteBuddyBulkAccessor accessor, int index) implements HibernateAccessorValueReader<T> {
 
