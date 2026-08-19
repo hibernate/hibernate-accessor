@@ -5,10 +5,19 @@ plugins {
 description = 'Reporting module'
 
 dependencies {
+	jacocoAggregation project(':hibernate-accessor')
+	jacocoAggregation project(':hibernate-accessor-asm')
+	jacocoAggregation project(':hibernate-accessor-bytebuddy')
+	jacocoAggregation project(':hibernate-accessor-generator')
 }
 
 tasks.register('mergeCodeCoverageReport', JacocoReport) {
     executionData fileTree(rootProject.layout.projectDirectory.asFile).include("**/build/jacoco/*.exec")
+
+	sourceSets project(':hibernate-accessor').sourceSets.main
+	sourceSets project(':hibernate-accessor-asm').sourceSets.main
+	sourceSets project(':hibernate-accessor-bytebuddy').sourceSets.main
+	sourceSets project(':hibernate-accessor-generator').sourceSets.main
 
     reports {
         xml.required = true
