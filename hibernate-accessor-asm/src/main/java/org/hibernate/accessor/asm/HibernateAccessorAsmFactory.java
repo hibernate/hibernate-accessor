@@ -5,13 +5,9 @@
 package org.hibernate.accessor.asm;
 
 import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.asm.spi.MultiValueAccessorPointcuts;
 import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Member;
 
 /**
  * Entry point for the ASM-based accessor strategy.
@@ -40,14 +36,4 @@ public interface HibernateAccessorAsmFactory extends HibernateAccessorFactory {
 	static HibernateAccessorAsmFactory factory(HibernateAccessorConfiguration configuration) {
 		return new org.hibernate.accessor.asm.impl.HibernateAccessorAsmFactory( configuration );
 	}
-
-	HibernateAccessorMultiValueReader multiValueReader(
-			Class<?> declaringClass,
-			Member[] members,
-			MultiValueAccessorPointcuts pointcuts);
-
-	HibernateAccessorMultiValueWriter multiValueWriter(
-			Class<?> declaringClass,
-			Member[] members,
-			MultiValueAccessorPointcuts pointcuts);
 }

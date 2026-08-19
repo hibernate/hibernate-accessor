@@ -5,13 +5,9 @@
 package org.hibernate.accessor.bytebuddy;
 
 import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.bytebuddy.spi.MultiValueAccessorPointcuts;
 import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Member;
 
 /**
  * Entry point for the ByteBuddy-based accessor strategy.
@@ -41,14 +37,4 @@ public interface HibernateAccessorByteBuddyFactory extends HibernateAccessorFact
 	static HibernateAccessorByteBuddyFactory factory(HibernateAccessorConfiguration configuration) {
 		return new org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyFactory( configuration );
 	}
-
-	HibernateAccessorMultiValueReader multiValueReader(
-			Class<?> declaringClass,
-			Member[] members,
-			MultiValueAccessorPointcuts pointcuts);
-
-	HibernateAccessorMultiValueWriter multiValueWriter(
-			Class<?> declaringClass,
-			Member[] members,
-			MultiValueAccessorPointcuts pointcuts);
 }
