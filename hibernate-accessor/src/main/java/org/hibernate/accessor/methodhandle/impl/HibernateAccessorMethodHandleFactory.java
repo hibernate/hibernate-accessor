@@ -10,7 +10,6 @@ import org.hibernate.accessor.HibernateAccessorValueReader;
 import org.hibernate.accessor.HibernateAccessorValueWriter;
 import org.hibernate.accessor.logging.impl.CoreLog;
 
-import java.io.Serial;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -82,10 +81,5 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 
 	private MethodHandles.Lookup privateLookup(Class<?> targetClass) throws IllegalAccessException {
 		return MethodHandles.privateLookupIn(targetClass, this.lookup);
-	}
-
-	@Serial
-	private Object readResolve() {
-		return new  HibernateAccessorMethodHandleFactory( MethodHandles.lookup() );
 	}
 }
