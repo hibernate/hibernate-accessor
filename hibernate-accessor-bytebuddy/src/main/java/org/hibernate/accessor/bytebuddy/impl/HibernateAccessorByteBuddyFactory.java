@@ -4,22 +4,6 @@
  */
 package org.hibernate.accessor.bytebuddy.impl;
 
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
-import org.hibernate.accessor.MultiValueAccessorGenerationException;
-import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
-import org.hibernate.accessor.spi.HibernateAccessorBytecodeDumper;
-import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
-import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
-import org.hibernate.accessor.spi.MemberValidation;
-
-import org.jboss.logging.Logger;
-
-import net.bytebuddy.jar.asm.Type;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -29,6 +13,22 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.HibernateAccessorMultiValueReader;
+import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
+import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.MultiValueAccessorGenerationException;
+import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
+import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
+import org.hibernate.accessor.spi.HibernateAccessorBytecodeDumper;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
+import org.hibernate.accessor.spi.MemberValidation;
+
+import org.jboss.logging.Logger;
+
+import net.bytebuddy.jar.asm.Type;
 
 public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor.bytebuddy.HibernateAccessorByteBuddyFactory {
 
@@ -58,8 +58,8 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	@Override
 	public <T> HibernateAccessorInstantiator<T> instantiator(Constructor<T> constructor) {
 		try {
-			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate(constructor.getDeclaringClass());
-			return new HibernateAccessorByteBuddyInstantiator<>(info.bulkAccessor(), info.constructorIndex(constructor));
+			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate( constructor.getDeclaringClass() );
+			return new HibernateAccessorByteBuddyInstantiator<>( info.bulkAccessor(), info.constructorIndex( constructor ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ByteBuddy instantiator for %s, falling back to reflection", constructor.getDeclaringClass() );
@@ -71,8 +71,8 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	public HibernateAccessorValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
 		try {
-			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate(field.getDeclaringClass());
-			return new HibernateAccessorByteBuddyFieldValueReader<>(info.bulkAccessor(), info.fieldIndex(field));
+			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
+			return new HibernateAccessorByteBuddyFieldValueReader<>( info.bulkAccessor(), info.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ByteBuddy value reader for %s, falling back to reflection", field );
@@ -82,10 +82,10 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 
 	@Override
 	public HibernateAccessorValueReader<?> valueReader(Method method) {
-		MemberValidation.validateReaderMethod(method);
+		MemberValidation.validateReaderMethod( method );
 		try {
-			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate(method.getDeclaringClass());
-			return new HibernateAccessorByteBuddyMethodValueReader<>(info.bulkAccessor(), info.methodIndex(method));
+			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate( method.getDeclaringClass() );
+			return new HibernateAccessorByteBuddyMethodValueReader<>( info.bulkAccessor(), info.methodIndex( method ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ByteBuddy value reader for %s, falling back to reflection", method );
@@ -100,8 +100,8 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 			return reflectionFallback.valueWriter( field );
 		}
 		try {
-			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate(field.getDeclaringClass());
-			return new HibernateAccessorByteBuddyFieldValueWriter(info.bulkAccessor(), info.fieldIndex(field));
+			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
+			return new HibernateAccessorByteBuddyFieldValueWriter( info.bulkAccessor(), info.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ByteBuddy value writer for %s, falling back to reflection", field );
@@ -111,10 +111,10 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 
 	@Override
 	public HibernateAccessorValueWriter valueWriter(Method setter) {
-		MemberValidation.validateWriterMethod(setter);
+		MemberValidation.validateWriterMethod( setter );
 		try {
-			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate(setter.getDeclaringClass());
-			return new HibernateAccessorByteBuddyMethodValueWriter(info.bulkAccessor(), info.methodIndex(setter));
+			HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate( setter.getDeclaringClass() );
+			return new HibernateAccessorByteBuddyMethodValueWriter( info.bulkAccessor(), info.methodIndex( setter ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ByteBuddy value writer for %s, falling back to reflection", setter );
@@ -132,10 +132,10 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 			MemberValidation.validateReaderMember( member );
 		}
 		try {
-			if (allSameDeclaringClass(declaringClass, members)) {
-				return generateDirectReader(members);
+			if ( allSameDeclaringClass( declaringClass, members ) ) {
+				return generateDirectReader( members );
 			}
-			return generateBulkBasedReader(members);
+			return generateBulkBasedReader( members );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ByteBuddy multi-value reader for %s, falling back to reflection", declaringClass );
@@ -153,10 +153,10 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 			MemberValidation.validateWriterMember( member );
 		}
 		try {
-			if (allSameDeclaringClass(declaringClass, members)) {
-				return generateDirectWriter(members);
+			if ( allSameDeclaringClass( declaringClass, members ) ) {
+				return generateDirectWriter( members );
 			}
-			return generateBulkBasedWriter(members);
+			return generateBulkBasedWriter( members );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ByteBuddy multi-value writer for %s, falling back to reflection", declaringClass );
@@ -193,70 +193,70 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	}
 
 	private HibernateAccessorMultiValueReader generateBulkBasedReader(Member[] members) {
-		final BulkAccessorLayout layout = buildBulkAccessorLayout(members);
-		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkReader(layout.accesses, layout.accessors.length);
+		final BulkAccessorLayout layout = buildBulkAccessorLayout( members );
+		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkReader( layout.accesses, layout.accessors.length );
 		bytecodeDumper.dump( Type.getInternalName( members[0].getDeclaringClass() ) + "$$HibernateAccessorMultiBulkReader_" + java.util.UUID.randomUUID(), bytecode );
 		try {
-			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass(bytecode, true);
+			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass( bytecode, true );
 			final Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
-			Arrays.fill(paramTypes, HibernateAccessorByteBuddyBulkAccessor.class);
-			return (HibernateAccessorMultiValueReader) hiddenLookup.lookupClass().getDeclaredConstructor(paramTypes).newInstance((Object[]) layout.accessors);
+			Arrays.fill( paramTypes, HibernateAccessorByteBuddyBulkAccessor.class );
+			return (HibernateAccessorMultiValueReader) hiddenLookup.lookupClass().getDeclaredConstructor( paramTypes ).newInstance( (Object[]) layout.accessors );
 		}
 		catch (Exception e) {
-			throw new MultiValueAccessorGenerationException("Failed to create bulk-based multi-value reader", e);
+			throw new MultiValueAccessorGenerationException( "Failed to create bulk-based multi-value reader", e );
 		}
 	}
 
 	private HibernateAccessorMultiValueWriter generateBulkBasedWriter(Member[] members) {
-		final BulkAccessorLayout layout = buildBulkAccessorLayout(members);
-		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkWriter(layout.accesses, layout.accessors.length);
+		final BulkAccessorLayout layout = buildBulkAccessorLayout( members );
+		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkWriter( layout.accesses, layout.accessors.length );
 		bytecodeDumper.dump( Type.getInternalName( members[0].getDeclaringClass() ) + "$$HibernateAccessorMultiBulkWriter_" + java.util.UUID.randomUUID(), bytecode );
 		try {
-			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass(bytecode, true);
+			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass( bytecode, true );
 			final Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
-			Arrays.fill(paramTypes, HibernateAccessorByteBuddyBulkAccessor.class);
-			return (HibernateAccessorMultiValueWriter) hiddenLookup.lookupClass().getDeclaredConstructor(paramTypes).newInstance((Object[]) layout.accessors);
+			Arrays.fill( paramTypes, HibernateAccessorByteBuddyBulkAccessor.class );
+			return (HibernateAccessorMultiValueWriter) hiddenLookup.lookupClass().getDeclaredConstructor( paramTypes ).newInstance( (Object[]) layout.accessors );
 		}
 		catch (Exception e) {
-			throw new MultiValueAccessorGenerationException("Failed to create bulk-based multi-value writer", e);
+			throw new MultiValueAccessorGenerationException( "Failed to create bulk-based multi-value writer", e );
 		}
 	}
 
 	private BulkAccessorLayout buildBulkAccessorLayout(Member[] members) {
 		final Map<Class<?>, Integer> classToFieldIndex = new LinkedHashMap<>();
-		for (Member member : members) {
-			classToFieldIndex.computeIfAbsent(member.getDeclaringClass(), cls -> classToFieldIndex.size());
+		for ( Member member : members ) {
+			classToFieldIndex.computeIfAbsent( member.getDeclaringClass(), cls -> classToFieldIndex.size() );
 		}
 
 		final HibernateAccessorByteBuddyBulkAccessor[] accessors = new HibernateAccessorByteBuddyBulkAccessor[classToFieldIndex.size()];
 		final HibernateAccessorByteBuddyClassAccessorInfo[] infos = new HibernateAccessorByteBuddyClassAccessorInfo[classToFieldIndex.size()];
-		for (var entry : classToFieldIndex.entrySet()) {
-			final HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate(entry.getKey());
+		for ( var entry : classToFieldIndex.entrySet() ) {
+			final HibernateAccessorByteBuddyClassAccessorInfo info = getOrCreate( entry.getKey() );
 			accessors[entry.getValue()] = info.bulkAccessor();
 			infos[entry.getValue()] = info;
 		}
 
 		final HibernateAccessorBulkMemberAccess[] accesses = new HibernateAccessorBulkMemberAccess[members.length];
-		for (int i = 0; i < members.length; i++) {
-			final int fieldIdx = classToFieldIndex.get(members[i].getDeclaringClass());
+		for ( int i = 0; i < members.length; i++ ) {
+			final int fieldIdx = classToFieldIndex.get( members[i].getDeclaringClass() );
 			final HibernateAccessorByteBuddyClassAccessorInfo info = infos[fieldIdx];
 			final boolean isField = members[i] instanceof Field;
-			final int memberIdx = isField ? info.fieldIndex((Field) members[i]) : info.methodIndex((Method) members[i]);
-			accesses[i] = new HibernateAccessorBulkMemberAccess(fieldIdx, memberIdx, isField);
+			final int memberIdx = isField ? info.fieldIndex( (Field) members[i] ) : info.methodIndex( (Method) members[i] );
+			accesses[i] = new HibernateAccessorBulkMemberAccess( fieldIdx, memberIdx, isField );
 		}
 
-		return new BulkAccessorLayout(accesses, accessors);
+		return new BulkAccessorLayout( accesses, accessors );
 	}
 
 	private record BulkAccessorLayout(HibernateAccessorBulkMemberAccess[] accesses, HibernateAccessorByteBuddyBulkAccessor[] accessors) {
 	}
 
 	private static boolean allSameDeclaringClass(Class<?> declaringClass, Member[] members) {
-		if (members.length == 0) {
+		if ( members.length == 0 ) {
 			return true;
 		}
-		for (int i = 0; i < members.length; i++) {
-			if (members[i].getDeclaringClass() != declaringClass) {
+		for ( int i = 0; i < members.length; i++ ) {
+			if ( members[i].getDeclaringClass() != declaringClass ) {
 				return false;
 			}
 		}

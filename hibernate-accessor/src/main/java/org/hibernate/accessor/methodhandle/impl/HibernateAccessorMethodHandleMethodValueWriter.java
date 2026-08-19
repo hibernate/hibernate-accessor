@@ -4,10 +4,10 @@
  */
 package org.hibernate.accessor.methodhandle.impl;
 
+import java.lang.invoke.MethodHandle;
+
 import org.hibernate.accessor.HibernateAccessorValueWriter;
 import org.hibernate.accessor.logging.impl.CoreLog;
-
-import java.lang.invoke.MethodHandle;
 
 public class HibernateAccessorMethodHandleMethodValueWriter implements HibernateAccessorValueWriter {
 	private final MethodHandle target;
@@ -19,13 +19,13 @@ public class HibernateAccessorMethodHandleMethodValueWriter implements Hibernate
 	@Override
 	public void set(Object instance, Object value) {
 		try {
-			target.invoke(instance, value);
+			target.invoke( instance, value );
 		}
 		catch (Throwable t) {
-			if (t instanceof Error) {
+			if ( t instanceof Error ) {
 				throw (Error) t;
 			}
-			throw CoreLog.INSTANCE.errorInvokingHandle(target, String.valueOf(instance), t, t.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingHandle( target, String.valueOf( instance ), t, t.getMessage() );
 		}
 	}
 }

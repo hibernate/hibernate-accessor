@@ -4,10 +4,10 @@
  */
 package org.hibernate.accessor.asm;
 
+import java.lang.invoke.MethodHandles;
+
 import org.hibernate.accessor.HibernateAccessorFactory;
 import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
-
-import java.lang.invoke.MethodHandles;
 
 /**
  * Entry point for the ASM-based accessor strategy.

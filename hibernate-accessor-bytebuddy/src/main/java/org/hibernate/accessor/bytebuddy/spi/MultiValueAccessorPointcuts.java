@@ -4,22 +4,36 @@
  */
 package org.hibernate.accessor.bytebuddy.spi;
 
+import java.lang.reflect.Member;
+
 import net.bytebuddy.jar.asm.Label;
 import net.bytebuddy.jar.asm.MethodVisitor;
-
-import java.lang.reflect.Member;
 
 public interface MultiValueAccessorPointcuts {
 
 	MultiValueAccessorPointcuts NOOP = new MultiValueAccessorPointcuts() {
-		@Override public void emitPreamble(MethodVisitor mv, Class<?> entityClass, int instanceSlot) {}
-		@Override public void emitBeforeRead(MethodVisitor mv, int index, Member member, Label skipLabel) {}
-		@Override public void emitBeforeWrite(MethodVisitor mv, int index, Member member, Label skipLabel) {}
-		@Override public void emitAfterWrite(MethodVisitor mv, int index, Member member) {}
+		@Override
+		public void emitPreamble(MethodVisitor mv, Class<?> entityClass, int instanceSlot) {
+		}
+
+		@Override
+		public void emitBeforeRead(MethodVisitor mv, int index, Member member, Label skipLabel) {
+		}
+
+		@Override
+		public void emitBeforeWrite(MethodVisitor mv, int index, Member member, Label skipLabel) {
+		}
+
+		@Override
+		public void emitAfterWrite(MethodVisitor mv, int index, Member member) {
+		}
 	};
 
 	void emitPreamble(MethodVisitor mv, Class<?> entityClass, int instanceSlot);
+
 	void emitBeforeRead(MethodVisitor mv, int index, Member member, Label skipLabel);
+
 	void emitBeforeWrite(MethodVisitor mv, int index, Member member, Label skipLabel);
+
 	void emitAfterWrite(MethodVisitor mv, int index, Member member);
 }

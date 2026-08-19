@@ -4,11 +4,11 @@
  */
 package org.hibernate.accessor.methodhandle.impl;
 
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.logging.impl.CoreLog;
-
 import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
+
+import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.logging.impl.CoreLog;
 
 public class HibernateAccessorMethodHandleInstantiator<T> implements HibernateAccessorInstantiator<T> {
 
@@ -22,13 +22,13 @@ public class HibernateAccessorMethodHandleInstantiator<T> implements HibernateAc
 	@SuppressWarnings("unchecked")
 	public T create(Object... args) {
 		try {
-			return (T) target.invoke(args);
+			return (T) target.invoke( args );
 		}
 		catch (Throwable t) {
-			if (t instanceof Error) {
+			if ( t instanceof Error ) {
 				throw (Error) t;
 			}
-			throw CoreLog.INSTANCE.errorInvokingHandle(target, Arrays.toString(args), t, t.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingHandle( target, Arrays.toString( args ), t, t.getMessage() );
 		}
 	}
 }

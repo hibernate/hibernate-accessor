@@ -4,6 +4,11 @@
  */
 package org.hibernate.accessor.reflection.impl;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+
 import org.hibernate.accessor.HibernateAccessorFactory;
 import org.hibernate.accessor.HibernateAccessorInstantiator;
 import org.hibernate.accessor.HibernateAccessorMultiValueReader;
@@ -11,11 +16,6 @@ import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.HibernateAccessorValueReader;
 import org.hibernate.accessor.HibernateAccessorValueWriter;
 import org.hibernate.accessor.spi.MemberValidation;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
 
 public class HibernateAccessorReflectionFactory implements HibernateAccessorFactory {
 
@@ -26,31 +26,31 @@ public class HibernateAccessorReflectionFactory implements HibernateAccessorFact
 
 	@Override
 	public <T> HibernateAccessorInstantiator<T> instantiator(Constructor<T> constructor) {
-		return new HibernateAccessorReflectionConstructorInstantiator<>(constructor);
+		return new HibernateAccessorReflectionConstructorInstantiator<>( constructor );
 	}
 
 	@Override
 	public HibernateAccessorValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
-		return new HibernateAccessorReflectionFieldValueReader<>(field);
+		return new HibernateAccessorReflectionFieldValueReader<>( field );
 	}
 
 	@Override
 	public HibernateAccessorValueReader<?> valueReader(Method method) {
 		MemberValidation.validateReaderMethod( method );
-		return new HibernateAccessorReflectionMethodValueReader<>(method);
+		return new HibernateAccessorReflectionMethodValueReader<>( method );
 	}
 
 	@Override
 	public HibernateAccessorValueWriter valueWriter(Field field) {
 		MemberValidation.validateInstanceMember( field );
-		return new HibernateAccessorReflectionFieldValueWriter(field);
+		return new HibernateAccessorReflectionFieldValueWriter( field );
 	}
 
 	@Override
 	public HibernateAccessorValueWriter valueWriter(Method setter) {
 		MemberValidation.validateWriterMethod( setter );
-		return new HibernateAccessorReflectionMethodValueWriter(setter);
+		return new HibernateAccessorReflectionMethodValueWriter( setter );
 	}
 
 	@Override

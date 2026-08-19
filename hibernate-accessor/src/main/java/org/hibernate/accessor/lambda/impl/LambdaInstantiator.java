@@ -4,24 +4,24 @@
  */
 package org.hibernate.accessor.lambda.impl;
 
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.logging.impl.CoreLog;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+
+import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.logging.impl.CoreLog;
 
 public class LambdaInstantiator<T> implements HibernateAccessorInstantiator<T> {
 	private final MethodHandle handle;
 
 	public LambdaInstantiator(MethodHandles.Lookup lookup, Constructor<T> constructor) {
 		try {
-			this.handle = lookup.unreflectConstructor(constructor)
-					.asSpreader(Object[].class, constructor.getParameterCount());
+			this.handle = lookup.unreflectConstructor( constructor )
+					.asSpreader( Object[].class, constructor.getParameterCount() );
 		}
 		catch (IllegalAccessException e) {
-			throw CoreLog.INSTANCE.errorCreatingHandle(constructor, e, e.getMessage());
+			throw CoreLog.INSTANCE.errorCreatingHandle( constructor, e, e.getMessage() );
 		}
 	}
 
@@ -29,13 +29,13 @@ public class LambdaInstantiator<T> implements HibernateAccessorInstantiator<T> {
 	@SuppressWarnings("unchecked")
 	public T create(Object... args) {
 		try {
-			return (T) handle.invoke(args);
+			return (T) handle.invoke( args );
 		}
 		catch (Throwable t) {
-			if (t instanceof Error) {
+			if ( t instanceof Error ) {
 				throw (Error) t;
 			}
-			throw CoreLog.INSTANCE.errorInvokingHandle(handle, Arrays.toString(args), t, t.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingHandle( handle, Arrays.toString( args ), t, t.getMessage() );
 		}
 	}
 }

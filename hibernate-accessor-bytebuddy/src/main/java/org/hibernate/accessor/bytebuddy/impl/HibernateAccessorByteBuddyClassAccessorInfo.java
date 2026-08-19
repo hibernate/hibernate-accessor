@@ -4,13 +4,6 @@
  */
 package org.hibernate.accessor.bytebuddy.impl;
 
-import org.hibernate.accessor.HibernateAccessorException;
-import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
-import org.hibernate.accessor.spi.HibernateAccessorBytecodeDumper;
-import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
-
-import net.bytebuddy.jar.asm.Type;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -19,6 +12,13 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.hibernate.accessor.HibernateAccessorException;
+import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
+import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
+import org.hibernate.accessor.spi.HibernateAccessorBytecodeDumper;
+
+import net.bytebuddy.jar.asm.Type;
 
 final class HibernateAccessorByteBuddyClassAccessorInfo {
 
@@ -29,10 +29,10 @@ final class HibernateAccessorByteBuddyClassAccessorInfo {
 	private final Map<String, Integer> constructorIndices;
 
 	private HibernateAccessorByteBuddyClassAccessorInfo(HibernateAccessorByteBuddyBulkAccessor bulkAccessor,
-														Map<String, Integer> fieldIndices,
-														Map<String, Integer> getterMethodIndices,
-														Map<String, Integer> setterMethodIndices,
-														Map<String, Integer> constructorIndices) {
+			Map<String, Integer> fieldIndices,
+			Map<String, Integer> getterMethodIndices,
+			Map<String, Integer> setterMethodIndices,
+			Map<String, Integer> constructorIndices) {
 		this.bulkAccessor = bulkAccessor;
 		this.fieldIndices = fieldIndices;
 		this.getterMethodIndices = getterMethodIndices;
@@ -55,26 +55,26 @@ final class HibernateAccessorByteBuddyClassAccessorInfo {
 		Constructor<?>[] constructors = declaringClass.getDeclaredConstructors();
 
 		Map<String, Integer> fieldIndices = new HashMap<>();
-		for (int i = 0; i < fields.length; i++) {
-			fieldIndices.put(fields[i].getName(), i);
+		for ( int i = 0; i < fields.length; i++ ) {
+			fieldIndices.put( fields[i].getName(), i );
 		}
 
 		Map<String, Integer> getterMethodIndices = new HashMap<>();
-		for (int i = 0; i < getterMethods.length; i++) {
-			getterMethodIndices.put(methodKey(getterMethods[i]), i);
+		for ( int i = 0; i < getterMethods.length; i++ ) {
+			getterMethodIndices.put( methodKey( getterMethods[i] ), i );
 		}
 
 		Map<String, Integer> setterMethodIndices = new HashMap<>();
-		for (int i = 0; i < setterMethods.length; i++) {
-			setterMethodIndices.put(methodKey(setterMethods[i]), i);
+		for ( int i = 0; i < setterMethods.length; i++ ) {
+			setterMethodIndices.put( methodKey( setterMethods[i] ), i );
 		}
 
 		Map<String, Integer> constructorIndices = new HashMap<>();
-		for (int i = 0; i < constructors.length; i++) {
-			constructorIndices.put(Type.getConstructorDescriptor(constructors[i]), i);
+		for ( int i = 0; i < constructors.length; i++ ) {
+			constructorIndices.put( Type.getConstructorDescriptor( constructors[i] ), i );
 		}
 
-		byte[] bytecode = HibernateAccessorByteBuddyBulkAccessorClassGenerator.generate(declaringClass, fields, getterMethods, setterMethods, constructors);
+		byte[] bytecode = HibernateAccessorByteBuddyBulkAccessorClassGenerator.generate( declaringClass, fields, getterMethods, setterMethods, constructors );
 		bytecodeDumper.dump( Type.getInternalName( declaringClass ) + "$$HibernateAccessor", bytecode );
 
 		try {
@@ -95,39 +95,39 @@ final class HibernateAccessorByteBuddyClassAccessorInfo {
 	}
 
 	int fieldIndex(Field field) {
-		Integer index = fieldIndices.get(field.getName());
-		if (index == null) {
-			throw new HibernateAccessorException("Unknown field: " + field);
+		Integer index = fieldIndices.get( field.getName() );
+		if ( index == null ) {
+			throw new HibernateAccessorException( "Unknown field: " + field );
 		}
 		return index;
 	}
 
 	int methodIndex(Method method) {
-		String key = methodKey(method);
-		if (method.getParameterCount() == 0 && method.getReturnType() != void.class) {
-			Integer index = getterMethodIndices.get(key);
-			if (index != null) {
+		String key = methodKey( method );
+		if ( method.getParameterCount() == 0 && method.getReturnType() != void.class ) {
+			Integer index = getterMethodIndices.get( key );
+			if ( index != null ) {
 				return index;
 			}
 		}
-		else if (method.getParameterCount() == 1) {
-			Integer index = setterMethodIndices.get(key);
-			if (index != null) {
+		else if ( method.getParameterCount() == 1 ) {
+			Integer index = setterMethodIndices.get( key );
+			if ( index != null ) {
 				return index;
 			}
 		}
-		throw new HibernateAccessorException("Unknown method: " + method);
+		throw new HibernateAccessorException( "Unknown method: " + method );
 	}
 
 	int constructorIndex(Constructor<?> constructor) {
-		Integer index = constructorIndices.get(Type.getConstructorDescriptor(constructor));
-		if (index == null) {
-			throw new HibernateAccessorException("Unknown constructor: " + constructor);
+		Integer index = constructorIndices.get( Type.getConstructorDescriptor( constructor ) );
+		if ( index == null ) {
+			throw new HibernateAccessorException( "Unknown constructor: " + constructor );
 		}
 		return index;
 	}
 
 	private static String methodKey(Method method) {
-		return method.getName() + Type.getMethodDescriptor(method);
+		return method.getName() + Type.getMethodDescriptor( method );
 	}
 }

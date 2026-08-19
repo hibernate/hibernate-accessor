@@ -4,15 +4,15 @@
  */
 package org.hibernate.accessor;
 
-import org.hibernate.accessor.lambda.impl.HibernateAccessorLambdaFactory;
-import org.hibernate.accessor.reflection.impl.HibernateAccessorReflectionFactory;
-import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+
+import org.hibernate.accessor.lambda.impl.HibernateAccessorLambdaFactory;
+import org.hibernate.accessor.reflection.impl.HibernateAccessorReflectionFactory;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 
 /**
  * Factory for creating accessors that read and write object state and instantiate objects.

@@ -4,11 +4,11 @@
  */
 package org.hibernate.accessor.reflection.impl;
 
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.logging.impl.CoreLog;
-
 import java.lang.reflect.Field;
 import java.util.Objects;
+
+import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.logging.impl.CoreLog;
 
 public class HibernateAccessorReflectionFieldValueReader<T> implements HibernateAccessorValueReader<T> {
 
@@ -16,18 +16,18 @@ public class HibernateAccessorReflectionFieldValueReader<T> implements Hibernate
 
 	public HibernateAccessorReflectionFieldValueReader(Field field) {
 		this.field = field;
-		field.setAccessible(true);
+		field.setAccessible( true );
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public T get(Object instance) {
 		try {
-			return (T) field.get(instance);
+			return (T) field.get( instance );
 		}
 		catch (RuntimeException | IllegalAccessException e) {
-			throw CoreLog.INSTANCE.errorInvokingMember(field, Objects.toString(instance), e,
-					e.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingMember( field, Objects.toString( instance ), e,
+					e.getMessage() );
 		}
 	}
 
@@ -43,10 +43,10 @@ public class HibernateAccessorReflectionFieldValueReader<T> implements Hibernate
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == null || !obj.getClass().equals(getClass())) {
+		if ( obj == null || !obj.getClass().equals( getClass() ) ) {
 			return false;
 		}
 		HibernateAccessorReflectionFieldValueReader<?> other = (HibernateAccessorReflectionFieldValueReader<?>) obj;
-		return field.equals(other.field);
+		return field.equals( other.field );
 	}
 }

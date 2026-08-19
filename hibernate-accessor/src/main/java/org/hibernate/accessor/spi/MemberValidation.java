@@ -4,13 +4,13 @@
  */
 package org.hibernate.accessor.spi;
 
-import org.hibernate.accessor.HibernateAccessorException;
-import org.hibernate.accessor.HibernateAccessorFactory;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+
+import org.hibernate.accessor.HibernateAccessorException;
+import org.hibernate.accessor.HibernateAccessorFactory;
 
 /**
  * Shared validation for {@link Member} arguments passed to

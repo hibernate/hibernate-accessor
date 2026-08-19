@@ -12,6 +12,6 @@ record HibernateAccessorByteBuddyFieldValueReader<T>(HibernateAccessorByteBuddyB
 	@Override
 	@SuppressWarnings("unchecked")
 	public T get(Object instance) {
-		return (T) accessor.readByField(instance, index);
+		return (T) accessor.readByField( instance, index );
 	}
 }

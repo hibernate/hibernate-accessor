@@ -13,6 +13,6 @@ record HibernateAccessorAsmInstantiator<T>(HibernateAccessorAsmBulkAccessor acce
 	@Override
 	@SuppressWarnings("unchecked")
 	public T create(Object... args) {
-		return (T) accessor.newInstance(index, args);
+		return (T) accessor.newInstance( index, args );
 	}
 }

@@ -18,6 +18,19 @@ spotless {
 		leadingSpacesToTabs( 4 )
 		trimTrailingWhitespace()
 		endWithNewline()
+		eclipse().configFile( rootProject.file( 'config/spotless/hibernate_accessor_style.xml' ) )
+
+		importOrder(
+				'\\#',                  // \# (All static imports first)
+				'java',
+				'javax',
+				'org.hibernate.accessor',
+				'org.hibernate',
+				'org.jboss',
+				'org.junit',
+				'org.openjdk.jmh',
+				''                      // (Unmatched / wildcard imports go last)
+		)
 	}
 }
 

@@ -4,11 +4,11 @@
  */
 package org.hibernate.accessor.reflection.impl;
 
-import org.hibernate.accessor.HibernateAccessorValueWriter;
-import org.hibernate.accessor.logging.impl.CoreLog;
-
 import java.lang.reflect.Field;
 import java.util.Objects;
+
+import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.logging.impl.CoreLog;
 
 public class HibernateAccessorReflectionFieldValueWriter implements HibernateAccessorValueWriter {
 
@@ -16,17 +16,17 @@ public class HibernateAccessorReflectionFieldValueWriter implements HibernateAcc
 
 	public HibernateAccessorReflectionFieldValueWriter(Field field) {
 		this.field = field;
-		field.setAccessible(true);
+		field.setAccessible( true );
 	}
 
 	@Override
 	public void set(Object instance, Object value) {
 		try {
-			field.set(instance, value);
+			field.set( instance, value );
 		}
 		catch (RuntimeException | IllegalAccessException e) {
-			throw CoreLog.INSTANCE.errorInvokingMember(field, Objects.toString(instance), e,
-					e.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingMember( field, Objects.toString( instance ), e,
+					e.getMessage() );
 		}
 	}
 
@@ -42,10 +42,10 @@ public class HibernateAccessorReflectionFieldValueWriter implements HibernateAcc
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == null || !obj.getClass().equals(getClass())) {
+		if ( obj == null || !obj.getClass().equals( getClass() ) ) {
 			return false;
 		}
 		HibernateAccessorReflectionFieldValueWriter other = (HibernateAccessorReflectionFieldValueWriter) obj;
-		return field.equals(other.field);
+		return field.equals( other.field );
 	}
 }

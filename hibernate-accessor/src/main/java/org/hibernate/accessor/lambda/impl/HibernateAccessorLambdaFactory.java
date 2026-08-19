@@ -4,17 +4,6 @@
  */
 package org.hibernate.accessor.lambda.impl;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
-import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
-import org.hibernate.accessor.spi.MemberValidation;
-
-import org.jboss.logging.Logger;
-
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaConversionException;
 import java.lang.invoke.LambdaMetafactory;
@@ -26,6 +15,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+
+import org.hibernate.accessor.HibernateAccessorFactory;
+import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.HibernateAccessorMultiValueReader;
+import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
+import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
+import org.hibernate.accessor.spi.MemberValidation;
+
+import org.jboss.logging.Logger;
 
 public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory {
 
@@ -50,7 +50,7 @@ public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory 
 					constructor
 			);
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create lambda instantiator for %s, falling back to reflection", constructor );
 			return reflectionFallback.instantiator( constructor );
 		}
@@ -62,7 +62,7 @@ public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory 
 		try {
 			return new LambdaFieldValueReader<>( MethodHandles.privateLookupIn( field.getDeclaringClass(), this.lookup ).unreflectGetter( field ) );
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create lambda field reader for %s, falling back to reflection", field );
 			return reflectionFallback.valueReader( field );
 		}

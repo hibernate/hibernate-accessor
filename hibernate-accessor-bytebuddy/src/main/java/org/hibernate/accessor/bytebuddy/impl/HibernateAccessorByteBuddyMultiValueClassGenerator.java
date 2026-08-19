@@ -4,6 +4,14 @@
  */
 package org.hibernate.accessor.bytebuddy.impl;
 
+import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitBox;
+import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitIntConstant;
+import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitUnboxOrCast;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+
 import org.hibernate.accessor.HibernateAccessorMultiValueReader;
 import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
@@ -13,114 +21,106 @@ import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.jar.asm.Type;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-
-import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitBox;
-import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitIntConstant;
-import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitUnboxOrCast;
-
 final class HibernateAccessorByteBuddyMultiValueClassGenerator implements Opcodes {
 
-	private static final String READER_INTERNAL = Type.getInternalName(HibernateAccessorMultiValueReader.class);
-	private static final String WRITER_INTERNAL = Type.getInternalName(HibernateAccessorMultiValueWriter.class);
-	private static final String BULK_ACCESSOR_INTERNAL = Type.getInternalName(HibernateAccessorByteBuddyBulkAccessor.class);
-	private static final String BULK_ACCESSOR_DESC = Type.getDescriptor(HibernateAccessorByteBuddyBulkAccessor.class);
+	private static final String READER_INTERNAL = Type.getInternalName( HibernateAccessorMultiValueReader.class );
+	private static final String WRITER_INTERNAL = Type.getInternalName( HibernateAccessorMultiValueWriter.class );
+	private static final String BULK_ACCESSOR_INTERNAL = Type.getInternalName( HibernateAccessorByteBuddyBulkAccessor.class );
+	private static final String BULK_ACCESSOR_DESC = Type.getDescriptor( HibernateAccessorByteBuddyBulkAccessor.class );
 
 	static byte[] generateReader(Class<?> targetClass, Member[] members) {
-		String targetInternal = Type.getInternalName(targetClass);
+		String targetInternal = Type.getInternalName( targetClass );
 		String generatedName = targetInternal + "$$HibernateAccessorMultiReader";
 
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-		cw.visit(V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[]{READER_INTERNAL});
+		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
+		cw.visit( V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
 
-		generateConstructor(cw);
+		generateConstructor( cw );
 
-		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "get", "(Ljava/lang/Object;)[Ljava/lang/Object;", null, null);
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "get", "(Ljava/lang/Object;)[Ljava/lang/Object;", null, null );
 		mv.visitCode();
 
-		emitIntConstant(mv, members.length);
-		mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-		mv.visitVarInsn(ASTORE, 2);
+		emitIntConstant( mv, members.length );
+		mv.visitTypeInsn( ANEWARRAY, "java/lang/Object" );
+		mv.visitVarInsn( ASTORE, 2 );
 
-		for (int i = 0; i < members.length; i++) {
-			mv.visitVarInsn(ALOAD, 2);
-			emitIntConstant(mv, i);
+		for ( int i = 0; i < members.length; i++ ) {
+			mv.visitVarInsn( ALOAD, 2 );
+			emitIntConstant( mv, i );
 
-			mv.visitVarInsn(ALOAD, 1);
+			mv.visitVarInsn( ALOAD, 1 );
 			Member member = members[i];
-			if (member instanceof Field field) {
-				String ownerInternal = Type.getInternalName(field.getDeclaringClass());
-				mv.visitTypeInsn(CHECKCAST, ownerInternal);
-				mv.visitFieldInsn(GETFIELD, ownerInternal, field.getName(), Type.getDescriptor(field.getType()));
-				emitBox(mv, field.getType());
+			if ( member instanceof Field field ) {
+				String ownerInternal = Type.getInternalName( field.getDeclaringClass() );
+				mv.visitTypeInsn( CHECKCAST, ownerInternal );
+				mv.visitFieldInsn( GETFIELD, ownerInternal, field.getName(), Type.getDescriptor( field.getType() ) );
+				emitBox( mv, field.getType() );
 			}
 			else {
 				Method method = (Method) member;
-				String ownerInternal = Type.getInternalName(method.getDeclaringClass());
+				String ownerInternal = Type.getInternalName( method.getDeclaringClass() );
 				boolean isInterface = method.getDeclaringClass().isInterface();
-				mv.visitTypeInsn(CHECKCAST, ownerInternal);
-				mv.visitMethodInsn(isInterface ? INVOKEINTERFACE : INVOKEVIRTUAL, ownerInternal, method.getName(), Type.getMethodDescriptor(method), isInterface);
-				emitBox(mv, method.getReturnType());
+				mv.visitTypeInsn( CHECKCAST, ownerInternal );
+				mv.visitMethodInsn( isInterface ? INVOKEINTERFACE : INVOKEVIRTUAL, ownerInternal, method.getName(), Type.getMethodDescriptor( method ), isInterface );
+				emitBox( mv, method.getReturnType() );
 			}
 
-			mv.visitInsn(AASTORE);
+			mv.visitInsn( AASTORE );
 		}
 
-		mv.visitVarInsn(ALOAD, 2);
-		mv.visitInsn(ARETURN);
+		mv.visitVarInsn( ALOAD, 2 );
+		mv.visitInsn( ARETURN );
 
-		mv.visitMaxs(0, 0);
+		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
 		cw.visitEnd();
 		return cw.toByteArray();
 	}
 
 	static byte[] generateWriter(Class<?> targetClass, Member[] members) {
-		String targetInternal = Type.getInternalName(targetClass);
+		String targetInternal = Type.getInternalName( targetClass );
 		String generatedName = targetInternal + "$$HibernateAccessorMultiWriter";
 
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-		cw.visit(V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[]{WRITER_INTERNAL});
+		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
+		cw.visit( V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
 
-		generateConstructor(cw);
+		generateConstructor( cw );
 
-		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "set", "(Ljava/lang/Object;[Ljava/lang/Object;)V", null, null);
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "set", "(Ljava/lang/Object;[Ljava/lang/Object;)V", null, null );
 		mv.visitCode();
 
-		for (int i = 0; i < members.length; i++) {
-			mv.visitVarInsn(ALOAD, 1);
+		for ( int i = 0; i < members.length; i++ ) {
+			mv.visitVarInsn( ALOAD, 1 );
 			Member member = members[i];
-			if (member instanceof Field field) {
-				String ownerInternal = Type.getInternalName(field.getDeclaringClass());
-				mv.visitTypeInsn(CHECKCAST, ownerInternal);
-				mv.visitVarInsn(ALOAD, 2);
-				emitIntConstant(mv, i);
-				mv.visitInsn(AALOAD);
-				emitUnboxOrCast(mv, field.getType());
-				mv.visitFieldInsn(PUTFIELD, ownerInternal, field.getName(), Type.getDescriptor(field.getType()));
+			if ( member instanceof Field field ) {
+				String ownerInternal = Type.getInternalName( field.getDeclaringClass() );
+				mv.visitTypeInsn( CHECKCAST, ownerInternal );
+				mv.visitVarInsn( ALOAD, 2 );
+				emitIntConstant( mv, i );
+				mv.visitInsn( AALOAD );
+				emitUnboxOrCast( mv, field.getType() );
+				mv.visitFieldInsn( PUTFIELD, ownerInternal, field.getName(), Type.getDescriptor( field.getType() ) );
 			}
 			else {
 				Method method = (Method) member;
-				String ownerInternal = Type.getInternalName(method.getDeclaringClass());
+				String ownerInternal = Type.getInternalName( method.getDeclaringClass() );
 				boolean isInterface = method.getDeclaringClass().isInterface();
-				mv.visitTypeInsn(CHECKCAST, ownerInternal);
-				mv.visitVarInsn(ALOAD, 2);
-				emitIntConstant(mv, i);
-				mv.visitInsn(AALOAD);
-				emitUnboxOrCast(mv, method.getParameterTypes()[0]);
-				mv.visitMethodInsn(isInterface ? INVOKEINTERFACE : INVOKEVIRTUAL, ownerInternal, method.getName(), Type.getMethodDescriptor(method), isInterface);
-				if (method.getReturnType() != void.class) {
-					Type retType = Type.getType(method.getReturnType());
-					mv.visitInsn(retType.getSize() == 2 ? POP2 : POP);
+				mv.visitTypeInsn( CHECKCAST, ownerInternal );
+				mv.visitVarInsn( ALOAD, 2 );
+				emitIntConstant( mv, i );
+				mv.visitInsn( AALOAD );
+				emitUnboxOrCast( mv, method.getParameterTypes()[0] );
+				mv.visitMethodInsn( isInterface ? INVOKEINTERFACE : INVOKEVIRTUAL, ownerInternal, method.getName(), Type.getMethodDescriptor( method ), isInterface );
+				if ( method.getReturnType() != void.class ) {
+					Type retType = Type.getType( method.getReturnType() );
+					mv.visitInsn( retType.getSize() == 2 ? POP2 : POP );
 				}
 			}
 		}
 
-		mv.visitInsn(RETURN);
+		mv.visitInsn( RETURN );
 
-		mv.visitMaxs(0, 0);
+		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
 		cw.visitEnd();
 		return cw.toByteArray();
@@ -129,37 +129,37 @@ final class HibernateAccessorByteBuddyMultiValueClassGenerator implements Opcode
 	static byte[] generateBulkReader(HibernateAccessorBulkMemberAccess[] accesses, int accessorFieldCount) {
 		String generatedName = "org/hibernate/accessor/bytebuddy/impl/HibernateAccessorMultiBulkReader";
 
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-		cw.visit(V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[]{READER_INTERNAL});
+		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
+		cw.visit( V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
 
-		generateBulkAccessorFields(cw, accessorFieldCount);
-		generateBulkAccessorConstructor(cw, generatedName, accessorFieldCount);
+		generateBulkAccessorFields( cw, accessorFieldCount );
+		generateBulkAccessorConstructor( cw, generatedName, accessorFieldCount );
 
-		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "get", "(Ljava/lang/Object;)[Ljava/lang/Object;", null, null);
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "get", "(Ljava/lang/Object;)[Ljava/lang/Object;", null, null );
 		mv.visitCode();
 
-		emitIntConstant(mv, accesses.length);
-		mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-		mv.visitVarInsn(ASTORE, 2);
+		emitIntConstant( mv, accesses.length );
+		mv.visitTypeInsn( ANEWARRAY, "java/lang/Object" );
+		mv.visitVarInsn( ASTORE, 2 );
 
-		for (int i = 0; i < accesses.length; i++) {
+		for ( int i = 0; i < accesses.length; i++ ) {
 			HibernateAccessorBulkMemberAccess access = accesses[i];
-			mv.visitVarInsn(ALOAD, 2);
-			emitIntConstant(mv, i);
+			mv.visitVarInsn( ALOAD, 2 );
+			emitIntConstant( mv, i );
 
-			mv.visitVarInsn(ALOAD, 0);
-			mv.visitFieldInsn(GETFIELD, generatedName, "accessor_" + access.accessorFieldIndex(), BULK_ACCESSOR_DESC);
-			mv.visitVarInsn(ALOAD, 1);
-			emitIntConstant(mv, access.memberIndex());
-			mv.visitMethodInsn(INVOKEINTERFACE, BULK_ACCESSOR_INTERNAL, access.isField() ? "readByField" : "readByMethod", "(Ljava/lang/Object;I)Ljava/lang/Object;", true);
+			mv.visitVarInsn( ALOAD, 0 );
+			mv.visitFieldInsn( GETFIELD, generatedName, "accessor_" + access.accessorFieldIndex(), BULK_ACCESSOR_DESC );
+			mv.visitVarInsn( ALOAD, 1 );
+			emitIntConstant( mv, access.memberIndex() );
+			mv.visitMethodInsn( INVOKEINTERFACE, BULK_ACCESSOR_INTERNAL, access.isField() ? "readByField" : "readByMethod", "(Ljava/lang/Object;I)Ljava/lang/Object;", true );
 
-			mv.visitInsn(AASTORE);
+			mv.visitInsn( AASTORE );
 		}
 
-		mv.visitVarInsn(ALOAD, 2);
-		mv.visitInsn(ARETURN);
+		mv.visitVarInsn( ALOAD, 2 );
+		mv.visitInsn( ARETURN );
 
-		mv.visitMaxs(0, 0);
+		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
 		cw.visitEnd();
 		return cw.toByteArray();
@@ -168,69 +168,69 @@ final class HibernateAccessorByteBuddyMultiValueClassGenerator implements Opcode
 	static byte[] generateBulkWriter(HibernateAccessorBulkMemberAccess[] accesses, int accessorFieldCount) {
 		String generatedName = "org/hibernate/accessor/bytebuddy/impl/HibernateAccessorMultiBulkWriter";
 
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-		cw.visit(V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[]{WRITER_INTERNAL});
+		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
+		cw.visit( V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
 
-		generateBulkAccessorFields(cw, accessorFieldCount);
-		generateBulkAccessorConstructor(cw, generatedName, accessorFieldCount);
+		generateBulkAccessorFields( cw, accessorFieldCount );
+		generateBulkAccessorConstructor( cw, generatedName, accessorFieldCount );
 
-		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "set", "(Ljava/lang/Object;[Ljava/lang/Object;)V", null, null);
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "set", "(Ljava/lang/Object;[Ljava/lang/Object;)V", null, null );
 		mv.visitCode();
 
-		for (int i = 0; i < accesses.length; i++) {
+		for ( int i = 0; i < accesses.length; i++ ) {
 			HibernateAccessorBulkMemberAccess access = accesses[i];
-			mv.visitVarInsn(ALOAD, 0);
-			mv.visitFieldInsn(GETFIELD, generatedName, "accessor_" + access.accessorFieldIndex(), BULK_ACCESSOR_DESC);
-			mv.visitVarInsn(ALOAD, 1);
-			emitIntConstant(mv, access.memberIndex());
-			mv.visitVarInsn(ALOAD, 2);
-			emitIntConstant(mv, i);
-			mv.visitInsn(AALOAD);
-			mv.visitMethodInsn(INVOKEINTERFACE, BULK_ACCESSOR_INTERNAL, access.isField() ? "writeByField" : "writeByMethod", "(Ljava/lang/Object;ILjava/lang/Object;)V", true);
+			mv.visitVarInsn( ALOAD, 0 );
+			mv.visitFieldInsn( GETFIELD, generatedName, "accessor_" + access.accessorFieldIndex(), BULK_ACCESSOR_DESC );
+			mv.visitVarInsn( ALOAD, 1 );
+			emitIntConstant( mv, access.memberIndex() );
+			mv.visitVarInsn( ALOAD, 2 );
+			emitIntConstant( mv, i );
+			mv.visitInsn( AALOAD );
+			mv.visitMethodInsn( INVOKEINTERFACE, BULK_ACCESSOR_INTERNAL, access.isField() ? "writeByField" : "writeByMethod", "(Ljava/lang/Object;ILjava/lang/Object;)V", true );
 		}
 
-		mv.visitInsn(RETURN);
+		mv.visitInsn( RETURN );
 
-		mv.visitMaxs(0, 0);
+		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
 		cw.visitEnd();
 		return cw.toByteArray();
 	}
 
 	private static void generateBulkAccessorFields(ClassWriter cw, int count) {
-		for (int i = 0; i < count; i++) {
-			cw.visitField(ACC_PRIVATE | ACC_FINAL, "accessor_" + i, BULK_ACCESSOR_DESC, null, null).visitEnd();
+		for ( int i = 0; i < count; i++ ) {
+			cw.visitField( ACC_PRIVATE | ACC_FINAL, "accessor_" + i, BULK_ACCESSOR_DESC, null, null ).visitEnd();
 		}
 	}
 
 	private static void generateBulkAccessorConstructor(ClassWriter cw, String className, int fieldCount) {
-		StringBuilder ctorDesc = new StringBuilder("(");
-		for (int i = 0; i < fieldCount; i++) {
-			ctorDesc.append(BULK_ACCESSOR_DESC);
+		StringBuilder ctorDesc = new StringBuilder( "(" );
+		for ( int i = 0; i < fieldCount; i++ ) {
+			ctorDesc.append( BULK_ACCESSOR_DESC );
 		}
-		ctorDesc.append(")V");
+		ctorDesc.append( ")V" );
 
-		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", ctorDesc.toString(), null, null);
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "<init>", ctorDesc.toString(), null, null );
 		mv.visitCode();
-		mv.visitVarInsn(ALOAD, 0);
-		mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-		for (int i = 0; i < fieldCount; i++) {
-			mv.visitVarInsn(ALOAD, 0);
-			mv.visitVarInsn(ALOAD, i + 1);
-			mv.visitFieldInsn(PUTFIELD, className, "accessor_" + i, BULK_ACCESSOR_DESC);
+		mv.visitVarInsn( ALOAD, 0 );
+		mv.visitMethodInsn( INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false );
+		for ( int i = 0; i < fieldCount; i++ ) {
+			mv.visitVarInsn( ALOAD, 0 );
+			mv.visitVarInsn( ALOAD, i + 1 );
+			mv.visitFieldInsn( PUTFIELD, className, "accessor_" + i, BULK_ACCESSOR_DESC );
 		}
-		mv.visitInsn(RETURN);
-		mv.visitMaxs(0, 0);
+		mv.visitInsn( RETURN );
+		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
 	}
 
 	private static void generateConstructor(ClassWriter cw) {
-		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "<init>", "()V", null, null );
 		mv.visitCode();
-		mv.visitVarInsn(ALOAD, 0);
-		mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-		mv.visitInsn(RETURN);
-		mv.visitMaxs(0, 0);
+		mv.visitVarInsn( ALOAD, 0 );
+		mv.visitMethodInsn( INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false );
+		mv.visitInsn( RETURN );
+		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
 	}
 }
