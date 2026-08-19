@@ -3,4 +3,5 @@ module org.hibernate.accessor.asm {
 	requires org.objectweb.asm;
 
 	exports org.hibernate.accessor.asm;
+	exports org.hibernate.accessor.asm.spi;
 }
