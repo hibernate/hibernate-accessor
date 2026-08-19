@@ -18,7 +18,7 @@ import java.lang.reflect.Method;
 
 import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitBox;
 import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitIntConstant;
-import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitUnboxOrCast;
+import static org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyUtils.emitWideningUnbox;
 
 final class HibernateAccessorByteBuddyBulkAccessorClassGenerator implements Opcodes {
 
@@ -110,7 +110,7 @@ final class HibernateAccessorByteBuddyBulkAccessorClassGenerator implements Opco
 				mv.visitTypeInsn(CHECKCAST, targetInternal);
 				Field f = fields[i];
 				mv.visitVarInsn(ALOAD, 3);
-				emitUnboxOrCast(mv, f.getType());
+				emitWideningUnbox(mv, f.getType());
 				mv.visitFieldInsn(PUTFIELD, targetInternal, f.getName(), Type.getDescriptor(f.getType()));
 				mv.visitInsn(RETURN);
 			}
@@ -179,7 +179,7 @@ final class HibernateAccessorByteBuddyBulkAccessorClassGenerator implements Opco
 				mv.visitVarInsn(ALOAD, 1);
 				mv.visitTypeInsn(CHECKCAST, targetInternal);
 				mv.visitVarInsn(ALOAD, 3);
-				emitUnboxOrCast(mv, m.getParameterTypes()[0]);
+				emitWideningUnbox(mv, m.getParameterTypes()[0]);
 				int opcode = isInterface ? INVOKEINTERFACE : INVOKEVIRTUAL;
 				mv.visitMethodInsn(opcode, targetInternal, m.getName(),
 						Type.getMethodDescriptor(m), isInterface);
@@ -223,7 +223,7 @@ final class HibernateAccessorByteBuddyBulkAccessorClassGenerator implements Opco
 					mv.visitVarInsn(ALOAD, 2);
 					emitIntConstant(mv, j);
 					mv.visitInsn(AALOAD);
-					emitUnboxOrCast(mv, paramTypes[j]);
+					emitWideningUnbox(mv, paramTypes[j]);
 				}
 				mv.visitMethodInsn(INVOKESPECIAL, targetInternal, "<init>",
 						Type.getConstructorDescriptor(ctor), false);

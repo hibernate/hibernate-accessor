@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Primitive type field and method access")
@@ -232,5 +233,132 @@ public class PrimitiveFieldAccessTest {
 
         writer.set(bean, 'A');
         assertEquals('A', reader.get(bean));
+    }
+
+    // Widening: a smaller primitive value written to a wider primitive target must be
+    // accepted, mirroring the reflection semantics (JLS 5.1.2 widening conversions).
+
+    @Test
+    @DisplayName("int value widened into a long field")
+    void testIntWidenedToLongField() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Field field = PrimitiveFieldBean.class.getDeclaredField("longField");
+        field.setAccessible(true);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(field);
+        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+
+        writer.set(bean, 42); // Integer -> long
+        assertEquals(42L, reader.get(bean));
+    }
+
+    @Test
+    @DisplayName("int value widened into a long setter")
+    void testIntWidenedToLongMethod() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Method setter = PrimitiveFieldBean.class.getDeclaredMethod("setLongField", long.class);
+        Method getter = PrimitiveFieldBean.class.getDeclaredMethod("getLongField");
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(setter);
+        HibernateAccessorValueReader<?> reader = factory.valueReader(getter);
+
+        writer.set(bean, 99); // Integer -> long
+        assertEquals(99L, reader.get(bean));
+    }
+
+    @Test
+    @DisplayName("byte value widened into an int field")
+    void testByteWidenedToIntField() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Field field = PrimitiveFieldBean.class.getDeclaredField("intField");
+        field.setAccessible(true);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(field);
+        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+
+        writer.set(bean, (byte) 5); // Byte -> int
+        assertEquals(5, reader.get(bean));
+    }
+
+    @Test
+    @DisplayName("char value widened into an int field")
+    void testCharWidenedToIntField() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Field field = PrimitiveFieldBean.class.getDeclaredField("intField");
+        field.setAccessible(true);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(field);
+        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+
+        writer.set(bean, 'A'); // Character -> int
+        assertEquals((int) 'A', reader.get(bean));
+    }
+
+    @Test
+    @DisplayName("short value widened into a long field")
+    void testShortWidenedToLongField() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Field field = PrimitiveFieldBean.class.getDeclaredField("longField");
+        field.setAccessible(true);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(field);
+        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+
+        writer.set(bean, (short) 7); // Short -> long
+        assertEquals(7L, reader.get(bean));
+    }
+
+    @Test
+    @DisplayName("int value widened into a double field")
+    void testIntWidenedToDoubleField() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Field field = PrimitiveFieldBean.class.getDeclaredField("doubleField");
+        field.setAccessible(true);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(field);
+        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+
+        writer.set(bean, 3); // Integer -> double
+        assertEquals(3.0, reader.get(bean));
+    }
+
+    @Test
+    @DisplayName("float value widened into a double field")
+    void testFloatWidenedToDoubleField() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Field field = PrimitiveFieldBean.class.getDeclaredField("doubleField");
+        field.setAccessible(true);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(field);
+        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+
+        writer.set(bean, 2.5f); // Float -> double
+        assertEquals(2.5, reader.get(bean));
+    }
+
+    // Narrowing: a wider primitive value written to a narrower primitive target must be
+    // rejected, again mirroring reflection (which throws IllegalArgumentException).
+
+    @Test
+    @DisplayName("long value narrowed into an int field is rejected")
+    void testLongNarrowedToIntFieldRejected() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Field field = PrimitiveFieldBean.class.getDeclaredField("intField");
+        field.setAccessible(true);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(field);
+
+        assertThrows(RuntimeException.class, () -> writer.set(bean, 42L)); // Long -> int
+    }
+
+    @Test
+    @DisplayName("long value narrowed into an int setter is rejected")
+    void testLongNarrowedToIntMethodRejected() throws Exception {
+        PrimitiveFieldBean bean = new PrimitiveFieldBean();
+        Method setter = PrimitiveFieldBean.class.getDeclaredMethod("setIntField", int.class);
+
+        HibernateAccessorValueWriter writer = factory.valueWriter(setter);
+
+        assertThrows(RuntimeException.class, () -> writer.set(bean, 42L)); // Long -> int
     }
 }

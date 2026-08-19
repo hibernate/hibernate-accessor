@@ -18,7 +18,7 @@ import org.objectweb.asm.Type;
 
 import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.emitBox;
 import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.emitIntConstant;
-import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.emitUnboxOrCast;
+import static org.hibernate.accessor.asm.impl.HibernateAccessorAsmUtils.emitWideningUnbox;
 
 
 final class HibernateAccessorAsmBulkAccessorClassGenerator implements Opcodes {
@@ -120,7 +120,7 @@ final class HibernateAccessorAsmBulkAccessorClassGenerator implements Opcodes {
 				mv.visitTypeInsn( CHECKCAST, targetInternal );
 				Field f = fields[i];
 				mv.visitVarInsn( ALOAD, 3 );
-				emitUnboxOrCast( mv, f.getType() );
+				emitWideningUnbox( mv, f.getType() );
 				mv.visitFieldInsn( PUTFIELD, targetInternal, f.getName(), Type.getDescriptor( f.getType() ) );
 				mv.visitInsn( RETURN );
 			}
@@ -205,7 +205,7 @@ final class HibernateAccessorAsmBulkAccessorClassGenerator implements Opcodes {
 				mv.visitVarInsn(ALOAD, 1);
 				mv.visitTypeInsn(CHECKCAST, targetInternal);
 				mv.visitVarInsn(ALOAD, 3);
-				emitUnboxOrCast(mv, m.getParameterTypes()[0]);
+				emitWideningUnbox(mv, m.getParameterTypes()[0]);
 				int opcode = isInterface ? INVOKEINTERFACE : INVOKEVIRTUAL;
 				mv.visitMethodInsn(opcode, targetInternal, m.getName(),
 						Type.getMethodDescriptor(m), isInterface);
@@ -253,7 +253,7 @@ final class HibernateAccessorAsmBulkAccessorClassGenerator implements Opcodes {
 					mv.visitVarInsn( ALOAD, 2 );
 					emitIntConstant( mv, j );
 					mv.visitInsn( AALOAD );
-					emitUnboxOrCast( mv, paramTypes[j] );
+					emitWideningUnbox( mv, paramTypes[j] );
 				}
 				mv.visitMethodInsn(
 						INVOKESPECIAL, targetInternal, "<init>",

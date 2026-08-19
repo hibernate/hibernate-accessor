@@ -124,9 +124,15 @@ public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory 
 			MethodHandles.Lookup lookup = MethodHandles.privateLookupIn( setter.getDeclaringClass(), this.lookup );
 			MethodHandle target = lookup.unreflect( setter );
 
-			Class<?> paramType = setter.getParameterTypes()[0].isPrimitive()
-					? MethodType.methodType( setter.getParameterTypes()[0] ).wrap().returnType()
-					: setter.getParameterTypes()[0];
+			if ( setter.getParameterTypes()[0].isPrimitive() ) {
+				// A metafactory-generated lambda unboxes via a checkcast to the exact wrapper,
+				// which rejects a widening value (e.g. an Integer passed to a long setter). The
+				// MethodHandle writer invokes through asType, which applies the same
+				// unbox-and-widen semantics as reflection, so use it for primitive setters.
+				return new LambdaFieldValueWriter( target );
+			}
+
+			Class<?> paramType = setter.getParameterTypes()[0];
 
 			try {
 				CallSite site = LambdaMetafactory.metafactory(
