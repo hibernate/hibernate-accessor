@@ -15,7 +15,7 @@ junitPlatformJupiter= "6.1.2"
 log4j = "2.26.1"
 
 # plugins
-spotless="8.8.0"
+spotless="8.9.0"
 develocity="4.5.0"
 
 [libraries]
