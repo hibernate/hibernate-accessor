@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright: Red Hat Inc. and Hibernate Authors
  */
-package org.hibernate.accessor.bytebuddy.impl;
+package org.hibernate.accessor.bytebuddy.spi;
 
 public interface HibernateAccessorByteBuddyBulkAccessor {
 

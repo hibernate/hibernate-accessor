@@ -5,6 +5,7 @@
 package org.hibernate.accessor.asm.impl;
 
 import org.hibernate.accessor.HibernateAccessorException;
+import org.hibernate.accessor.asm.spi.HibernateAccessorAsmBulkAccessor;
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
 import org.objectweb.asm.Type;
 
