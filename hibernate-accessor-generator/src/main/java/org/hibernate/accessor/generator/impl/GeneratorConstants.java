@@ -15,14 +15,14 @@ import org.hibernate.accessor.HibernateAccessorValueWriter;
 
 public interface GeneratorConstants {
 
-	String GENERATED_FACTORY_FQCN = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorFactory";
+	String GENERATED_FACTORY_FQCN = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorFactory";
 	String FACTORY_IMPLEMENTATION_INTERNAL = fqcnToName( GENERATED_FACTORY_FQCN );
 
-	String GENERATED_READER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorValueReaderImpl";
-	String GENERATED_WRITER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorValueWriterImpl";
-	String GENERATED_INSTANTIATOR_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorInstantiatorImpl";
-	String GENERATED_MULTI_VALUE_READER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorMultiValueReaderImpl";
-	String GENERATED_MULTI_VALUE_WRITER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorMultiValueWriterImpl";
+	String GENERATED_READER_IMPL = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorValueReaderImpl";
+	String GENERATED_WRITER_IMPL = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorValueWriterImpl";
+	String GENERATED_INSTANTIATOR_IMPL = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorInstantiatorImpl";
+	String GENERATED_MULTI_VALUE_READER_IMPL = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorMultiValueReaderImpl";
+	String GENERATED_MULTI_VALUE_WRITER_IMPL = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorMultiValueWriterImpl";
 
 	String READER_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorValueReader.class.getName() );
 	String WRITER_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorValueWriter.class.getName() );

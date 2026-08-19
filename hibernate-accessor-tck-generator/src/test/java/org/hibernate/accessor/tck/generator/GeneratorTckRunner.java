@@ -12,7 +12,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 
 @Suite
 @SuiteDisplayName( "Build-time Generator TCK tests Runner" )
-@SelectPackages( "org.hibernate.models.accessor.tck" )
+@SelectPackages( "org.hibernate.accessor.tck" )
 @IncludeClassNamePatterns( { ".*Test" } )
 @ExcludeClassNamePatterns( { ".*InterfaceMethod.*" } )
 public class GeneratorTckRunner {
