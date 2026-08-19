@@ -10,6 +10,7 @@ import org.hibernate.accessor.HibernateAccessorMultiValueReader;
 import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.HibernateAccessorValueReader;
 import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.spi.MemberValidation;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -35,6 +36,7 @@ public class HibernateAccessorReflectionFactory implements HibernateAccessorFact
 
 	@Override
 	public HibernateAccessorValueReader<?> valueReader(Method method) {
+		MemberValidation.validateReaderMethod( method );
 		return new HibernateAccessorReflectionMethodValueReader<>(method);
 	}
 
@@ -45,6 +47,7 @@ public class HibernateAccessorReflectionFactory implements HibernateAccessorFact
 
 	@Override
 	public HibernateAccessorValueWriter valueWriter(Method setter) {
+		MemberValidation.validateWriterMethod( setter );
 		return new HibernateAccessorReflectionMethodValueWriter(setter);
 	}
 
@@ -53,6 +56,7 @@ public class HibernateAccessorReflectionFactory implements HibernateAccessorFact
 		final HibernateAccessorValueReader<?>[] readers = new HibernateAccessorValueReader<?>[members.length];
 		for ( int i = 0; i < members.length; i++ ) {
 			final Member member = members[i];
+			MemberValidation.validateReaderMember( member );
 			if ( member instanceof Field field ) {
 				readers[i] = valueReader( field );
 			}
@@ -71,6 +75,7 @@ public class HibernateAccessorReflectionFactory implements HibernateAccessorFact
 		final HibernateAccessorValueWriter[] writers = new HibernateAccessorValueWriter[members.length];
 		for ( int i = 0; i < members.length; i++ ) {
 			final Member member = members[i];
+			MemberValidation.validateWriterMember( member );
 			if ( member instanceof Field field ) {
 				writers[i] = valueWriter( field );
 			}
