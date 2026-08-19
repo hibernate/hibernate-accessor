@@ -6,6 +6,7 @@ package org.hibernate.accessor;
 
 import org.hibernate.accessor.lambda.impl.HibernateAccessorLambdaFactory;
 import org.hibernate.accessor.reflection.impl.HibernateAccessorReflectionFactory;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
@@ -43,7 +44,17 @@ public interface HibernateAccessorFactory {
 	 * @return a new lambda-based factory instance
 	 */
 	static HibernateAccessorFactory lambda(MethodHandles.Lookup lookup) {
-		return new HibernateAccessorLambdaFactory(lookup);
+		return lambda( new HibernateAccessorConfiguration( lookup ) );
+	}
+
+	/**
+	 * Returns a lambda-based factory with the given configuration.
+	 *
+	 * @param configuration the accessor configuration (must contain a {@link HibernateAccessorConfiguration#LOOKUP lookup})
+	 * @return a new lambda-based factory instance
+	 */
+	static HibernateAccessorFactory lambda(HibernateAccessorConfiguration configuration) {
+		return new HibernateAccessorLambdaFactory( configuration );
 	}
 
 	/**

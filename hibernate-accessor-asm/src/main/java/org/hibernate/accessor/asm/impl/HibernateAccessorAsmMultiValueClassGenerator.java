@@ -347,7 +347,7 @@ final class HibernateAccessorAsmMultiValueClassGenerator implements Opcodes {
 	}
 
 	static byte[] generateBulkReader(HibernateAccessorBulkMemberAccess[] accesses, int accessorFieldCount, MultiValueAccessorPointcuts pointcuts) {
-		String generatedName = "org/hibernate/models/accessor/asm/impl/HibernateAccessorMultiBulkReader";
+		String generatedName = "org/hibernate/accessor/asm/impl/HibernateAccessorMultiBulkReader";
 
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 		cw.visit(V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[]{READER_INTERNAL});
@@ -398,7 +398,7 @@ final class HibernateAccessorAsmMultiValueClassGenerator implements Opcodes {
 	}
 
 	static byte[] generateBulkWriter(HibernateAccessorBulkMemberAccess[] accesses, int accessorFieldCount, MultiValueAccessorPointcuts pointcuts) {
-		String generatedName = "org/hibernate/models/accessor/asm/impl/HibernateAccessorMultiBulkWriter";
+		String generatedName = "org/hibernate/accessor/asm/impl/HibernateAccessorMultiBulkWriter";
 
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 		cw.visit(V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[]{WRITER_INTERNAL});

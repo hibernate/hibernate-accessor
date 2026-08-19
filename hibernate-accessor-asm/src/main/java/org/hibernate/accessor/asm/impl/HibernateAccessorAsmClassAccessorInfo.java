@@ -6,6 +6,7 @@ package org.hibernate.accessor.asm.impl;
 
 import org.hibernate.accessor.HibernateAccessorException;
 import org.hibernate.accessor.asm.spi.HibernateAccessorAsmBulkAccessor;
+import org.hibernate.accessor.spi.HibernateAccessorBytecodeDumper;
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
 import org.objectweb.asm.Type;
 
@@ -35,7 +36,7 @@ final class HibernateAccessorAsmClassAccessorInfo {
 		this.constructorIndices = constructorIndices;
 	}
 
-	static HibernateAccessorAsmClassAccessorInfo create(Class<?> declaringClass, CrossClassLoaderLookupBridge lookupBridge) {
+	static HibernateAccessorAsmClassAccessorInfo create(Class<?> declaringClass, CrossClassLoaderLookupBridge lookupBridge, HibernateAccessorBytecodeDumper bytecodeDumper) {
 		Field[] fields = Arrays.stream( declaringClass.getDeclaredFields() )
 				.filter( f -> !Modifier.isStatic( f.getModifiers() ) )
 				.toArray( Field[]::new );
@@ -60,6 +61,7 @@ final class HibernateAccessorAsmClassAccessorInfo {
 		}
 
 		byte[] bytecode = HibernateAccessorAsmBulkAccessorClassGenerator.generate(declaringClass, fields, methods, constructors);
+		bytecodeDumper.dump( Type.getInternalName( declaringClass ) + "$$HibernateAccessor", bytecode );
 
 		try {
 			MethodHandles.Lookup targetLookup = lookupBridge.resolve( declaringClass );

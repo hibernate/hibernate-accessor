@@ -8,6 +8,7 @@ import org.hibernate.accessor.HibernateAccessorFactory;
 import org.hibernate.accessor.HibernateAccessorMultiValueReader;
 import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.asm.spi.MultiValueAccessorPointcuts;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Member;
@@ -27,7 +28,17 @@ public interface HibernateAccessorAsmFactory extends HibernateAccessorFactory {
 	 * @return a new ASM-based factory instance
 	 */
 	static HibernateAccessorAsmFactory factory(MethodHandles.Lookup lookup) {
-		return new org.hibernate.accessor.asm.impl.HibernateAccessorAsmFactory( lookup);
+		return factory( new HibernateAccessorConfiguration( lookup ) );
+	}
+
+	/**
+	 * Creates an ASM-based accessor factory using the given configuration.
+	 *
+	 * @param configuration the accessor configuration (must contain a {@link HibernateAccessorConfiguration#LOOKUP lookup})
+	 * @return a new ASM-based factory instance
+	 */
+	static HibernateAccessorAsmFactory factory(HibernateAccessorConfiguration configuration) {
+		return new org.hibernate.accessor.asm.impl.HibernateAccessorAsmFactory( configuration );
 	}
 
 	HibernateAccessorMultiValueReader multiValueReader(

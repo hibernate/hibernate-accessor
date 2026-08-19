@@ -8,6 +8,7 @@ import org.hibernate.accessor.HibernateAccessorFactory;
 import org.hibernate.accessor.HibernateAccessorMultiValueReader;
 import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.bytebuddy.spi.MultiValueAccessorPointcuts;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Member;
@@ -28,7 +29,17 @@ public interface HibernateAccessorByteBuddyFactory extends HibernateAccessorFact
 	 * @return a new ByteBuddy-based factory instance
 	 */
 	static HibernateAccessorByteBuddyFactory factory(MethodHandles.Lookup lookup) {
-		return new org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyFactory( lookup );
+		return factory( new HibernateAccessorConfiguration( lookup ) );
+	}
+
+	/**
+	 * Creates a ByteBuddy-based accessor factory using the given configuration.
+	 *
+	 * @param configuration the accessor configuration (must contain a {@link HibernateAccessorConfiguration#LOOKUP lookup})
+	 * @return a new ByteBuddy-based factory instance
+	 */
+	static HibernateAccessorByteBuddyFactory factory(HibernateAccessorConfiguration configuration) {
+		return new org.hibernate.accessor.bytebuddy.impl.HibernateAccessorByteBuddyFactory( configuration );
 	}
 
 	HibernateAccessorMultiValueReader multiValueReader(
