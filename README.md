@@ -2,7 +2,7 @@
 
 ## What is it?
 
-A library that provides efficient field/property access and instance creation for Hibernate Models.
+A library that provides efficient field/property access and instance creation for main Hibernate projects.
 
 It provides a single API (`HibernateAccessorFactory`) with pluggable strategies for reading
 and writing object state and for instantiating objects via constructors.
@@ -15,7 +15,7 @@ Add the core module to your project:
 <dependency>
     <groupId>org.hibernate.accessor</groupId>
     <artifactId>hibernate-accessor</artifactId>
-    <version>${hibernate-models.version}</version>
+    <version>${hibernate-accessor.version}</version>
 </dependency>
 ```
 
