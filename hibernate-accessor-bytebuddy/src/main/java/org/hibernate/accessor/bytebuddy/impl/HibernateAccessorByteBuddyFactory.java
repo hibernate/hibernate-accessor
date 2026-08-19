@@ -12,8 +12,12 @@ import org.hibernate.accessor.HibernateAccessorValueWriter;
 import org.hibernate.accessor.MultiValueAccessorGenerationException;
 import org.hibernate.accessor.bytebuddy.spi.HibernateAccessorByteBuddyBulkAccessor;
 import org.hibernate.accessor.bytebuddy.spi.MultiValueAccessorPointcuts;
+import org.hibernate.accessor.spi.HibernateAccessorBytecodeDumper;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
 import org.hibernate.accessor.spi.MemberValidation;
+
+import net.bytebuddy.jar.asm.Type;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
@@ -30,13 +34,19 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private static final MethodHandles.Lookup ACCESSOR_MODULE_LOOKUP = MethodHandles.lookup();
 	private final ClassValue<HibernateAccessorByteBuddyClassAccessorInfo> cache;
 	private final CrossClassLoaderLookupBridge lookupBridge;
+	private final HibernateAccessorBytecodeDumper bytecodeDumper;
 
 	public HibernateAccessorByteBuddyFactory(MethodHandles.Lookup lookup) {
-		this.lookupBridge = new CrossClassLoaderLookupBridge( lookup, HibernateAccessorByteBuddyBridgeClassGenerator::generate );
+		this( new HibernateAccessorConfiguration( lookup ) );
+	}
+
+	public HibernateAccessorByteBuddyFactory(HibernateAccessorConfiguration configuration) {
+		this.lookupBridge = new CrossClassLoaderLookupBridge( configuration.lookup(), HibernateAccessorByteBuddyBridgeClassGenerator::generate );
+		this.bytecodeDumper = new HibernateAccessorBytecodeDumper( configuration );
 		this.cache = new ClassValue<>() {
 			@Override
 			protected HibernateAccessorByteBuddyClassAccessorInfo computeValue(Class<?> type) {
-				return HibernateAccessorByteBuddyClassAccessorInfo.create( type, lookupBridge );
+				return HibernateAccessorByteBuddyClassAccessorInfo.create( type, lookupBridge, bytecodeDumper );
 			}
 		};
 	}
@@ -138,6 +148,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueReader generateDirectReader(Member[] members) {
 		final Class<?> targetClass = members[0].getDeclaringClass();
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateReader( targetClass, members );
+		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiReader_" + java.util.UUID.randomUUID(), bytecode );
 		try {
 			MethodHandles.Lookup targetLookup = lookupBridge.resolve( targetClass );
 			MethodHandles.Lookup hiddenLookup = targetLookup.defineHiddenClass( bytecode, true, MethodHandles.Lookup.ClassOption.NESTMATE );
@@ -151,6 +162,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueWriter generateDirectWriter(Member[] members) {
 		final Class<?> targetClass = members[0].getDeclaringClass();
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateWriter( targetClass, members );
+		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiWriter_" + java.util.UUID.randomUUID(), bytecode );
 		try {
 			MethodHandles.Lookup targetLookup = lookupBridge.resolve( targetClass );
 			MethodHandles.Lookup hiddenLookup = targetLookup.defineHiddenClass( bytecode, true, MethodHandles.Lookup.ClassOption.NESTMATE );
@@ -164,6 +176,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueReader generateBulkBasedReader(Member[] members) {
 		final BulkAccessorLayout layout = buildBulkAccessorLayout(members);
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkReader(layout.accesses, layout.accessors.length);
+		bytecodeDumper.dump( Type.getInternalName( members[0].getDeclaringClass() ) + "$$HibernateAccessorMultiBulkReader_" + java.util.UUID.randomUUID(), bytecode );
 		try {
 			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass(bytecode, true);
 			final Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
@@ -178,6 +191,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueWriter generateBulkBasedWriter(Member[] members) {
 		final BulkAccessorLayout layout = buildBulkAccessorLayout(members);
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkWriter(layout.accesses, layout.accessors.length);
+		bytecodeDumper.dump( Type.getInternalName( members[0].getDeclaringClass() ) + "$$HibernateAccessorMultiBulkWriter_" + java.util.UUID.randomUUID(), bytecode );
 		try {
 			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass(bytecode, true);
 			final Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
@@ -192,6 +206,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueReader generateDirectReader(Member[] members, MultiValueAccessorPointcuts pointcuts) {
 		final Class<?> targetClass = members[0].getDeclaringClass();
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateReader( targetClass, members, pointcuts );
+		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiReader", bytecode );
 		try {
 			MethodHandles.Lookup targetLookup = lookupBridge.resolve( targetClass );
 			MethodHandles.Lookup hiddenLookup = targetLookup.defineHiddenClass( bytecode, true, MethodHandles.Lookup.ClassOption.NESTMATE );
@@ -205,6 +220,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueWriter generateDirectWriter(Member[] members, MultiValueAccessorPointcuts pointcuts) {
 		final Class<?> targetClass = members[0].getDeclaringClass();
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateWriter( targetClass, members, pointcuts );
+		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiWriter", bytecode );
 		try {
 			MethodHandles.Lookup targetLookup = lookupBridge.resolve( targetClass );
 			MethodHandles.Lookup hiddenLookup = targetLookup.defineHiddenClass( bytecode, true, MethodHandles.Lookup.ClassOption.NESTMATE );
@@ -218,6 +234,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueReader generateBulkBasedReader(Member[] members, MultiValueAccessorPointcuts pointcuts) {
 		final BulkAccessorLayout layout = buildBulkAccessorLayout(members);
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkReader(layout.accesses, layout.accessors.length, pointcuts);
+		bytecodeDumper.dump( "org/hibernate/models/accessor/bytebuddy/impl/HibernateAccessorMultiBulkReader", bytecode );
 		try {
 			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass(bytecode, true);
 			final Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
@@ -232,6 +249,7 @@ public class HibernateAccessorByteBuddyFactory implements org.hibernate.accessor
 	private HibernateAccessorMultiValueWriter generateBulkBasedWriter(Member[] members, MultiValueAccessorPointcuts pointcuts) {
 		final BulkAccessorLayout layout = buildBulkAccessorLayout(members);
 		final byte[] bytecode = HibernateAccessorByteBuddyMultiValueClassGenerator.generateBulkWriter(layout.accesses, layout.accessors.length, pointcuts);
+		bytecodeDumper.dump( "org/hibernate/models/accessor/bytebuddy/impl/HibernateAccessorMultiBulkWriter", bytecode );
 		try {
 			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass(bytecode, true);
 			final Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
