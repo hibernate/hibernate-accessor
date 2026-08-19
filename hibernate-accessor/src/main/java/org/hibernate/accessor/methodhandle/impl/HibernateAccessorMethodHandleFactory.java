@@ -36,10 +36,10 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 	public <T> HibernateAccessorInstantiator<T> instantiator(Constructor<T> constructor) {
 		try {
 			return new HibernateAccessorMethodHandleInstantiator<>(
-					privateLookup(constructor.getDeclaringClass()).unreflectConstructor(constructor)
-							.asSpreader(Object[].class, constructor.getParameterCount()));
+					privateLookup( constructor.getDeclaringClass() ).unreflectConstructor( constructor )
+							.asSpreader( Object[].class, constructor.getParameterCount() ) );
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create method-handle instantiator for %s, falling back to reflection", constructor );
 			return reflectionFallback.instantiator( constructor );
 		}
@@ -50,9 +50,9 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 		MemberValidation.validateInstanceMember( field );
 		try {
 			return new HibernateAccessorMethodHandleFieldValueReader<>(
-					privateLookup(field.getDeclaringClass()).unreflectGetter(field));
+					privateLookup( field.getDeclaringClass() ).unreflectGetter( field ) );
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create method-handle field reader for %s, falling back to reflection", field );
 			return reflectionFallback.valueReader( field );
 		}
@@ -63,9 +63,9 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 		MemberValidation.validateReaderMethod( method );
 		try {
 			return new HibernateAccessorMethodHandleMethodValueReader<>(
-					privateLookup(method.getDeclaringClass()).unreflect(method));
+					privateLookup( method.getDeclaringClass() ).unreflect( method ) );
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create method-handle method reader for %s, falling back to reflection", method );
 			return reflectionFallback.valueReader( method );
 		}
@@ -79,9 +79,9 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 		}
 		try {
 			return new HibernateAccessorMethodHandleFieldValueWriter(
-					privateLookup(field.getDeclaringClass()).unreflectSetter(field));
+					privateLookup( field.getDeclaringClass() ).unreflectSetter( field ) );
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create method-handle field writer for %s, falling back to reflection", field );
 			return reflectionFallback.valueWriter( field );
 		}
@@ -92,9 +92,9 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 		MemberValidation.validateWriterMethod( setter );
 		try {
 			return new HibernateAccessorMethodHandleMethodValueWriter(
-					privateLookup(setter.getDeclaringClass()).unreflect(setter));
+					privateLookup( setter.getDeclaringClass() ).unreflect( setter ) );
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create method-handle method writer for %s, falling back to reflection", setter );
 			return reflectionFallback.valueWriter( setter );
 		}
@@ -159,6 +159,6 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 	}
 
 	private MethodHandles.Lookup privateLookup(Class<?> targetClass) throws IllegalAccessException {
-		return MethodHandles.privateLookupIn(targetClass, this.lookup);
+		return MethodHandles.privateLookupIn( targetClass, this.lookup );
 	}
 }

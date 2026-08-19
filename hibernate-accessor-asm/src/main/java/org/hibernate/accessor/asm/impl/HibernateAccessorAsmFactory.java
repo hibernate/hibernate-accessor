@@ -72,8 +72,8 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 	public HibernateAccessorValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
 		try {
-			HibernateAccessorAsmClassAccessorInfo info = getOrCreate(field.getDeclaringClass());
-			return new HibernateAccessorAsmFieldValueReader<>(info.bulkAccessor(), info.fieldIndex(field));
+			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
+			return new HibernateAccessorAsmFieldValueReader<>( info.bulkAccessor(), info.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", field );
@@ -101,8 +101,8 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 			return reflectionFallback.valueWriter( field );
 		}
 		try {
-			HibernateAccessorAsmClassAccessorInfo info = getOrCreate(field.getDeclaringClass());
-			return new HibernateAccessorAsmFieldValueWriter(info.bulkAccessor(), info.fieldIndex(field));
+			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
+			return new HibernateAccessorAsmFieldValueWriter( info.bulkAccessor(), info.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", field );
@@ -217,7 +217,7 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 					.newInstance( (Object[]) layout.accessors );
 		}
 		catch (Exception e) {
-			throw new MultiValueAccessorGenerationException( "Failed to create bulk-based multi-value reader", e);
+			throw new MultiValueAccessorGenerationException( "Failed to create bulk-based multi-value reader", e );
 		}
 	}
 
@@ -260,17 +260,15 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 			final int fieldIdx = classToFieldIndex.get( members[i].getDeclaringClass() );
 			final HibernateAccessorAsmClassAccessorInfo info = infos[fieldIdx];
 			final boolean isField = members[i] instanceof Field;
-			final int memberIdx = isField ?
-					info.fieldIndex( (Field) members[i] ) :
-					info.methodIndex( (Method) members[i] );
+			final int memberIdx = isField ? info.fieldIndex( (Field) members[i] ) : info.methodIndex( (Method) members[i] );
 			accesses[i] = new HibernateAccessorBulkMemberAccess( fieldIdx, memberIdx, isField );
 		}
 
 		return new BulkAccessorLayout( accesses, accessors );
 	}
 
-	private record BulkAccessorLayout(HibernateAccessorBulkMemberAccess[] accesses,
-									HibernateAccessorAsmBulkAccessor[] accessors) {
+	private record BulkAccessorLayout(  HibernateAccessorBulkMemberAccess[] accesses,
+										HibernateAccessorAsmBulkAccessor[] accessors) {
 	}
 
 	private static boolean allSameDeclaringClass(Class<?> declaringClass, Member[] members) {

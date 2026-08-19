@@ -26,31 +26,31 @@ public class HibernateAccessorReflectionFactory implements HibernateAccessorFact
 
 	@Override
 	public <T> HibernateAccessorInstantiator<T> instantiator(Constructor<T> constructor) {
-		return new HibernateAccessorReflectionConstructorInstantiator<>(constructor);
+		return new HibernateAccessorReflectionConstructorInstantiator<>( constructor );
 	}
 
 	@Override
 	public HibernateAccessorValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
-		return new HibernateAccessorReflectionFieldValueReader<>(field);
+		return new HibernateAccessorReflectionFieldValueReader<>( field );
 	}
 
 	@Override
 	public HibernateAccessorValueReader<?> valueReader(Method method) {
 		MemberValidation.validateReaderMethod( method );
-		return new HibernateAccessorReflectionMethodValueReader<>(method);
+		return new HibernateAccessorReflectionMethodValueReader<>( method );
 	}
 
 	@Override
 	public HibernateAccessorValueWriter valueWriter(Field field) {
 		MemberValidation.validateInstanceMember( field );
-		return new HibernateAccessorReflectionFieldValueWriter(field);
+		return new HibernateAccessorReflectionFieldValueWriter( field );
 	}
 
 	@Override
 	public HibernateAccessorValueWriter valueWriter(Method setter) {
 		MemberValidation.validateWriterMethod( setter );
-		return new HibernateAccessorReflectionMethodValueWriter(setter);
+		return new HibernateAccessorReflectionMethodValueWriter( setter );
 	}
 
 	@Override

@@ -148,7 +148,8 @@ public final class CrossClassLoaderLookupBridge {
 		catch (IllegalAccessException e) {
 			throw new RuntimeException(
 					"Cannot create lookup bridge for classloader of " + targetClass.getName()
-							+ ": privateLookupIn failed across module boundary", e );
+							+ ": privateLookupIn failed across module boundary",
+					e );
 		}
 		catch (Exception e) {
 			throw new RuntimeException(

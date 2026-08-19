@@ -22,7 +22,7 @@ public class HibernateAccessorException extends RuntimeException {
 	 * @param message the detail message
 	 */
 	public HibernateAccessorException(String message) {
-		super(message);
+		super( message );
 	}
 
 	/**
@@ -32,7 +32,7 @@ public class HibernateAccessorException extends RuntimeException {
 	 * @param cause the underlying cause
 	 */
 	public HibernateAccessorException(String message, Throwable cause) {
-		super(message, cause);
+		super( message, cause );
 	}
 
 	/**
@@ -41,6 +41,6 @@ public class HibernateAccessorException extends RuntimeException {
 	 * @param cause the underlying cause
 	 */
 	public HibernateAccessorException(Throwable cause) {
-		super(cause);
+		super( cause );
 	}
 }

@@ -25,21 +25,21 @@ public interface CoreLog {
 
 	String CATEGORY_NAME = "org.hibernate.accessor";
 
-	CoreLog INSTANCE = Logger.getMessageLogger(MethodHandles.lookup(), CoreLog.class, CATEGORY_NAME, Locale.ROOT);
+	CoreLog INSTANCE = Logger.getMessageLogger( MethodHandles.lookup(), CoreLog.class, CATEGORY_NAME, Locale.ROOT );
 
 	@Message(id = 1,
 			value = "Exception while invoking '%1$s' on '%2$s': %3$s.")
 	HibernateAccessorException errorInvokingMember(Member member, String componentAsString,
-												@Cause Throwable cause, String causeMessage);
+			@Cause Throwable cause, String causeMessage);
 
 	@Message(id = 2,
 			value = "Exception while invoking '%1$s' on '%2$s': %3$s.")
 	HibernateAccessorException errorInvokingHandle(MethodHandle handle, String componentAsString,
-												@Cause Throwable cause, String causeMessage);
+			@Cause Throwable cause, String causeMessage);
 
 	@Message(id = 3,
 			value = "Exception while creating '%1$s': %2$s.")
 	HibernateAccessorException errorCreatingHandle(Member handle,
-												@Cause Throwable cause, String causeMessage);
+			@Cause Throwable cause, String causeMessage);
 
 }

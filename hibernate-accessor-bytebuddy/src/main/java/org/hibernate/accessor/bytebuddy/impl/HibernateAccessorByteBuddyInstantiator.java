@@ -12,6 +12,6 @@ record HibernateAccessorByteBuddyInstantiator<T>(HibernateAccessorByteBuddyBulkA
 	@Override
 	@SuppressWarnings("unchecked")
 	public T create(Object... args) {
-		return (T) accessor.newInstance(index, args);
+		return (T) accessor.newInstance( index, args );
 	}
 }

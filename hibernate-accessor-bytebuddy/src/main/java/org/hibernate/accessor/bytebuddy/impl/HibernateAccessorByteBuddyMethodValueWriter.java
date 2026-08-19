@@ -11,6 +11,6 @@ record HibernateAccessorByteBuddyMethodValueWriter(HibernateAccessorByteBuddyBul
 
 	@Override
 	public void set(Object instance, Object value) {
-		accessor.writeByMethod(instance, index, value);
+		accessor.writeByMethod( instance, index, value );
 	}
 }

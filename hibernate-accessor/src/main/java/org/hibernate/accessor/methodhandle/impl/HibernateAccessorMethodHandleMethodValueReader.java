@@ -20,13 +20,13 @@ public class HibernateAccessorMethodHandleMethodValueReader<T> implements Hibern
 	@SuppressWarnings("unchecked")
 	public T get(Object instance) {
 		try {
-			return (T) target.invoke(instance);
+			return (T) target.invoke( instance );
 		}
 		catch (Throwable t) {
-			if (t instanceof Error) {
+			if ( t instanceof Error ) {
 				throw (Error) t;
 			}
-			throw CoreLog.INSTANCE.errorInvokingHandle(target, String.valueOf(instance), t, t.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingHandle( target, String.valueOf( instance ), t, t.getMessage() );
 		}
 	}
 }

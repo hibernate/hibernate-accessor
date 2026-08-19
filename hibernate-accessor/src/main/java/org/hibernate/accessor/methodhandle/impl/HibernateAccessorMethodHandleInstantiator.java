@@ -22,13 +22,13 @@ public class HibernateAccessorMethodHandleInstantiator<T> implements HibernateAc
 	@SuppressWarnings("unchecked")
 	public T create(Object... args) {
 		try {
-			return (T) target.invoke(args);
+			return (T) target.invoke( args );
 		}
 		catch (Throwable t) {
-			if (t instanceof Error) {
+			if ( t instanceof Error ) {
 				throw (Error) t;
 			}
-			throw CoreLog.INSTANCE.errorInvokingHandle(target, Arrays.toString(args), t, t.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingHandle( target, Arrays.toString( args ), t, t.getMessage() );
 		}
 	}
 }

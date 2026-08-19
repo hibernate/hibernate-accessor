@@ -41,7 +41,7 @@ public class HibernateAccessorConfiguration {
 		if ( value == null ) {
 			return null;
 		}
-		if ( type == String.class && !(value instanceof String) ) {
+		if ( type == String.class && !( value instanceof String ) ) {
 			return (T) value.toString();
 		}
 		return type.cast( value );

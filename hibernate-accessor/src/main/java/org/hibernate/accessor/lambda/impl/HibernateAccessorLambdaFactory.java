@@ -50,7 +50,7 @@ public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory 
 					constructor
 			);
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create lambda instantiator for %s, falling back to reflection", constructor );
 			return reflectionFallback.instantiator( constructor );
 		}
@@ -62,7 +62,7 @@ public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory 
 		try {
 			return new LambdaFieldValueReader<>( MethodHandles.privateLookupIn( field.getDeclaringClass(), this.lookup ).unreflectGetter( field ) );
 		}
-		catch (RuntimeException|IllegalAccessException e) {
+		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create lambda field reader for %s, falling back to reflection", field );
 			return reflectionFallback.valueReader( field );
 		}

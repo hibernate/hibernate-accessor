@@ -18,6 +18,7 @@ spotless {
 		leadingSpacesToTabs( 4 )
 		trimTrailingWhitespace()
 		endWithNewline()
+		eclipse().configFile( rootProject.file( 'config/spotless/hibernate_accessor_style.xml' ) )
 	}
 }
 

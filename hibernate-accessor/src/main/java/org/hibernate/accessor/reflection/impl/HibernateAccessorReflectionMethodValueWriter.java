@@ -17,24 +17,24 @@ public class HibernateAccessorReflectionMethodValueWriter implements HibernateAc
 
 	public HibernateAccessorReflectionMethodValueWriter(Method setter) {
 		this.method = setter;
-		method.setAccessible(true);
+		method.setAccessible( true );
 	}
 
 	@Override
 	public void set(Object instance, Object value) {
 		try {
-			method.invoke(instance, value);
+			method.invoke( instance, value );
 		}
 		catch (RuntimeException | IllegalAccessException e) {
-			throw CoreLog.INSTANCE.errorInvokingMember(method, Objects.toString(instance), e, e.getMessage());
+			throw CoreLog.INSTANCE.errorInvokingMember( method, Objects.toString( instance ), e, e.getMessage() );
 		}
 		catch (InvocationTargetException e) {
 			Throwable thrown = e.getCause();
-			if (thrown instanceof Error) {
+			if ( thrown instanceof Error ) {
 				throw (Error) thrown;
 			}
 			else {
-				throw CoreLog.INSTANCE.errorInvokingMember(method, Objects.toString(instance), thrown, thrown.getMessage());
+				throw CoreLog.INSTANCE.errorInvokingMember( method, Objects.toString( instance ), thrown, thrown.getMessage() );
 			}
 		}
 	}
@@ -51,10 +51,10 @@ public class HibernateAccessorReflectionMethodValueWriter implements HibernateAc
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == null || !obj.getClass().equals(getClass())) {
+		if ( obj == null || !obj.getClass().equals( getClass() ) ) {
 			return false;
 		}
 		HibernateAccessorReflectionMethodValueWriter other = (HibernateAccessorReflectionMethodValueWriter) obj;
-		return Objects.equals(method, other.method);
+		return Objects.equals( method, other.method );
 	}
 }
