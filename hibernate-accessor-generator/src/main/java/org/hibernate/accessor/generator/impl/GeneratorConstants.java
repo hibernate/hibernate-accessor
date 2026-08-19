@@ -8,6 +8,8 @@ import static org.hibernate.accessor.generator.impl.GenerationUtil.fqcnToName;
 
 import org.hibernate.accessor.HibernateAccessorFactory;
 import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.HibernateAccessorMultiValueReader;
+import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.HibernateAccessorValueReader;
 import org.hibernate.accessor.HibernateAccessorValueWriter;
 
@@ -19,11 +21,15 @@ public interface GeneratorConstants {
 	String GENERATED_READER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorValueReaderImpl";
 	String GENERATED_WRITER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorValueWriterImpl";
 	String GENERATED_INSTANTIATOR_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorInstantiatorImpl";
+	String GENERATED_MULTI_VALUE_READER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorMultiValueReaderImpl";
+	String GENERATED_MULTI_VALUE_WRITER_IMPL = "org.hibernate.models.accessor.generator.generated.GeneratedHibernateAccessorMultiValueWriterImpl";
 
 	String READER_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorValueReader.class.getName() );
 	String WRITER_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorValueWriter.class.getName() );
 	String INSTANTIATOR_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorInstantiator.class.getName() );
 	String FACTORY_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorFactory.class.getName() );
+	String MULTI_VALUE_READER_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorMultiValueReader.class.getName() );
+	String MULTI_VALUE_WRITER_INTERFACE_INTERNAL = fqcnToName( HibernateAccessorMultiValueWriter.class.getName() );
 	String NAMING_UTIL_INTERNAL = fqcnToName( "runtime.org.hibernate.accessor.generator.NamingUtil" );
 
 	String METHOD_NAME_FIELD_READER_ACCESSOR = "$$__hibernateAccessor_fieldReader";
@@ -31,6 +37,9 @@ public interface GeneratorConstants {
 	String METHOD_NAME_FIELD_WRITER_ACCESSOR = "$$__hibernateAccessor_fieldWriter";
 	String METHOD_NAME_METHOD_WRITER_ACCESSOR = "$$__hibernateAccessor_methodWriter";
 	String METHOD_NAME_INSTANTIATOR_ACCESSOR = "$$__hibernateAccessor_instantiator";
+
+	String METHOD_NAME_MULTI_VALUE_READER_ACCESSOR = "$$__hibernateAccessor_multiValueReader";
+	String METHOD_NAME_MULTI_VALUE_WRITER_ACCESSOR = "$$__hibernateAccessor_multiValueWriter";
 
 	String PREFIX_READ_METHOD = "$$__hibernateAccessor_read";
 	String PREFIX_WRITE_METHOD = "$$__hibernateAccessor_write";

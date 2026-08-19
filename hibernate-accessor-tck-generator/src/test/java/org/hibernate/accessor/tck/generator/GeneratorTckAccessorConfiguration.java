@@ -16,8 +16,11 @@ public class GeneratorTckAccessorConfiguration implements TckAccessorConfigurati
 			String readerFqcn = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorValueReaderImpl";
 			String writerFqcn = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorValueWriterImpl";
 			String instantiatorFqcn = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorInstantiatorImpl";
+			String multiValueReaderFqcn = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorMultiValueReaderImpl";
+			String multiValueWriterFqcn = "org.hibernate.accessor.generator.generated.GeneratedHibernateAccessorMultiValueWriterImpl";
 
-			AccessorImplFactory.init( readerFqcn, writerFqcn, instantiatorFqcn );
+			AccessorImplFactory.init( readerFqcn, writerFqcn, instantiatorFqcn,
+					multiValueReaderFqcn, multiValueWriterFqcn );
 
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
 			Class<?> factoryClass = cl.loadClass( factoryFqcn );
