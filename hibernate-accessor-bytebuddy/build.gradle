@@ -1,0 +1,11 @@
+plugins {
+    id "published-java-module"
+}
+
+description = "hibernate-accessor based on ByteBuddy (shaded ASM) generated implementation"
+
+dependencies {
+    api project( ":hibernate-accessor" )
+
+    api libs.byteBuddy
+}

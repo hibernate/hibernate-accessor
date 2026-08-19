@@ -1,0 +1,11 @@
+plugins {
+    id "testing"
+}
+
+description = "TCK runner for ByteBuddy-based accessor implementation"
+
+dependencies {
+    testImplementation project( ":hibernate-accessor-tck" )
+    testImplementation project( ":hibernate-accessor-bytebuddy" )
+    testImplementation libs.test.junitPlatformSuiteEngine
+}

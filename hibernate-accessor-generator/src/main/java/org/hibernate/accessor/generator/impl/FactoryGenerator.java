@@ -127,7 +127,7 @@ public class FactoryGenerator implements Opcodes, GeneratorConstants {
 	}
 
 	private static final String MEMBER_VALIDATION_INTERNAL = GenerationUtil.fqcnToName(
-			"org.hibernate.models.accessor.spi.MemberValidation" );
+			"org.hibernate.accessor.spi.MemberValidation" );
 
 	private void generateValueAccessor(ClassWriter cw, String factoryMethodName,
 			String reflectType, String memberNameMethod,
@@ -377,11 +377,11 @@ public class FactoryGenerator implements Opcodes, GeneratorConstants {
 	}
 
 	private static final String MULTI_VALUE_HELPER_INTERNAL = GenerationUtil.fqcnToName(
-			"org.hibernate.models.accessor.generator.runtime.MultiValueHelper" );
+			"org.hibernate.accessor.generator.runtime.MultiValueHelper" );
 	private static final String MULTI_VALUE_READER_INTERNAL = GenerationUtil.fqcnToName(
-			"org.hibernate.models.accessor.HibernateAccessorMultiValueReader" );
+			"org.hibernate.accessor.HibernateAccessorMultiValueReader" );
 	private static final String MULTI_VALUE_WRITER_INTERNAL = GenerationUtil.fqcnToName(
-			"org.hibernate.models.accessor.HibernateAccessorMultiValueWriter" );
+			"org.hibernate.accessor.HibernateAccessorMultiValueWriter" );
 
 	private void generateMultiValueMethod(ClassWriter cw, String methodName, String returnInternal,
 			String helperMethodName, String hostMethodName, Set<String> registeredClasses) {
