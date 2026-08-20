@@ -1,6 +1,6 @@
 [versions]
 # libs
-byteBuddy = "1.18.11"
+byteBuddy = "1.18.12"
 ow2Asm = "9.10.1"
 jbossLogging = "3.6.3.Final"
 jbossLoggingTool = "3.0.4.Final"
