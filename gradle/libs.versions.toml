@@ -10,8 +10,8 @@ jdks-baseline = "17"
 
 # testLibs
 assertj = "3.27.7"
-junitJupiter = "6.1.2"
-junitPlatformJupiter= "6.1.2"
+junitJupiter = "6.1.3"
+junitPlatformJupiter= "6.1.3"
 log4j = "2.26.1"
 
 # plugins
