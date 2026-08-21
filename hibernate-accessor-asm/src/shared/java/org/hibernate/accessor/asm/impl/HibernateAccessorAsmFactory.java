@@ -87,7 +87,7 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 		MemberValidation.validateReaderMethod( method );
 		try {
 			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( method.getDeclaringClass() );
-			return new HibernateAccessorAsmMethodValueReader<>( info.bulkAccessor(), info.methodIndex( method ) );
+			return new HibernateAccessorAsmMethodValueReader<>( info.bulkAccessor(), info.methodIndex( method ), method );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", method );
@@ -116,7 +116,7 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 		MemberValidation.validateWriterMethod( setter );
 		try {
 			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( setter.getDeclaringClass() );
-			return new HibernateAccessorAsmMethodValueWriter( info.bulkAccessor(), info.methodIndex( setter ) );
+			return new HibernateAccessorAsmMethodValueWriter( info.bulkAccessor(), info.methodIndex( setter ), setter );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", setter );

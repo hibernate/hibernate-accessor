@@ -77,13 +77,13 @@ public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory 
 			try {
 				CallSite site = LambdaMetafactory.metafactory(
 						lookup,
-						"get",
-						MethodType.methodType( HibernateAccessorValueReader.class ),
+						"getRaw",
+						MethodType.methodType( LambdaTranslatingReader.class ),
 						MethodType.methodType( Object.class, Object.class ),
 						target,
 						MethodType.methodType( method.getReturnType(), method.getDeclaringClass() )
 				);
-				return (HibernateAccessorValueReader<?>) site.getTarget().invokeExact();
+				return (LambdaTranslatingReader<?>) site.getTarget().invokeExact();
 			}
 			catch (LambdaConversionException e) {
 				// LambdaMetafactory internally calls defineHiddenClass which requires
@@ -137,13 +137,13 @@ public class HibernateAccessorLambdaFactory implements HibernateAccessorFactory 
 			try {
 				CallSite site = LambdaMetafactory.metafactory(
 						lookup,
-						"set",
-						MethodType.methodType( HibernateAccessorValueWriter.class ),
+						"setRaw",
+						MethodType.methodType( LambdaTranslatingWriter.class ),
 						MethodType.methodType( void.class, Object.class, Object.class ),
 						target,
 						MethodType.methodType( void.class, setter.getDeclaringClass(), paramType )
 				);
-				return (HibernateAccessorValueWriter) site.getTarget().invokeExact();
+				return (LambdaTranslatingWriter) site.getTarget().invokeExact();
 			}
 			catch (LambdaConversionException e) {
 				// See valueReader(Method) — same cross-CL MODULE bit issue (JDK-8228624)
