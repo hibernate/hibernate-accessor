@@ -7,7 +7,7 @@ package org.hibernate.accessor.lambda.impl;
 import java.lang.invoke.MethodHandle;
 
 import org.hibernate.accessor.HibernateAccessorValueWriter;
-import org.hibernate.accessor.logging.impl.CoreLog;
+import org.hibernate.accessor.internal.HibernateAccessorThrowables;
 
 public class LambdaFieldValueWriter implements HibernateAccessorValueWriter {
 	private final MethodHandle setter;
@@ -22,10 +22,8 @@ public class LambdaFieldValueWriter implements HibernateAccessorValueWriter {
 			setter.invoke( instance, value );
 		}
 		catch (Throwable t) {
-			if ( t instanceof Error ) {
-				throw (Error) t;
-			}
-			throw CoreLog.INSTANCE.errorInvokingHandle( setter, String.valueOf( instance ), t, t.getMessage() );
+			// Propagate whatever the setter body threw, unchanged, so every strategy behaves alike.
+			throw HibernateAccessorThrowables.sneakyThrow( t );
 		}
 	}
 }

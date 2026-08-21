@@ -7,7 +7,7 @@ package org.hibernate.accessor.lambda.impl;
 import java.lang.invoke.MethodHandle;
 
 import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.logging.impl.CoreLog;
+import org.hibernate.accessor.internal.HibernateAccessorThrowables;
 
 public class LambdaFieldValueReader<T> implements HibernateAccessorValueReader<T> {
 	private final MethodHandle getter;
@@ -24,10 +24,8 @@ public class LambdaFieldValueReader<T> implements HibernateAccessorValueReader<T
 			return (T) getter.invoke( instance );
 		}
 		catch (Throwable t) {
-			if ( t instanceof Error ) {
-				throw (Error) t;
-			}
-			throw CoreLog.INSTANCE.errorInvokingHandle( getter, String.valueOf( instance ), t, t.getMessage() );
+			// Propagate whatever the getter body threw, unchanged, so every strategy behaves alike.
+			throw HibernateAccessorThrowables.sneakyThrow( t );
 		}
 	}
 }

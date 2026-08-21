@@ -7,7 +7,7 @@ package org.hibernate.accessor.methodhandle.impl;
 import java.lang.invoke.MethodHandle;
 
 import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.logging.impl.CoreLog;
+import org.hibernate.accessor.internal.HibernateAccessorThrowables;
 
 public class HibernateAccessorMethodHandleMethodValueReader<T> implements HibernateAccessorValueReader<T> {
 	private final MethodHandle target;
@@ -23,10 +23,8 @@ public class HibernateAccessorMethodHandleMethodValueReader<T> implements Hibern
 			return (T) target.invoke( instance );
 		}
 		catch (Throwable t) {
-			if ( t instanceof Error ) {
-				throw (Error) t;
-			}
-			throw CoreLog.INSTANCE.errorInvokingHandle( target, String.valueOf( instance ), t, t.getMessage() );
+			// Propagate whatever the getter body threw, unchanged, so every strategy behaves alike.
+			throw HibernateAccessorThrowables.sneakyThrow( t );
 		}
 	}
 }
