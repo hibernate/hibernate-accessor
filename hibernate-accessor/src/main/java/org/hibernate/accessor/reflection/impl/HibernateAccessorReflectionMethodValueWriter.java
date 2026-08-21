@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.internal.HibernateAccessorThrowables;
 import org.hibernate.accessor.logging.impl.CoreLog;
 
 public class HibernateAccessorReflectionMethodValueWriter implements HibernateAccessorValueWriter {
@@ -29,13 +30,12 @@ public class HibernateAccessorReflectionMethodValueWriter implements HibernateAc
 			throw CoreLog.INSTANCE.errorInvokingMember( method, Objects.toString( instance ), e, e.getMessage() );
 		}
 		catch (InvocationTargetException e) {
+			// Propagate whatever the setter body threw, unchanged, so every strategy behaves alike.
 			Throwable thrown = e.getCause();
-			if ( thrown instanceof Error ) {
-				throw (Error) thrown;
+			if ( thrown == null ) {
+				throw CoreLog.INSTANCE.errorInvokingMember( method, Objects.toString( instance ), e, e.getMessage() );
 			}
-			else {
-				throw CoreLog.INSTANCE.errorInvokingMember( method, Objects.toString( instance ), thrown, thrown.getMessage() );
-			}
+			throw HibernateAccessorThrowables.sneakyThrow( thrown );
 		}
 	}
 
