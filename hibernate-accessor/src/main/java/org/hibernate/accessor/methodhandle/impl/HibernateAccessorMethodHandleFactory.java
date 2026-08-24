@@ -17,6 +17,7 @@ import org.hibernate.accessor.HibernateAccessorMultiValueReader;
 import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.HibernateAccessorValueReader;
 import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 import org.hibernate.accessor.spi.MemberValidation;
 
 import org.jboss.logging.Logger;
@@ -29,7 +30,11 @@ public class HibernateAccessorMethodHandleFactory implements HibernateAccessorFa
 	private final HibernateAccessorFactory reflectionFallback = HibernateAccessorFactory.reflection();
 
 	public HibernateAccessorMethodHandleFactory(MethodHandles.Lookup lookup) {
-		this.lookup = lookup;
+		this( new HibernateAccessorConfiguration( lookup ) );
+	}
+
+	public HibernateAccessorMethodHandleFactory(HibernateAccessorConfiguration configuration) {
+		this.lookup = configuration.lookup();
 	}
 
 	@Override

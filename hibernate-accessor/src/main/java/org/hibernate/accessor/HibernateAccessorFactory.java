@@ -11,13 +11,15 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 import org.hibernate.accessor.lambda.impl.HibernateAccessorLambdaFactory;
+import org.hibernate.accessor.methodhandle.impl.HibernateAccessorMethodHandleFactory;
 import org.hibernate.accessor.reflection.impl.HibernateAccessorReflectionFactory;
 import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
 
 /**
  * Factory for creating accessors that read and write object state and instantiate objects.
  *
- * <p>Obtain an instance via the static factory methods {@link #reflection()} or {@link #lambda(MethodHandles.Lookup)},
+ * <p>Obtain an instance via the static factory methods {@link #reflection()}, {@link #lambda(MethodHandles.Lookup)},
+ * or {@link #methodHandle(MethodHandles.Lookup)},
  * then use it to create {@link HibernateAccessorInstantiator instantiators},
  * {@link HibernateAccessorValueReader readers}, and {@link HibernateAccessorValueWriter writers}.
  */
@@ -55,6 +57,29 @@ public interface HibernateAccessorFactory {
 	 */
 	static HibernateAccessorFactory lambda(HibernateAccessorConfiguration configuration) {
 		return new HibernateAccessorLambdaFactory( configuration );
+	}
+
+	/**
+	 * Returns a method-handle-based factory that uses the given lookup for access control.
+	 *
+	 * <p>The returned factory accesses fields, methods, and constructors via
+	 * {@link java.lang.invoke.MethodHandle method handles}, which can offer better performance than reflection.
+	 *
+	 * @param lookup the lookup object that determines access rights
+	 * @return a new method-handle-based factory instance
+	 */
+	static HibernateAccessorFactory methodHandle(MethodHandles.Lookup lookup) {
+		return methodHandle( new HibernateAccessorConfiguration( lookup ) );
+	}
+
+	/**
+	 * Returns a method-handle-based factory with the given configuration.
+	 *
+	 * @param configuration the accessor configuration (must contain a {@link HibernateAccessorConfiguration#LOOKUP lookup})
+	 * @return a new method-handle-based factory instance
+	 */
+	static HibernateAccessorFactory methodHandle(HibernateAccessorConfiguration configuration) {
+		return new HibernateAccessorMethodHandleFactory( configuration );
 	}
 
 	/**

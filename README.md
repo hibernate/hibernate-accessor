@@ -21,7 +21,7 @@ Add the core module to your project:
 </dependency>
 ```
 
-The core module includes the reflection- and lambda-based strategies. For the bytecode-generating
+The core module includes the reflection-, lambda-, and method-handle-based strategies. For the bytecode-generating
 strategies, add the corresponding module instead (each transitively includes the core):
 
 ```xml
@@ -49,6 +49,9 @@ Built-in strategies are available via static factory methods:
 ```java
 // Reflection-based (simplest, no extra setup)
 HibernateAccessorFactory factory = HibernateAccessorFactory.reflection();
+
+// Method-handle-based (mostly better performance, requires a MethodHandles.Lookup)
+HibernateAccessorFactory factory = HibernateAccessorFactory.methodHandle(MethodHandles.lookup());
 
 // Lambda-based (better performance, requires a MethodHandles.Lookup)
 HibernateAccessorFactory factory = HibernateAccessorFactory.lambda(MethodHandles.lookup());
@@ -154,5 +157,6 @@ Supported properties:
 |---|---|---|---|
 | Reflection | `HibernateAccessorFactory.reflection()` | `java.lang.reflect` | Simplest. Shared singleton instance. |
 | Lambda | `HibernateAccessorFactory.lambda(lookup)` | `LambdaMetafactory` | Better throughput after warm-up. Requires a `MethodHandles.Lookup` with appropriate access. |
+| Method handle | `HibernateAccessorFactory.methodHandle(lookup)` | `java.lang.invoke.MethodHandle` | Better throughput than reflection. Requires a `MethodHandles.Lookup` with appropriate access. |
 | ASM | `HibernateAccessorAsmFactory.factory(lookup)` | ASM bytecode generation | Generates one class per entity with `TABLESWITCH` dispatch on field/method index. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-asm` (which brings `org.ow2.asm:asm`). |
 | ByteBuddy | `HibernateAccessorByteBuddyFactory.factory(lookup)` | ByteBuddy bytecode generation | Same generated-class approach as ASM, using ByteBuddy's shaded ASM. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-bytebuddy`. |
