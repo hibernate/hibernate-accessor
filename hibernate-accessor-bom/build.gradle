@@ -1,0 +1,29 @@
+plugins {
+    id "java-platform"
+
+    id "maven-publish"
+    id "publishing-info"
+}
+
+description = "hibernate-accessor Bill of Materials (BOM)"
+
+dependencies {
+    constraints {
+        api project( ":hibernate-accessor" )
+        api project( ":hibernate-accessor-asm" )
+        api project( ":hibernate-accessor-bytebuddy" )
+    }
+}
+
+publishing {
+    publications {
+        publishedArtifacts( MavenPublication ) {
+            from components.javaPlatform
+
+            pom {
+                name = "Hibernate Accessor BOM"
+                description = "A Bill of Materials (BOM) for the Hibernate Accessor modules"
+            }
+        }
+    }
+}

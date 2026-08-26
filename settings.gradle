@@ -71,6 +71,7 @@ include 'reporting'
 include 'hibernate-accessor'
 include 'hibernate-accessor-asm'
 include 'hibernate-accessor-bytebuddy'
+include 'hibernate-accessor-bom'
 
 include 'hibernate-accessor-tck'
 project(':hibernate-accessor-tck').projectDir = file( 'testing/hibernate-accessor-tck' )
