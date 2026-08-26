@@ -17,7 +17,7 @@ Add the core module to your project:
 <dependency>
     <groupId>org.hibernate.accessor</groupId>
     <artifactId>hibernate-accessor</artifactId>
-    <version>${hibernate-accessor.version}</version>
+    <version>0.1.0.Alpha1</version>
 </dependency>
 ```
 
@@ -29,14 +29,14 @@ strategies, add the corresponding module instead (each transitively includes the
 <dependency>
     <groupId>org.hibernate.accessor</groupId>
     <artifactId>hibernate-accessor-asm</artifactId>
-    <version>${hibernate-accessor.version}</version>
+    <version>0.1.0.Alpha1</version>
 </dependency>
 
 <!-- ByteBuddy-based strategy -->
 <dependency>
     <groupId>org.hibernate.accessor</groupId>
     <artifactId>hibernate-accessor-bytebuddy</artifactId>
-    <version>${hibernate-accessor.version}</version>
+    <version>0.1.0.Alpha1</version>
 </dependency>
 ```
 
