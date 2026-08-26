@@ -1,6 +1,6 @@
 plugins {
 	id "java-module"
-	id "maven-publish"
+	id "publishing-info"
 }
 
 
@@ -8,62 +8,6 @@ publishing {
 	publications {
 		publishedArtifacts( MavenPublication ) {
 			from components.java
-			pom {
-				name = "Hibernate Accessor"
-				description = "A library that generalizes field/property access and instance creation across Hibernate projects"
-				url = "https://github.com/hibernate/hibernate-accessor"
-
-				organization {
-					name = 'Hibernate.org'
-					url = 'https://hibernate.org'
-				}
-
-				licenses {
-					license {
-						name = "Apache License Version 2.0"
-						url = "http://www.apache.org/licenses/"
-						distribution = "repo"
-					}
-				}
-
-				scm {
-					url = "https://github.com/hibernate/hibernate-accessor"
-					connection = "scm:git:https://github.com/hibernate/hibernate-accessor.git"
-					developerConnection = "scm:git:https://github.com/hibernate/hibernate-accessor.git"
-				}
-
-				issueManagement {
-					system = "github"
-					url = "https://github.com/hibernate/hibernate-accessor"
-				}
-
-				developers {
-					developer {
-						id = "hibernate-team"
-						name = "The Hibernate Development Team"
-						organization = "Hibernate.org"
-						organizationUrl = "https://hibernate.org"
-					}
-				}
-
-			}
 		}
 	}
-	repositories {
-		maven {
-			name = 'staging'
-			url = rootProject.layout.buildDirectory.dir("staging-deploy${File.separator}maven")
-		}
-		maven {
-			name = 'snapshots'
-			url = 'https://central.sonatype.com/repository/maven-snapshots/'
-			// So that Gradle uses the `ORG_GRADLE_PROJECT_snapshotsPassword` / `ORG_GRADLE_PROJECT_snapshotsUsername`
-			//  env variables to read the username/password for the `snapshots` repository publishing:
-			credentials(PasswordCredentials)
-		}
-	}
-}
-
-tasks.register("releasePrepare") {
-	dependsOn publishAllPublicationsToStagingRepository
 }
