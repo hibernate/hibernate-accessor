@@ -4,7 +4,6 @@
  */
 package org.hibernate.accessor.asm.impl;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -78,11 +77,8 @@ final class HibernateAccessorAsmClassAccessorInfo {
 		bytecodeDumper.dump( Type.getInternalName( declaringClass ) + "$$HibernateAccessor", bytecode );
 
 		try {
-			MethodHandles.Lookup targetLookup = lookupBridge.resolve( declaringClass );
-			MethodHandles.Lookup hiddenClassLookup = targetLookup.defineHiddenClass(
-					bytecode, true, MethodHandles.Lookup.ClassOption.NESTMATE );
-			HibernateAccessorAsmBulkAccessor instance = (HibernateAccessorAsmBulkAccessor) hiddenClassLookup.lookupClass()
-					.getDeclaredConstructor().newInstance();
+			HibernateAccessorAsmBulkAccessor instance =
+					(HibernateAccessorAsmBulkAccessor) lookupBridge.defineAccessor( declaringClass, bytecode );
 			return new HibernateAccessorAsmClassAccessorInfo( instance, fieldIndices, getterMethodIndices, setterMethodIndices, constructorIndices );
 		}
 		catch (Exception e) {
