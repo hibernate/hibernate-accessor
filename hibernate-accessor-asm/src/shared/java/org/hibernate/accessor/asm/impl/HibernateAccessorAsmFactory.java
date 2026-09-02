@@ -171,12 +171,7 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 		final byte[] bytecode = HibernateAccessorAsmMultiValueClassGenerator.generateReader( targetClass, members );
 		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiReader_" + java.util.UUID.randomUUID(), bytecode );
 		try {
-			MethodHandles.Lookup targetLookup = lookupBridge.resolve( targetClass );
-			MethodHandles.Lookup hiddenLookup = targetLookup.defineHiddenClass(
-					bytecode, true, MethodHandles.Lookup.ClassOption.NESTMATE );
-			return (HibernateAccessorMultiValueReader) hiddenLookup.lookupClass()
-					.getDeclaredConstructor()
-					.newInstance();
+			return (HibernateAccessorMultiValueReader) lookupBridge.defineAccessor( targetClass, bytecode );
 		}
 		catch (Exception e) {
 			throw new MultiValueAccessorGenerationException(
@@ -189,12 +184,7 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 		final byte[] bytecode = HibernateAccessorAsmMultiValueClassGenerator.generateWriter( targetClass, members );
 		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiWriter_" + java.util.UUID.randomUUID(), bytecode );
 		try {
-			MethodHandles.Lookup targetLookup = lookupBridge.resolve( targetClass );
-			MethodHandles.Lookup hiddenLookup = targetLookup.defineHiddenClass(
-					bytecode, true, MethodHandles.Lookup.ClassOption.NESTMATE );
-			return (HibernateAccessorMultiValueWriter) hiddenLookup.lookupClass()
-					.getDeclaredConstructor()
-					.newInstance();
+			return (HibernateAccessorMultiValueWriter) lookupBridge.defineAccessor( targetClass, bytecode );
 		}
 		catch (Exception e) {
 			throw new MultiValueAccessorGenerationException(
