@@ -7,6 +7,7 @@ package org.hibernate.accessor.performance.model;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Properties;
@@ -39,12 +40,17 @@ public final class GeneratedModel {
 	private final Class<?>[] types;
 	private final Field[][] scalarFields;
 	private final Method[][] scalarGetters;
+	private final Method[][] scalarSetters;
 	private final Field[][] referenceFields;
 	private final Method[][] referenceGetters;
 	private final int[][] referenceLeafType;
 
 	private final String readerFieldClassName;
 	private final String readerMethodClassName;
+	private final String multiReaderFieldClassName;
+	private final String multiReaderMethodClassName;
+	private final String multiWriterFieldClassName;
+	private final String multiWriterMethodClassName;
 
 	private final Object[] roots;
 	private final long referenceChecksum;
@@ -60,10 +66,15 @@ public final class GeneratedModel {
 		this.seed = Integer.parseInt( required( descriptor, "seed" ) );
 		this.readerFieldClassName = required( descriptor, "readerFieldClass" );
 		this.readerMethodClassName = required( descriptor, "readerMethodClass" );
+		this.multiReaderFieldClassName = required( descriptor, "multiReaderFieldClass" );
+		this.multiReaderMethodClassName = required( descriptor, "multiReaderMethodClass" );
+		this.multiWriterFieldClassName = required( descriptor, "multiWriterFieldClass" );
+		this.multiWriterMethodClassName = required( descriptor, "multiWriterMethodClass" );
 
 		this.types = new Class<?>[entityCount];
 		this.scalarFields = new Field[entityCount][fieldCount];
 		this.scalarGetters = new Method[entityCount][fieldCount];
+		this.scalarSetters = new Method[entityCount][fieldCount];
 		this.referenceFields = new Field[entityCount][depth];
 		this.referenceGetters = new Method[entityCount][depth];
 		this.referenceLeafType = new int[entityCount][depth];
@@ -87,6 +98,7 @@ public final class GeneratedModel {
 				field.setAccessible( true );
 				scalarFields[t][i] = field;
 				scalarGetters[t][i] = type.getMethod( "getF" + i );
+				scalarSetters[t][i] = type.getMethod( "setF" + i, int.class );
 			}
 			for ( int j = 0; j < depth; j++ ) {
 				Field field = type.getDeclaredField( "r" + j );
@@ -206,6 +218,25 @@ public final class GeneratedModel {
 		return scalarGetters[typeIndex][fieldIndex];
 	}
 
+	public Method scalarSetter(int typeIndex, int fieldIndex) {
+		return scalarSetters[typeIndex][fieldIndex];
+	}
+
+	public Class<?> entityType(int typeIndex) {
+		return types[typeIndex];
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> Constructor<T> entityConstructor(int typeIndex) {
+		try {
+			return (Constructor<T>) types[typeIndex].getDeclaredConstructor();
+		}
+		catch (NoSuchMethodException e) {
+			throw new IllegalStateException(
+					"No no-arg constructor on " + types[typeIndex].getName(), e );
+		}
+	}
+
 	public Field referenceField(int typeIndex, int refIndex) {
 		return referenceFields[typeIndex][refIndex];
 	}
@@ -234,6 +265,36 @@ public final class GeneratedModel {
 		}
 		catch (ClassNotFoundException e) {
 			throw new IllegalStateException( "Missing generated reader class '" + className + "'", e );
+		}
+	}
+
+	/**
+	 * The shared double-switch multi-reader class for the given access kind. Instantiate it with the
+	 * {@code (int classIndex)} constructor to obtain a multi-reader for a specific entity type;
+	 * every multi-reader is an instance of this one class, keeping the {@code get()} call site monomorphic.
+	 */
+	public Class<?> switchMultiReaderClass(AccessKind access) {
+		String className = access == AccessKind.FIELD ? multiReaderFieldClassName : multiReaderMethodClassName;
+		try {
+			return Class.forName( className );
+		}
+		catch (ClassNotFoundException e) {
+			throw new IllegalStateException( "Missing generated multi-reader class '" + className + "'", e );
+		}
+	}
+
+	/**
+	 * The shared double-switch multi-writer class for the given access kind. Instantiate it with the
+	 * {@code (int classIndex)} constructor to obtain a multi-writer for a specific entity type;
+	 * every multi-writer is an instance of this one class, keeping the {@code set()} call site monomorphic.
+	 */
+	public Class<?> switchMultiWriterClass(AccessKind access) {
+		String className = access == AccessKind.FIELD ? multiWriterFieldClassName : multiWriterMethodClassName;
+		try {
+			return Class.forName( className );
+		}
+		catch (ClassNotFoundException e) {
+			throw new IllegalStateException( "Missing generated multi-writer class '" + className + "'", e );
 		}
 	}
 

@@ -68,6 +68,30 @@ public final class GenerateModelsMain {
 							packageInternal, GeneratedNames.READER_METHOD_SIMPLE,
 							GeneratedNames.READ_METHOD_GETTER, spec.entityCount() ) );
 
+			// Shared multi-value readers (bulk read all scalars).
+			Files.write(
+					packageDir.resolve( GeneratedNames.MULTI_READER_FIELD_SIMPLE + ".class" ),
+					SwitchMultiReaderEmitter.emit(
+							packageInternal, GeneratedNames.MULTI_READER_FIELD_SIMPLE,
+							GeneratedNames.READ_ALL_METHOD_FIELD, spec.entityCount() ) );
+			Files.write(
+					packageDir.resolve( GeneratedNames.MULTI_READER_METHOD_SIMPLE + ".class" ),
+					SwitchMultiReaderEmitter.emit(
+							packageInternal, GeneratedNames.MULTI_READER_METHOD_SIMPLE,
+							GeneratedNames.READ_ALL_METHOD_GETTER, spec.entityCount() ) );
+
+			// Shared multi-value writers (bulk write all scalars).
+			Files.write(
+					packageDir.resolve( GeneratedNames.MULTI_WRITER_FIELD_SIMPLE + ".class" ),
+					SwitchMultiWriterEmitter.emit(
+							packageInternal, GeneratedNames.MULTI_WRITER_FIELD_SIMPLE,
+							GeneratedNames.WRITE_ALL_METHOD_FIELD, spec.entityCount() ) );
+			Files.write(
+					packageDir.resolve( GeneratedNames.MULTI_WRITER_METHOD_SIMPLE + ".class" ),
+					SwitchMultiWriterEmitter.emit(
+							packageInternal, GeneratedNames.MULTI_WRITER_METHOD_SIMPLE,
+							GeneratedNames.WRITE_ALL_METHOD_GETTER, spec.entityCount() ) );
+
 			writeDescriptor( spec, outputDir );
 		}
 		catch (IOException e) {
@@ -84,7 +108,11 @@ public final class GenerateModelsMain {
 				+ "depth=" + spec.depth() + "\n"
 				+ "seed=" + spec.seed() + "\n"
 				+ "readerFieldClass=" + spec.packageName() + "." + GeneratedNames.READER_FIELD_SIMPLE + "\n"
-				+ "readerMethodClass=" + spec.packageName() + "." + GeneratedNames.READER_METHOD_SIMPLE + "\n";
+				+ "readerMethodClass=" + spec.packageName() + "." + GeneratedNames.READER_METHOD_SIMPLE + "\n"
+				+ "multiReaderFieldClass=" + spec.packageName() + "." + GeneratedNames.MULTI_READER_FIELD_SIMPLE + "\n"
+				+ "multiReaderMethodClass=" + spec.packageName() + "." + GeneratedNames.MULTI_READER_METHOD_SIMPLE + "\n"
+				+ "multiWriterFieldClass=" + spec.packageName() + "." + GeneratedNames.MULTI_WRITER_FIELD_SIMPLE + "\n"
+				+ "multiWriterMethodClass=" + spec.packageName() + "." + GeneratedNames.MULTI_WRITER_METHOD_SIMPLE + "\n";
 		Path descriptorFile = outputDir.resolve( "models" ).resolve( spec.modelId() + ".properties" );
 		Files.writeString( descriptorFile, descriptor, StandardCharsets.UTF_8 );
 	}

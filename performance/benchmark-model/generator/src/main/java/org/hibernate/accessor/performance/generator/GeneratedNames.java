@@ -28,6 +28,36 @@ final class GeneratedNames {
 
 	static final String READER_INTERFACE_INTERNAL = "org/hibernate/accessor/HibernateAccessorValueReader";
 
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Multi-value (bulk) host methods and shared accessor names
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	/** Host static method reading all scalar fields into {@code Object[]} via direct field access. */
+	static final String READ_ALL_METHOD_FIELD = "$$readAll";
+	/** Host static method reading all scalar fields into {@code Object[]} via getters. */
+	static final String READ_ALL_METHOD_GETTER = "$$readAllMethod";
+	/** {@code (Object instance) -> Object[]}. */
+	static final String READ_ALL_METHOD_DESC = "(Ljava/lang/Object;)[Ljava/lang/Object;";
+
+	/** Host static method writing all scalar fields from {@code Object[]} via direct field access. */
+	static final String WRITE_ALL_METHOD_FIELD = "$$writeAll";
+	/** Host static method writing all scalar fields from {@code Object[]} via setters. */
+	static final String WRITE_ALL_METHOD_GETTER = "$$writeAllMethod";
+	/** {@code (Object instance, Object[] values) -> void}. */
+	static final String WRITE_ALL_METHOD_DESC = "(Ljava/lang/Object;[Ljava/lang/Object;)V";
+
+	/** Simple name of the shared multi-reader dispatching to {@link #READ_ALL_METHOD_FIELD}. */
+	static final String MULTI_READER_FIELD_SIMPLE = "GeneratedMultiReaderField";
+	/** Simple name of the shared multi-reader dispatching to {@link #READ_ALL_METHOD_GETTER}. */
+	static final String MULTI_READER_METHOD_SIMPLE = "GeneratedMultiReaderMethod";
+	/** Simple name of the shared multi-writer dispatching to {@link #WRITE_ALL_METHOD_FIELD}. */
+	static final String MULTI_WRITER_FIELD_SIMPLE = "GeneratedMultiWriterField";
+	/** Simple name of the shared multi-writer dispatching to {@link #WRITE_ALL_METHOD_GETTER}. */
+	static final String MULTI_WRITER_METHOD_SIMPLE = "GeneratedMultiWriterMethod";
+
+	static final String MULTI_READER_INTERFACE_INTERNAL = "org/hibernate/accessor/HibernateAccessorMultiValueReader";
+	static final String MULTI_WRITER_INTERFACE_INTERNAL = "org/hibernate/accessor/HibernateAccessorMultiValueWriter";
+
 	/**
 	 * Above this many cases a switch is split into {@code <name>$0, <name>$1, ...} sub-methods behind a
 	 * {@code switch(index / SWITCH_CHUNK_SIZE)} dispatcher, dodging the JIT huge-method limit -- matching

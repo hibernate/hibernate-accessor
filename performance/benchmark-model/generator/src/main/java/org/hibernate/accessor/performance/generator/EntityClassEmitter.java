@@ -62,6 +62,11 @@ public final class EntityClassEmitter {
 		emitReadMethod( cw, packageInternal, typeIndex, fieldCount, depth, entityCount, false );
 		emitReadMethod( cw, packageInternal, typeIndex, fieldCount, depth, entityCount, true );
 
+		emitReadAllMethod( cw, internalName, fieldCount, false );
+		emitReadAllMethod( cw, internalName, fieldCount, true );
+		emitWriteAllMethod( cw, internalName, fieldCount, false );
+		emitWriteAllMethod( cw, internalName, fieldCount, true );
+
 		cw.visitEnd();
 		return cw.toByteArray();
 	}
@@ -264,6 +269,85 @@ public final class EntityClassEmitter {
 		mv.visitMethodInsn(
 				Opcodes.INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V", false );
 		mv.visitInsn( Opcodes.ATHROW );
+	}
+
+	/**
+	 * Emits {@code $$readAll}/{@code $$readAllMethod}: reads all scalar fields into a new {@code Object[]},
+	 * boxing each {@code int}. Straight-line code, no switch -- intended for models where {@code fieldCount}
+	 * stays below the JIT method-size limit.
+	 */
+	private static void emitReadAllMethod(ClassWriter cw, String owner, int fieldCount, boolean useGetter) {
+		String methodName = useGetter ? GeneratedNames.READ_ALL_METHOD_GETTER : GeneratedNames.READ_ALL_METHOD_FIELD;
+		MethodVisitor mv = cw.visitMethod(
+				Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, methodName, GeneratedNames.READ_ALL_METHOD_DESC, null, null );
+		mv.visitCode();
+
+		// slot 0 = instance (Object) → cast and store in slot 1
+		mv.visitVarInsn( Opcodes.ALOAD, 0 );
+		mv.visitTypeInsn( Opcodes.CHECKCAST, owner );
+		mv.visitVarInsn( Opcodes.ASTORE, 1 );
+
+		// slot 2 = new Object[fieldCount]
+		AsmSupport.pushIntConst( mv, fieldCount );
+		mv.visitTypeInsn( Opcodes.ANEWARRAY, "java/lang/Object" );
+		mv.visitVarInsn( Opcodes.ASTORE, 2 );
+
+		for ( int i = 0; i < fieldCount; i++ ) {
+			String field = "f" + i;
+			mv.visitVarInsn( Opcodes.ALOAD, 2 );
+			AsmSupport.pushIntConst( mv, i );
+			mv.visitVarInsn( Opcodes.ALOAD, 1 );
+			if ( useGetter ) {
+				mv.visitMethodInsn( Opcodes.INVOKEVIRTUAL, owner, getterName( field ), "()I", false );
+			}
+			else {
+				mv.visitFieldInsn( Opcodes.GETFIELD, owner, field, "I" );
+			}
+			mv.visitMethodInsn(
+					Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false );
+			mv.visitInsn( Opcodes.AASTORE );
+		}
+
+		mv.visitVarInsn( Opcodes.ALOAD, 2 );
+		mv.visitInsn( Opcodes.ARETURN );
+		mv.visitMaxs( 0, 0 );
+		mv.visitEnd();
+	}
+
+	/**
+	 * Emits {@code $$writeAll}/{@code $$writeAllMethod}: writes all scalar fields from an {@code Object[]},
+	 * unboxing each element to {@code int}. Straight-line code, no switch.
+	 */
+	private static void emitWriteAllMethod(ClassWriter cw, String owner, int fieldCount, boolean useSetter) {
+		String methodName = useSetter ? GeneratedNames.WRITE_ALL_METHOD_GETTER : GeneratedNames.WRITE_ALL_METHOD_FIELD;
+		MethodVisitor mv = cw.visitMethod(
+				Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, methodName, GeneratedNames.WRITE_ALL_METHOD_DESC, null, null );
+		mv.visitCode();
+
+		// slot 0 = instance (Object), slot 1 = values (Object[]) → cast instance to slot 2
+		mv.visitVarInsn( Opcodes.ALOAD, 0 );
+		mv.visitTypeInsn( Opcodes.CHECKCAST, owner );
+		mv.visitVarInsn( Opcodes.ASTORE, 2 );
+
+		for ( int i = 0; i < fieldCount; i++ ) {
+			String field = "f" + i;
+			mv.visitVarInsn( Opcodes.ALOAD, 2 );
+			mv.visitVarInsn( Opcodes.ALOAD, 1 );
+			AsmSupport.pushIntConst( mv, i );
+			mv.visitInsn( Opcodes.AALOAD );
+			mv.visitTypeInsn( Opcodes.CHECKCAST, "java/lang/Integer" );
+			mv.visitMethodInsn( Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false );
+			if ( useSetter ) {
+				mv.visitMethodInsn( Opcodes.INVOKEVIRTUAL, owner, setterName( field ), "(I)V", false );
+			}
+			else {
+				mv.visitFieldInsn( Opcodes.PUTFIELD, owner, field, "I" );
+			}
+		}
+
+		mv.visitInsn( Opcodes.RETURN );
+		mv.visitMaxs( 0, 0 );
+		mv.visitEnd();
 	}
 
 	private static String getterName(String field) {
