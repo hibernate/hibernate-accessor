@@ -13,7 +13,9 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.hibernate.accessor.HibernateAccessorException;
 import org.hibernate.accessor.HibernateAccessorFactory;
 import org.hibernate.accessor.HibernateAccessorInstantiator;
 import org.hibernate.accessor.HibernateAccessorMultiValueReader;
@@ -21,6 +23,8 @@ import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
 import org.hibernate.accessor.HibernateAccessorValueReader;
 import org.hibernate.accessor.HibernateAccessorValueWriter;
 import org.hibernate.accessor.MultiValueAccessorGenerationException;
+import org.hibernate.accessor.asm.HibernateAccessorAsmConfiguration;
+import org.hibernate.accessor.asm.HibernateAccessorAsmGenerationStrategy;
 import org.hibernate.accessor.asm.spi.HibernateAccessorAsmBulkAccessor;
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
 import org.hibernate.accessor.spi.HibernateAccessorBytecodeDumper;
@@ -38,8 +42,19 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 	// we only need it to create hidden classes for generated multi readers/writers
 	private static final MethodHandles.Lookup ACCESSOR_MODULE_LOOKUP = MethodHandles.lookup();
 	private final ClassValue<HibernateAccessorAsmClassAccessorInfo> cache;
+	// Only used by the PER_MEMBER strategy: memoizes the generated per-member readers/writers so
+	// repeated calls for the same member return one shared, stateless instance (keeping call sites
+	// monomorphic and avoiding a fresh hidden class per call). Keyed by declaring class via
+	// ClassValue so entries are collected when the class's loader is unloaded, then by Member.
+	private final ClassValue<PerMemberAccessors> perMemberCache = new ClassValue<>() {
+		@Override
+		protected PerMemberAccessors computeValue(Class<?> type) {
+			return new PerMemberAccessors();
+		}
+	};
 	private final CrossClassLoaderLookupBridge lookupBridge;
 	private final HibernateAccessorBytecodeDumper bytecodeDumper;
+	private final HibernateAccessorAsmGenerationStrategy generationStrategy;
 	private final HibernateAccessorFactory reflectionFallback = HibernateAccessorFactory.reflection();
 
 	public HibernateAccessorAsmFactory(MethodHandles.Lookup lookup) {
@@ -49,6 +64,7 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 	public HibernateAccessorAsmFactory(HibernateAccessorConfiguration configuration) {
 		this.lookupBridge = new CrossClassLoaderLookupBridge( configuration.lookup(), HibernateAccessorAsmBridgeClassGenerator::generate );
 		this.bytecodeDumper = new HibernateAccessorBytecodeDumper( configuration );
+		this.generationStrategy = HibernateAccessorAsmConfiguration.generationStrategy( configuration );
 		this.cache = new ClassValue<>() {
 			@Override
 			protected HibernateAccessorAsmClassAccessorInfo computeValue(Class<?> type) {
@@ -73,6 +89,9 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 	public HibernateAccessorValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
 		try {
+			if ( generationStrategy == HibernateAccessorAsmGenerationStrategy.PER_MEMBER ) {
+				return perMemberCache.get( field.getDeclaringClass() ).readers.computeIfAbsent( field, this::generatePerMemberReader );
+			}
 			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
 			return new HibernateAccessorAsmFieldValueReader<>( info.bulkAccessor(), info.fieldIndex( field ) );
 		}
@@ -86,6 +105,9 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 	public HibernateAccessorValueReader<?> valueReader(Method method) {
 		MemberValidation.validateReaderMethod( method );
 		try {
+			if ( generationStrategy == HibernateAccessorAsmGenerationStrategy.PER_MEMBER ) {
+				return perMemberCache.get( method.getDeclaringClass() ).readers.computeIfAbsent( method, this::generatePerMemberReader );
+			}
 			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( method.getDeclaringClass() );
 			return new HibernateAccessorAsmMethodValueReader<>( info.bulkAccessor(), info.methodIndex( method ) );
 		}
@@ -102,6 +124,9 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 			return reflectionFallback.valueWriter( field );
 		}
 		try {
+			if ( generationStrategy == HibernateAccessorAsmGenerationStrategy.PER_MEMBER ) {
+				return perMemberCache.get( field.getDeclaringClass() ).writers.computeIfAbsent( field, this::generatePerMemberWriter );
+			}
 			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
 			return new HibernateAccessorAsmFieldValueWriter( info.bulkAccessor(), info.fieldIndex( field ) );
 		}
@@ -115,6 +140,9 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 	public HibernateAccessorValueWriter valueWriter(Method setter) {
 		MemberValidation.validateWriterMethod( setter );
 		try {
+			if ( generationStrategy == HibernateAccessorAsmGenerationStrategy.PER_MEMBER ) {
+				return perMemberCache.get( setter.getDeclaringClass() ).writers.computeIfAbsent( setter, this::generatePerMemberWriter );
+			}
 			HibernateAccessorAsmClassAccessorInfo info = getOrCreate( setter.getDeclaringClass() );
 			return new HibernateAccessorAsmMethodValueWriter( info.bulkAccessor(), info.methodIndex( setter ) );
 		}
@@ -163,6 +191,30 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ASM multi-value writer for %s, falling back to reflection", declaringClass );
 			return reflectionFallback.multiValueWriter( declaringClass, members );
+		}
+	}
+
+	private HibernateAccessorValueReader<?> generatePerMemberReader(Member member) {
+		final Class<?> targetClass = member.getDeclaringClass();
+		final byte[] bytecode = HibernateAccessorAsmPerMemberClassGenerator.generateReader( member );
+		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorReader_" + member.getName() + "_" + java.util.UUID.randomUUID(), bytecode );
+		try {
+			return (HibernateAccessorValueReader<?>) lookupBridge.defineAccessor( targetClass, bytecode );
+		}
+		catch (Exception e) {
+			throw new HibernateAccessorException( "Failed to create per-member value reader for " + member, e );
+		}
+	}
+
+	private HibernateAccessorValueWriter generatePerMemberWriter(Member member) {
+		final Class<?> targetClass = member.getDeclaringClass();
+		final byte[] bytecode = HibernateAccessorAsmPerMemberClassGenerator.generateWriter( member );
+		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorWriter_" + member.getName() + "_" + java.util.UUID.randomUUID(), bytecode );
+		try {
+			return (HibernateAccessorValueWriter) lookupBridge.defineAccessor( targetClass, bytecode );
+		}
+		catch (Exception e) {
+			throw new HibernateAccessorException( "Failed to create per-member value writer for " + member, e );
 		}
 	}
 
@@ -276,6 +328,13 @@ public class HibernateAccessorAsmFactory implements org.hibernate.accessor.asm.H
 
 	private HibernateAccessorAsmClassAccessorInfo getOrCreate(Class<?> declaringClass) {
 		return cache.get( declaringClass );
+	}
+
+	// Per-class holder for memoized PER_MEMBER accessors. Kept a static holder (no reference back to
+	// the factory) so a ClassValue entry pins nothing but its own maps and the members' own class.
+	private static final class PerMemberAccessors {
+		final ConcurrentHashMap<Member, HibernateAccessorValueReader<?>> readers = new ConcurrentHashMap<>();
+		final ConcurrentHashMap<Member, HibernateAccessorValueWriter> writers = new ConcurrentHashMap<>();
 	}
 
 }

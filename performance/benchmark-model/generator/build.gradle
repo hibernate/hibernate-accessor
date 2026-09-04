@@ -1,0 +1,41 @@
+plugins {
+    id "java-module"
+    id "code-quality"
+}
+
+description = "Build-time generator for the parameterized benchmark model (entity classes + descriptors)"
+
+dependencies {
+    // Only ASM is needed to emit entity classes. The vendored Quarkus double-switch
+    // generator (which needs the core module) is added here in phase 2.
+    implementation libs.asm
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Model generation
+//
+// Reads the checked-in manifest (one row per model config) and emits, per model,
+// entity `.class` files plus a `models/<modelId>.properties` descriptor into the
+// module build dir. The benchmark-model module puts that dir on its runtime classpath.
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def manifestFile = layout.projectDirectory.file( "benchmark-models.txt" )
+def modelOutputDir = layout.buildDirectory.dir( "benchmark-model" )
+
+tasks.register( "generateBenchmarkModel", JavaExec ) {
+    group = "benchmark"
+    description = "Generates the benchmark entity model classes and descriptors from the manifest"
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "org.hibernate.accessor.performance.generator.GenerateModelsMain"
+
+    inputs.file( manifestFile )
+    outputs.dir( modelOutputDir )
+
+    args( manifestFile.asFile.absolutePath, modelOutputDir.get().asFile.absolutePath )
+
+    // Regenerate from a clean slate so removed manifest rows don't leave stale classes behind.
+    doFirst {
+        modelOutputDir.get().asFile.deleteDir()
+    }
+}

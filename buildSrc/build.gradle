@@ -1,3 +1,10 @@
 plugins {
 	id 'groovy-gradle-plugin'
 }
+
+dependencies {
+	// Put the Shadow plugin on the convention classpath so the precompiled `benchmark-jars`
+	// convention can apply it and reference the ShadowJar type statically. This centralizes the
+	// version that used to be inlined in the (now removed) `performance` module build script.
+	implementation "com.gradleup.shadow:shadow-gradle-plugin:9.0.0"
+}

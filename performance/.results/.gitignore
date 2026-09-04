@@ -1,0 +1,3 @@
+# Benchmark result output (JMH json/txt, comparison tables, async-profiler flamegraphs, footprint csv)
+*
+!.gitignore

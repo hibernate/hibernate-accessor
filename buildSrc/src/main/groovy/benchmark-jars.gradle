@@ -1,0 +1,63 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+plugins {
+	id "com.gradleup.shadow"
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Strategy-specific, self-executing benchmark jars (shared by every benchmark module)
+//
+// Split along real classpath boundaries rather than one-per-strategy:
+//   - core       -> reflection, methodHandle, lambda (pure JDK, no extra deps)
+//   - asm        -> core + the ASM module (+ ow2-asm)
+//   - bytebuddy  -> core + the ByteBuddy module (+ byte-buddy)
+// The specific strategy is picked at run time via the JMH `strategy` parameter.
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+// Extra, runtime-only modules bundled into the strategy-specific benchmark jars.
+configurations {
+	asmRuntime
+	bytebuddyRuntime
+}
+
+dependencies {
+	asmRuntime project( ":hibernate-accessor-asm" )
+	bytebuddyRuntime project( ":hibernate-accessor-bytebuddy" )
+}
+
+def benchmarkProfiles = [
+		Core     : [],
+		Asm      : [ configurations.asmRuntime ],
+		Bytebuddy: [ configurations.bytebuddyRuntime ],
+]
+
+benchmarkProfiles.each { profile, extraConfigurations ->
+	tasks.register( "benchmarkJar${profile}", ShadowJar ) {
+		group = "benchmark"
+		description = "Builds the ${profile.toLowerCase()} benchmark uber-jar"
+
+		// Base name is derived from the applying module (e.g. hibernate-accessor-benchmark-model-asm.jar),
+		// so the suite is legible right in the filename.
+		archiveBaseName = "${project.name}-${profile.toLowerCase()}"
+		archiveClassifier = ""
+		archiveVersion = ""
+
+		from sourceSets.main.output
+		configurations = [ project.configurations.runtimeClasspath ] + extraConfigurations
+
+		manifest {
+			attributes 'Main-Class': 'org.openjdk.jmh.Main'
+		}
+
+		mergeServiceFiles()
+		// Signed dependencies would make the uber-jar fail verification.
+		exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class'
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	}
+}
+
+tasks.register( "benchmarkJars" ) {
+	group = "benchmark"
+	description = "Builds all strategy-specific benchmark jars"
+	dependsOn "benchmarkJarCore", "benchmarkJarAsm", "benchmarkJarBytebuddy"
+}
