@@ -68,6 +68,13 @@ develocity {
 
 include 'reporting'
 
+include 'hibernate-accessor-benchmark-basic'
+project(':hibernate-accessor-benchmark-basic').projectDir = file( 'performance/benchmark-basic' )
+include 'hibernate-accessor-benchmark-model-generator'
+project(':hibernate-accessor-benchmark-model-generator').projectDir = file( 'performance/benchmark-model/generator' )
+include 'hibernate-accessor-benchmark-model'
+project(':hibernate-accessor-benchmark-model').projectDir = file( 'performance/benchmark-model/benchmarks' )
+
 include 'hibernate-accessor'
 include 'hibernate-accessor-asm'
 include 'hibernate-accessor-bytebuddy'

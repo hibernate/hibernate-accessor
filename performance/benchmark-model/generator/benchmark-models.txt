@@ -1,0 +1,41 @@
+# Benchmark model manifest -- one row per generated model.
+#
+# Format (comma-separated):  modelId, entityCount, fieldCount, depth [, seed]
+#
+#  - entityCount : number of distinct entity types (== class-switch width; one root instance each)
+#  - fieldCount  : scalar int members per type (== member-switch width)
+#  - depth       : to-one reference members per type; E_i.r_j -> E_((i+1+j) % entityCount)
+#                  walk() follows these one level (root + N leaves). Requires depth < entityCount.
+#  - seed        : optional; deterministic scalar values. Defaults to 42.
+#
+# Values are arbitrary -- a row like `custom, 1234, 200, 3` is perfectly fine. The starter grid
+# below is entityCount in {8,64,256} x fieldCount in {4,16,64} x depth in {2,4}; large fieldCount
+# probes member-switch chunking and large entityCount probes class-switch chunking (phase 2).
+
+e8_f4_d2,     8,   4, 2
+e8_f4_d4,     8,   4, 4
+e8_f16_d2,    8,  16, 2
+e8_f16_d4,    8,  16, 4
+e8_f64_d2,    8,  64, 2
+e8_f64_d4,    8,  64, 4
+e64_f4_d2,   64,   4, 2
+e64_f4_d4,   64,   4, 4
+e64_f16_d2,  64,  16, 2
+e64_f16_d4,  64,  16, 4
+e64_f64_d2,  64,  64, 2
+e64_f64_d4,  64,  64, 4
+e256_f4_d2, 256,   4, 2
+e256_f4_d4, 256,   4, 4
+e256_f16_d2,256,  16, 2
+e256_f16_d4,256,  16, 4
+e256_f64_d2,256,  64, 2
+e256_f64_d4,256,  64, 4
+
+# Chunk-boundary probes: these cross SWITCH_CHUNK_SIZE (1000) so the generator splits a switch into
+# `<name>$<chunk>` sub-methods behind a `switch(index / 1000)` dispatcher -- the reason this benchmark
+# exists. They are heavy (many classes / very wide classes) so they are kept OUT of the benchmark's
+# default @Param grid; select them explicitly with `-p modelId=...`.
+# 1024 types -> class-switch chunks (2) in the shared reader's get()
+e1024_f4_d2, 1024,    4, 2
+# 1201 members -> member-switch chunks (2) in each host $$read/$$readMethod
+e4_f1200_d1,    4, 1200, 1

@@ -9,3 +9,20 @@ dependencies {
     testImplementation project( ":hibernate-accessor-asm" )
     testImplementation libs.test.junitPlatformSuiteEngine
 }
+
+// The default `test` task exercises the BULK_SWITCH generation strategy (the factory default).
+// This second task re-runs the whole TCK against the PER_MEMBER strategy; the value is read back by
+// AsmTckAccessorConfiguration via the HibernateAccessorAsmConfiguration.GENERATION_STRATEGY property.
+def testPerMember = tasks.register( "testPerMember", Test ) {
+    description = "Runs the TCK against the ASM factory using the PER_MEMBER generation strategy"
+    group = "verification"
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty "hibernate.accessor.generation.strategy", "PER_MEMBER"
+    shouldRunAfter tasks.named( "test" )
+}
+
+tasks.named( "check" ) {
+    dependsOn testPerMember
+}

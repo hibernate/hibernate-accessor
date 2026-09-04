@@ -4,6 +4,7 @@ byteBuddy = "1.18.12"
 ow2Asm = "9.10.1"
 jbossLogging = "3.6.3.Final"
 jbossLoggingTool = "3.0.4.Final"
+jmh = "1.37"
 
 # jdks
 jdks-baseline = "17"
@@ -23,6 +24,8 @@ develocity="4.5.0"
 byteBuddy = { group = "net.bytebuddy", name = "byte-buddy", version.ref = "byteBuddy" }
 byteBuddyAgent = { group = "net.bytebuddy", name = "byte-buddy-agent", version.ref = "byteBuddy" }
 asm = { group = "org.ow2.asm", name = "asm", version.ref = "ow2Asm" }
+jmh-core = { group = "org.openjdk.jmh", name = "jmh-core", version.ref = "jmh" }
+jmh-generatorAnnprocess = { group = "org.openjdk.jmh", name = "jmh-generator-annprocess", version.ref = "jmh" }
 loggingCore = { group = "org.jboss.logging", name = "jboss-logging", version.ref = "jbossLogging" }
 loggingAnnotations = { group = "org.jboss.logging", name = "jboss-logging-annotations", version.ref = "jbossLoggingTool" }
 loggingProcessor = { group = "org.jboss.logging", name = "jboss-logging-processor", version.ref = "jbossLoggingTool" }

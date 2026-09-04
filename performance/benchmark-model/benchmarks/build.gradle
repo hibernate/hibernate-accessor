@@ -1,0 +1,29 @@
+plugins {
+    id "java-module"
+    id "code-quality"
+    id "benchmark-jars"
+}
+
+description = "JMH benchmarks over the build-time generated, parameterized entity model"
+
+dependencies {
+    // The benchmark sources compile against the core module only. The reflection,
+    // method-handle and lambda strategies live here. The asm and bytebuddy factories
+    // are resolved reflectively at runtime (see Strategy), so those modules are a pure
+    // runtime-bundling concern handled per benchmark jar by the `benchmark-jars` convention.
+    implementation project( ":hibernate-accessor" )
+
+    implementation libs.jmh.core
+    annotationProcessor libs.jmh.generatorAnnprocess
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Generated benchmark model
+//
+// The benchmark-model-generator emits entity `.class` files + `models/*.properties`
+// descriptors at build time. We add that directory as a main output dir so it lands on
+// the runtime classpath and inside every strategy benchmark jar (from sourceSets.main.output),
+// while staying off the compile classpath -- the harness consumes it purely by reflection.
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def generatedModelDir = project( ":hibernate-accessor-benchmark-model-generator" ).layout.buildDirectory.dir( "benchmark-model" )
+sourceSets.main.output.dir( generatedModelDir, builtBy: ":hibernate-accessor-benchmark-model-generator:generateBenchmarkModel" )
