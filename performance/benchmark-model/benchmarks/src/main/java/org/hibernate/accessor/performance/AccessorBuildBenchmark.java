@@ -7,7 +7,7 @@ package org.hibernate.accessor.performance;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
+import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.performance.model.GeneratedModel;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -79,7 +79,7 @@ public class AccessorBuildBenchmark {
 	 */
 	@Benchmark
 	public void buildAllReaders(Blackhole blackhole) {
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		boolean field = access == AccessKind.FIELD;
 
 		for ( int t = 0; t < entityCount; t++ ) {

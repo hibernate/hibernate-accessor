@@ -44,7 +44,7 @@ public final class BookSwitchDispatcher {
 
 	/**
 	 * Reads member {@code memberId} of the given {@code bean}, whose entity type is identified by
-	 * {@code classId}. Scalars are returned boxed (matching the {@code HibernateAccessorValueReader}
+	 * {@code classId}. Scalars are returned boxed (matching the {@code ValueReader}
 	 * contract the other strategies satisfy); reference/collection edges are returned as-is.
 	 */
 	public static Object get(int classId, int memberId, Object bean) {

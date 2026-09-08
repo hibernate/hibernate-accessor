@@ -4,7 +4,7 @@
  */
 package org.hibernate.accessor.performance.baseline;
 
-import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.performance.entities.mega.Entity00;
 import org.hibernate.accessor.performance.entities.mega.Entity01;
 import org.hibernate.accessor.performance.entities.mega.Entity02;
@@ -25,8 +25,8 @@ public final class DirectMegaReaders {
 	}
 
 	/** One reader per {@code MegaEntities.CLASSES} entry, in the same order. */
-	public static HibernateAccessorValueReader<?>[] readers() {
-		return new HibernateAccessorValueReader<?>[] {
+	public static ValueReader<?>[] readers() {
+		return new ValueReader<?>[] {
 				new R00(),
 				new R01(),
 				new R02(),
@@ -42,84 +42,84 @@ public final class DirectMegaReaders {
 		};
 	}
 
-	static final class R00 implements HibernateAccessorValueReader<Integer> {
+	static final class R00 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity00) instance ).getValue();
 		}
 	}
 
-	static final class R01 implements HibernateAccessorValueReader<Integer> {
+	static final class R01 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity01) instance ).getValue();
 		}
 	}
 
-	static final class R02 implements HibernateAccessorValueReader<Integer> {
+	static final class R02 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity02) instance ).getValue();
 		}
 	}
 
-	static final class R03 implements HibernateAccessorValueReader<Integer> {
+	static final class R03 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity03) instance ).getValue();
 		}
 	}
 
-	static final class R04 implements HibernateAccessorValueReader<Integer> {
+	static final class R04 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity04) instance ).getValue();
 		}
 	}
 
-	static final class R05 implements HibernateAccessorValueReader<Integer> {
+	static final class R05 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity05) instance ).getValue();
 		}
 	}
 
-	static final class R06 implements HibernateAccessorValueReader<Integer> {
+	static final class R06 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity06) instance ).getValue();
 		}
 	}
 
-	static final class R07 implements HibernateAccessorValueReader<Integer> {
+	static final class R07 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity07) instance ).getValue();
 		}
 	}
 
-	static final class R08 implements HibernateAccessorValueReader<Integer> {
+	static final class R08 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity08) instance ).getValue();
 		}
 	}
 
-	static final class R09 implements HibernateAccessorValueReader<Integer> {
+	static final class R09 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity09) instance ).getValue();
 		}
 	}
 
-	static final class R10 implements HibernateAccessorValueReader<Integer> {
+	static final class R10 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity10) instance ).getValue();
 		}
 	}
 
-	static final class R11 implements HibernateAccessorValueReader<Integer> {
+	static final class R11 implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (Entity11) instance ).getValue();

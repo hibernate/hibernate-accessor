@@ -7,8 +7,8 @@ package org.hibernate.accessor.performance;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.performance.entities.BenchEntity;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -24,7 +24,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Instantiates {@link BenchEntity} via {@link HibernateAccessorInstantiator#create} for a chosen
+ * Instantiates {@link BenchEntity} via {@link Instantiator#create} for a chosen
  * strategy, using either the no-arg or the all-args constructor.
  *
  * @see InstantiateBaseline for the hand-written raw and interface-dispatch reference points
@@ -43,12 +43,12 @@ public class InstantiateBenchmark {
 	@Param({ "false", "true" })
 	private boolean withArgs;
 
-	private HibernateAccessorInstantiator<BenchEntity> instantiator;
+	private Instantiator<BenchEntity> instantiator;
 	private Object[] args;
 
 	@Setup
 	public void setUp() throws ReflectiveOperationException {
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		if ( withArgs ) {
 			this.instantiator = factory.instantiator(
 					BenchEntity.class.getDeclaredConstructor( int.class, String.class ) );

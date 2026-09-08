@@ -7,7 +7,7 @@ package org.hibernate.accessor.performance;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
+import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.performance.entities.book.BookGraph;
 import org.hibernate.accessor.performance.entities.book.Order;
 
@@ -58,7 +58,7 @@ public class CascadeBenchmark {
 
 	@Setup
 	public void setUp() throws ReflectiveOperationException {
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		this.walker = CascadeWalker.forStrategy( factory, access );
 		this.order = BookGraph.sampleOrder( lineCount );
 	}

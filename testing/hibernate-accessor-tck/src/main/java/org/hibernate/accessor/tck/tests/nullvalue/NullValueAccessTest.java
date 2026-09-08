@@ -1,8 +1,8 @@
 package org.hibernate.accessor.tck.tests.nullvalue;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.visibility.PropertyVisibilityBean;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @DisplayName("Null value handling")
 public class NullValueAccessTest {
 
-    private HibernateAccessorFactory factory;
+    private AccessorFactory factory;
 
     @BeforeAll
     void setup() {
@@ -33,7 +33,7 @@ public class NullValueAccessTest {
         Field field = PropertyVisibilityBean.class.getDeclaredField("publicField");
         field.setAccessible(true);
 
-        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+        ValueReader<?> reader = factory.valueReader(field);
         assertNull(reader.get(bean));
     }
 
@@ -43,8 +43,8 @@ public class NullValueAccessTest {
         Field field = PropertyVisibilityBean.class.getDeclaredField("publicField");
         field.setAccessible(true);
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(field);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+        ValueWriter writer = factory.valueWriter(field);
+        ValueReader<?> reader = factory.valueReader(field);
 
         writer.set(bean, "not-null");
         assertEquals("not-null", reader.get(bean));
@@ -59,7 +59,7 @@ public class NullValueAccessTest {
         Method getter = PropertyVisibilityBean.class.getDeclaredMethod("getPublicField");
         getter.setAccessible(true);
 
-        HibernateAccessorValueReader<?> reader = factory.valueReader(getter);
+        ValueReader<?> reader = factory.valueReader(getter);
         assertNull(reader.get(bean));
     }
 
@@ -71,8 +71,8 @@ public class NullValueAccessTest {
         setter.setAccessible(true);
         getter.setAccessible(true);
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(setter);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(getter);
+        ValueWriter writer = factory.valueWriter(setter);
+        ValueReader<?> reader = factory.valueReader(getter);
 
         writer.set(bean, "not-null");
         assertEquals("not-null", reader.get(bean));

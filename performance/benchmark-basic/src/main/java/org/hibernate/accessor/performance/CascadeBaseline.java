@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.Warmup;
  *   <li><b>raw</b> -- the graph is walked with the property getters called directly (no interface, no
  *       per-type dispatch map); primitives stay unboxed. The absolute floor the JIT fully inlines.</li>
  *   <li><b>iface</b> -- the same {@link CascadeWalker} the strategies use, fed hand-written
- *       {@link org.hibernate.accessor.HibernateAccessorValueReader} implementations, so the call shape
+ *       {@link org.hibernate.accessor.ValueReader} implementations, so the call shape
  *       (and megamorphism) matches and the delta against a strategy isolates that strategy's internals.</li>
  *   <li><b>switch</b> -- the "build-time two-layer switch dispatcher" idea: every read funnels through a
  *       single monomorphic {@link org.hibernate.accessor.performance.baseline.BookSwitchDispatcher#get}

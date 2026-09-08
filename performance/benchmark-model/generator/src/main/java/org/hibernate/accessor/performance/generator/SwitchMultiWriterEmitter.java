@@ -10,7 +10,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
- * Emits a shared multi-value-writer implementing {@code HibernateAccessorMultiValueWriter}, carrying
+ * Emits a shared multi-value-writer implementing {@code MultiValueWriter}, carrying
  * a {@code classIndex} and dispatching {@code set()} via {@code tableswitch(classIndex)} into the
  * matching entity's host {@code $$writeAll*} method, which writes all scalar fields in one shot.
  *

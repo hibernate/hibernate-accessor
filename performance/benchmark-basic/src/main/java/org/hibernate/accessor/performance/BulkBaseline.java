@@ -6,8 +6,8 @@ package org.hibernate.accessor.performance;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.performance.baseline.DirectWideAccessors;
 import org.hibernate.accessor.performance.entities.WideEntity;
 
@@ -47,8 +47,8 @@ public class BulkBaseline {
 
 	private DirectWideAccessors.WideReader rawReader;
 	private DirectWideAccessors.WideWriter rawWriter;
-	private HibernateAccessorMultiValueReader ifaceReader;
-	private HibernateAccessorMultiValueWriter ifaceWriter;
+	private MultiValueReader ifaceReader;
+	private MultiValueWriter ifaceWriter;
 
 	@Setup
 	public void setUp() {

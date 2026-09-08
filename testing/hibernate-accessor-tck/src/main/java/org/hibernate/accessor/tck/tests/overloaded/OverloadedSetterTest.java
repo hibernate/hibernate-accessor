@@ -4,8 +4,8 @@
  */
 package org.hibernate.accessor.tck.tests.overloaded;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.OverloadedSetterBean;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("Overloaded setter methods")
 public class OverloadedSetterTest {
 
-	private HibernateAccessorFactory factory;
+	private AccessorFactory factory;
 
 	@BeforeAll
 	void setup() {
@@ -34,7 +34,7 @@ public class OverloadedSetterTest {
 		OverloadedSetterBean bean = new OverloadedSetterBean();
 		Method setter = OverloadedSetterBean.class.getDeclaredMethod( "setValue", String.class );
 
-		HibernateAccessorValueWriter writer = factory.valueWriter( setter );
+		ValueWriter writer = factory.valueWriter( setter );
 		writer.set( bean, "hello" );
 		assertEquals( "hello", bean.getValue() );
 	}
@@ -45,7 +45,7 @@ public class OverloadedSetterTest {
 		OverloadedSetterBean bean = new OverloadedSetterBean();
 		Method setter = OverloadedSetterBean.class.getDeclaredMethod( "setValue", int.class );
 
-		HibernateAccessorValueWriter writer = factory.valueWriter( setter );
+		ValueWriter writer = factory.valueWriter( setter );
 		writer.set( bean, 42 );
 		assertEquals( "42", bean.getValue() );
 	}

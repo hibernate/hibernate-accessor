@@ -26,7 +26,7 @@ final class GeneratedNames {
 	/** Simple name of the shared reader dispatching to {@link #READ_METHOD_GETTER}. */
 	static final String READER_METHOD_SIMPLE = "GeneratedReaderMethod";
 
-	static final String READER_INTERFACE_INTERNAL = "org/hibernate/accessor/HibernateAccessorValueReader";
+	static final String READER_INTERFACE_INTERNAL = "org/hibernate/accessor/ValueReader";
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Multi-value (bulk) host methods and shared accessor names
@@ -55,8 +55,8 @@ final class GeneratedNames {
 	/** Simple name of the shared multi-writer dispatching to {@link #WRITE_ALL_METHOD_GETTER}. */
 	static final String MULTI_WRITER_METHOD_SIMPLE = "GeneratedMultiWriterMethod";
 
-	static final String MULTI_READER_INTERFACE_INTERNAL = "org/hibernate/accessor/HibernateAccessorMultiValueReader";
-	static final String MULTI_WRITER_INTERFACE_INTERNAL = "org/hibernate/accessor/HibernateAccessorMultiValueWriter";
+	static final String MULTI_READER_INTERFACE_INTERNAL = "org/hibernate/accessor/MultiValueReader";
+	static final String MULTI_WRITER_INTERFACE_INTERNAL = "org/hibernate/accessor/MultiValueWriter";
 
 	/**
 	 * Above this many cases a switch is split into {@code <name>$0, <name>$1, ...} sub-methods behind a

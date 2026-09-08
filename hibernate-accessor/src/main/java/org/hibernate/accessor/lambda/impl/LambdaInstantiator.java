@@ -9,10 +9,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
-import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.logging.impl.CoreLog;
 
-public class LambdaInstantiator<T> implements HibernateAccessorInstantiator<T> {
+public class LambdaInstantiator<T> implements Instantiator<T> {
 	private final MethodHandle handle;
 
 	public LambdaInstantiator(MethodHandles.Lookup lookup, Constructor<T> constructor) {

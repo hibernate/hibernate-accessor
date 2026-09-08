@@ -1,8 +1,8 @@
 package org.hibernate.accessor.tck.tests.interfacemethod;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @DisplayName("Interface method access")
 public class InterfaceMethodAccessTest {
 
-    private HibernateAccessorFactory factory;
+    private AccessorFactory factory;
 
     @BeforeAll
     void setup() {
@@ -32,9 +32,9 @@ public class InterfaceMethodAccessTest {
         Method getter = GreetingService.class.getDeclaredMethod("getGreeting");
         Method setter = GreetingService.class.getDeclaredMethod("setGreeting", String.class);
 
-        HibernateAccessorValueReader<String> reader =
-                (HibernateAccessorValueReader<String>) factory.valueReader(getter);
-        HibernateAccessorValueWriter writer = factory.valueWriter(setter);
+        ValueReader<String> reader =
+                (ValueReader<String>) factory.valueReader(getter);
+        ValueWriter writer = factory.valueWriter(setter);
 
         GreetingServiceImpl instance = new GreetingServiceImpl();
 

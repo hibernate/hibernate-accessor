@@ -1,9 +1,9 @@
 package org.hibernate.accessor.tck.tests.visibility;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.visibility.PropertyVisibilityBean;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Access without caller pre-setting setAccessible")
 public class NoPresetAccessibilityTest {
 
-    private HibernateAccessorFactory factory;
+    private AccessorFactory factory;
 
     @BeforeAll
     void setup() {
@@ -33,8 +33,8 @@ public class NoPresetAccessibilityTest {
     void testPrivateFieldAccessWithoutSetAccessible() throws Exception {
         Field field = PropertyVisibilityBean.class.getDeclaredField("privateField");
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(field);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+        ValueWriter writer = factory.valueWriter(field);
+        ValueReader<?> reader = factory.valueReader(field);
 
         PropertyVisibilityBean bean = new PropertyVisibilityBean();
         writer.set(bean, "no-preset");
@@ -46,8 +46,8 @@ public class NoPresetAccessibilityTest {
         Method setter = PropertyVisibilityBean.class.getDeclaredMethod("setPrivateField", String.class);
         Method getter = PropertyVisibilityBean.class.getDeclaredMethod("getPrivateField");
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(setter);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(getter);
+        ValueWriter writer = factory.valueWriter(setter);
+        ValueReader<?> reader = factory.valueReader(getter);
 
         PropertyVisibilityBean bean = new PropertyVisibilityBean();
         writer.set(bean, "no-preset");
@@ -58,8 +58,8 @@ public class NoPresetAccessibilityTest {
     void testPackagePrivateFieldAccessWithoutSetAccessible() throws Exception {
         Field field = PropertyVisibilityBean.class.getDeclaredField("defaultField");
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(field);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+        ValueWriter writer = factory.valueWriter(field);
+        ValueReader<?> reader = factory.valueReader(field);
 
         PropertyVisibilityBean bean = new PropertyVisibilityBean();
         writer.set(bean, "pkg-private");
@@ -70,8 +70,8 @@ public class NoPresetAccessibilityTest {
     void testProtectedFieldAccessWithoutSetAccessible() throws Exception {
         Field field = PropertyVisibilityBean.class.getDeclaredField("protectedField");
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(field);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+        ValueWriter writer = factory.valueWriter(field);
+        ValueReader<?> reader = factory.valueReader(field);
 
         PropertyVisibilityBean bean = new PropertyVisibilityBean();
         writer.set(bean, "protected-val");
@@ -82,7 +82,7 @@ public class NoPresetAccessibilityTest {
     void testConstructorWithoutSetAccessible() throws Exception {
         Constructor<?> constructor = PropertyVisibilityBean.class.getDeclaredConstructor();
 
-        HibernateAccessorInstantiator<?> instantiator = factory.instantiator(constructor);
+        Instantiator<?> instantiator = factory.instantiator(constructor);
         Object instance = instantiator.create();
         assertNotNull(instance);
         assertEquals(PropertyVisibilityBean.class, instance.getClass());
@@ -93,7 +93,7 @@ public class NoPresetAccessibilityTest {
 		Class<?> beanClass = Class.forName( "org.hibernate.accessor.tck.tests.beans.visibility.PackagePrivateBean" );
 		Constructor<?> constructor = beanClass.getDeclaredConstructor();
 
-		HibernateAccessorInstantiator<?> instantiator = factory.instantiator( constructor );
+		Instantiator<?> instantiator = factory.instantiator( constructor );
 		Object instance = instantiator.create();
 		assertNotNull( instance );
 		assertEquals( beanClass, instance.getClass() );

@@ -6,10 +6,10 @@ package org.hibernate.accessor.lambda.impl;
 
 import java.lang.invoke.MethodHandle;
 
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.internal.HibernateAccessorThrowables;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.internal.AccessorThrowables;
 
-public class LambdaFieldValueReader<T> implements HibernateAccessorValueReader<T> {
+public class LambdaFieldValueReader<T> implements ValueReader<T> {
 	private final MethodHandle getter;
 
 	@SuppressWarnings("unchecked")
@@ -25,7 +25,7 @@ public class LambdaFieldValueReader<T> implements HibernateAccessorValueReader<T
 		}
 		catch (Throwable t) {
 			// Propagate whatever the getter body threw, unchanged, so every strategy behaves alike.
-			throw HibernateAccessorThrowables.sneakyThrow( t );
+			throw AccessorThrowables.sneakyThrow( t );
 		}
 	}
 }

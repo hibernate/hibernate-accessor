@@ -9,7 +9,7 @@ package org.hibernate.accessor;
  * for a given class and member set. Consumers should catch this to fall back
  * to per-property access.
  */
-public class MultiValueAccessorGenerationException extends HibernateAccessorException {
+public class MultiValueAccessorGenerationException extends AccessorException {
 
 	public MultiValueAccessorGenerationException(String message) {
 		super( message );

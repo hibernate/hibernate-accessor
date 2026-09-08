@@ -10,7 +10,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
- * Emits a shared multi-value-reader implementing {@code HibernateAccessorMultiValueReader}, carrying
+ * Emits a shared multi-value-reader implementing {@code MultiValueReader}, carrying
  * a {@code classIndex} and dispatching {@code get()} via {@code tableswitch(classIndex)} into the
  * matching entity's host {@code $$readAll*} method, which reads all scalar fields in one shot.
  *

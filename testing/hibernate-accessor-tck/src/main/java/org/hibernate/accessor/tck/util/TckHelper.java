@@ -1,6 +1,6 @@
 package org.hibernate.accessor.tck.util;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
+import org.hibernate.accessor.AccessorFactory;
 
 import java.util.ServiceLoader;
 
@@ -21,7 +21,7 @@ public class TckHelper {
                 ));
     }
 
-    public static HibernateAccessorFactory factory() {
+    public static AccessorFactory factory() {
         return CONFIGURATION.factory();
     }
 }

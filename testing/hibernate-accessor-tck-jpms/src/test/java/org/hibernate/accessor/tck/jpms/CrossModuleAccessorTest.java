@@ -4,14 +4,14 @@
  */
 package org.hibernate.accessor.tck.jpms;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
-import org.hibernate.accessor.asm.HibernateAccessorAsmFactory;
-import org.hibernate.accessor.bytebuddy.HibernateAccessorByteBuddyFactory;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
+import org.hibernate.accessor.asm.AsmAccessorFactory;
+import org.hibernate.accessor.bytebuddy.ByteBuddyAccessorFactory;
 import org.hibernate.accessor.tck.jpms.entities.SimpleEntity;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CrossModuleAccessorTest {
 
-	static Stream<HibernateAccessorFactory> factories() {
+	static Stream<AccessorFactory> factories() {
 		MethodHandles.Lookup lookup = MethodHandles.lookup();
 		return Stream.of(
-				HibernateAccessorFactory.reflection(),
-				HibernateAccessorFactory.lambda( lookup ),
-				HibernateAccessorAsmFactory.factory( lookup ),
-				HibernateAccessorByteBuddyFactory.factory( lookup )
+				AccessorFactory.reflection(),
+				AccessorFactory.lambda( lookup ),
+				AsmAccessorFactory.factory( lookup ),
+				ByteBuddyAccessorFactory.factory( lookup )
 		);
 	}
 
@@ -47,12 +47,12 @@ class CrossModuleAccessorTest {
 
 	@ParameterizedTest
 	@MethodSource("factories")
-	void testFieldAccess(HibernateAccessorFactory factory) throws Exception {
+	void testFieldAccess(AccessorFactory factory) throws Exception {
 		Field nameField = SimpleEntity.class.getDeclaredField( "name" );
 		nameField.setAccessible( true );
 
-		HibernateAccessorValueReader<?> reader = factory.valueReader( nameField );
-		HibernateAccessorValueWriter writer = factory.valueWriter( nameField );
+		ValueReader<?> reader = factory.valueReader( nameField );
+		ValueWriter writer = factory.valueWriter( nameField );
 
 		SimpleEntity entity = new SimpleEntity( 1, "original" );
 		assertThat( reader.get( entity ) ).isEqualTo( "original" );
@@ -63,12 +63,12 @@ class CrossModuleAccessorTest {
 
 	@ParameterizedTest
 	@MethodSource("factories")
-	void testMethodAccess(HibernateAccessorFactory factory) throws Exception {
+	void testMethodAccess(AccessorFactory factory) throws Exception {
 		Method getter = SimpleEntity.class.getDeclaredMethod( "getName" );
 		Method setter = SimpleEntity.class.getDeclaredMethod( "setName", String.class );
 
-		HibernateAccessorValueReader<?> reader = factory.valueReader( getter );
-		HibernateAccessorValueWriter writer = factory.valueWriter( setter );
+		ValueReader<?> reader = factory.valueReader( getter );
+		ValueWriter writer = factory.valueWriter( setter );
 
 		SimpleEntity entity = new SimpleEntity( 1, "original" );
 		assertThat( reader.get( entity ) ).isEqualTo( "original" );
@@ -79,8 +79,8 @@ class CrossModuleAccessorTest {
 
 	@ParameterizedTest
 	@MethodSource("factories")
-	void testInstantiator(HibernateAccessorFactory factory) throws Exception {
-		HibernateAccessorInstantiator<SimpleEntity> instantiator =
+	void testInstantiator(AccessorFactory factory) throws Exception {
+		Instantiator<SimpleEntity> instantiator =
 				factory.instantiator( SimpleEntity.class.getDeclaredConstructor() );
 
 		SimpleEntity entity = instantiator.create();
@@ -89,16 +89,16 @@ class CrossModuleAccessorTest {
 
 	@ParameterizedTest
 	@MethodSource("factories")
-	void testMultiValueAccess(HibernateAccessorFactory factory) throws Exception {
+	void testMultiValueAccess(AccessorFactory factory) throws Exception {
 		Field idField = SimpleEntity.class.getDeclaredField( "id" );
 		idField.setAccessible( true );
 		Field nameField = SimpleEntity.class.getDeclaredField( "name" );
 		nameField.setAccessible( true );
 
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader(
+		MultiValueReader reader = factory.multiValueReader(
 				SimpleEntity.class, idField, nameField
 		);
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter(
+		MultiValueWriter writer = factory.multiValueWriter(
 				SimpleEntity.class, idField, nameField
 		);
 

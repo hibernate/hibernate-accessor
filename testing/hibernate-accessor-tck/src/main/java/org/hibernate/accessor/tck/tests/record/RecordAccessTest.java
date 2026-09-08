@@ -1,8 +1,8 @@
 package org.hibernate.accessor.tck.tests.record;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.tck.tests.beans.SimpleRecord;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Record access")
 public class RecordAccessTest {
 
-    private HibernateAccessorFactory factory;
+    private AccessorFactory factory;
 
     @BeforeAll
     void setup() {
@@ -32,7 +32,7 @@ public class RecordAccessTest {
     void testRecordInstantiationViaCanonicalConstructor() throws Exception {
         Constructor<SimpleRecord> ctor = SimpleRecord.class.getDeclaredConstructor(String.class, int.class);
         ctor.setAccessible(true);
-        HibernateAccessorInstantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
+        Instantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
 
         SimpleRecord record = instantiator.create("test", 99);
         assertNotNull(record);
@@ -46,7 +46,7 @@ public class RecordAccessTest {
 
         Method nameGetter = SimpleRecord.class.getDeclaredMethod("name");
         nameGetter.setAccessible(true);
-        HibernateAccessorValueReader<?> nameReader = factory.valueReader(nameGetter);
+        ValueReader<?> nameReader = factory.valueReader(nameGetter);
 
         assertEquals("hello", nameReader.get(record));
     }
@@ -57,7 +57,7 @@ public class RecordAccessTest {
 
         Method valueGetter = SimpleRecord.class.getDeclaredMethod("value");
         valueGetter.setAccessible(true);
-        HibernateAccessorValueReader<?> valueReader = factory.valueReader(valueGetter);
+        ValueReader<?> valueReader = factory.valueReader(valueGetter);
 
         assertEquals(42, valueReader.get(record));
     }
@@ -68,7 +68,7 @@ public class RecordAccessTest {
 
         Field nameField = SimpleRecord.class.getDeclaredField("name");
         nameField.setAccessible(true);
-        HibernateAccessorValueReader<?> nameReader = factory.valueReader(nameField);
+        ValueReader<?> nameReader = factory.valueReader(nameField);
 
         assertEquals("hello", nameReader.get(record));
     }
@@ -79,7 +79,7 @@ public class RecordAccessTest {
 
         Field valueField = SimpleRecord.class.getDeclaredField("value");
         valueField.setAccessible(true);
-        HibernateAccessorValueReader<?> valueReader = factory.valueReader(valueField);
+        ValueReader<?> valueReader = factory.valueReader(valueField);
 
         assertEquals(42, valueReader.get(record));
     }

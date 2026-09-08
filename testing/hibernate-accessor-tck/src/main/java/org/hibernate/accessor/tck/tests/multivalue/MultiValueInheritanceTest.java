@@ -4,9 +4,9 @@
  */
 package org.hibernate.accessor.tck.tests.multivalue;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ChildBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ParentBean;
 import org.hibernate.accessor.tck.util.TckHelper;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("Multi-value accessor access across class hierarchy")
 public class MultiValueInheritanceTest {
 
-	private HibernateAccessorFactory factory;
+	private AccessorFactory factory;
 
 	@BeforeAll
 	void setup() {
@@ -45,7 +45,7 @@ public class MultiValueInheritanceTest {
 		parentField.setAccessible( true );
 		childField.setAccessible( true );
 
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader( ChildBean.class, parentField, childField );
+		MultiValueReader reader = factory.multiValueReader( ChildBean.class, parentField, childField );
 		Object[] values = reader.get( bean );
 
 		assertEquals( 2, values.length );
@@ -63,7 +63,7 @@ public class MultiValueInheritanceTest {
 		parentField.setAccessible( true );
 		childField.setAccessible( true );
 
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter( ChildBean.class, parentField, childField );
+		MultiValueWriter writer = factory.multiValueWriter( ChildBean.class, parentField, childField );
 		writer.set( bean, new Object[]{ "written-parent", "written-child" } );
 
 		assertEquals( "written-parent", bean.getParentField() );
@@ -81,7 +81,7 @@ public class MultiValueInheritanceTest {
 		parentField.setAccessible( true );
 		Method getChild = ChildBean.class.getDeclaredMethod( "getChildField" );
 
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader( ChildBean.class, parentField, getChild );
+		MultiValueReader reader = factory.multiValueReader( ChildBean.class, parentField, getChild );
 		Object[] values = reader.get( bean );
 
 		assertEquals( 2, values.length );
@@ -98,7 +98,7 @@ public class MultiValueInheritanceTest {
 		Field childField = ChildBean.class.getDeclaredField( "childField" );
 		childField.setAccessible( true );
 
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter( ChildBean.class, setParent, childField );
+		MultiValueWriter writer = factory.multiValueWriter( ChildBean.class, setParent, childField );
 		writer.set( bean, new Object[]{ "via-method", "via-field" } );
 
 		assertEquals( "via-method", bean.getParentField() );
@@ -117,8 +117,8 @@ public class MultiValueInheritanceTest {
 
 		Member[] members = { parentField, childField };
 
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter( ChildBean.class, members );
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader( ChildBean.class, members );
+		MultiValueWriter writer = factory.multiValueWriter( ChildBean.class, members );
+		MultiValueReader reader = factory.multiValueReader( ChildBean.class, members );
 
 		Object[] input = { "hello", "world" };
 		writer.set( bean, input );

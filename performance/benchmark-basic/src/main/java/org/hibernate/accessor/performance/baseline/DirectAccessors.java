@@ -4,9 +4,9 @@
  */
 package org.hibernate.accessor.performance.baseline;
 
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.performance.entities.BenchEntity;
 
 /**
@@ -26,42 +26,42 @@ public final class DirectAccessors {
 	private DirectAccessors() {
 	}
 
-	public static final class IntReader implements HibernateAccessorValueReader<Integer> {
+	public static final class IntReader implements ValueReader<Integer> {
 		@Override
 		public Integer get(Object instance) {
 			return ( (BenchEntity) instance ).getIntValue();
 		}
 	}
 
-	public static final class StringReader implements HibernateAccessorValueReader<String> {
+	public static final class StringReader implements ValueReader<String> {
 		@Override
 		public String get(Object instance) {
 			return ( (BenchEntity) instance ).getStringValue();
 		}
 	}
 
-	public static final class IntWriter implements HibernateAccessorValueWriter {
+	public static final class IntWriter implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (BenchEntity) instance ).setIntValue( (Integer) value );
 		}
 	}
 
-	public static final class StringWriter implements HibernateAccessorValueWriter {
+	public static final class StringWriter implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (BenchEntity) instance ).setStringValue( (String) value );
 		}
 	}
 
-	public static final class NoArgInstantiator implements HibernateAccessorInstantiator<BenchEntity> {
+	public static final class NoArgInstantiator implements Instantiator<BenchEntity> {
 		@Override
 		public BenchEntity create(Object... args) {
 			return new BenchEntity();
 		}
 	}
 
-	public static final class AllArgsInstantiator implements HibernateAccessorInstantiator<BenchEntity> {
+	public static final class AllArgsInstantiator implements Instantiator<BenchEntity> {
 		@Override
 		public BenchEntity create(Object... args) {
 			return new BenchEntity( (Integer) args[0], (String) args[1] );

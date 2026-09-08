@@ -11,7 +11,7 @@ import java.lang.management.MemoryPoolMXBean;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
+import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.performance.model.GeneratedModel;
 
 /**
@@ -56,7 +56,7 @@ public final class FootprintReport {
 		long classesBefore = classLoading.getTotalLoadedClassCount();
 		long metaBefore = usedMetaspace( metaspace );
 
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		boolean field = access == AccessKind.FIELD;
 
 		// Hold references so the generated classes/readers cannot be unloaded before measuring.

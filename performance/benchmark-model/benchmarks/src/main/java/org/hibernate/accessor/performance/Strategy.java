@@ -8,11 +8,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.spi.HibernateAccessorConfiguration;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.spi.AccessorConfiguration;
 
 /**
- * The accessor strategies under test, mapped to their {@link HibernateAccessorFactory}.
+ * The accessor strategies under test, mapped to their {@link AccessorFactory}.
  *
  * <p><strong>Duplicated</strong> verbatim in the {@code hibernate-accessor-benchmark-basic} and
  * {@code hibernate-accessor-benchmark-model} modules (the two never share a classpath). Keep the
@@ -31,44 +31,44 @@ public enum Strategy {
 
 	REFLECTION {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
-			return HibernateAccessorFactory.reflection();
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
+			return AccessorFactory.reflection();
 		}
 	},
 	METHOD_HANDLE {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
-			return HibernateAccessorFactory.methodHandle( lookup );
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
+			return AccessorFactory.methodHandle( lookup );
 		}
 	},
 	LAMBDA {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
-			return HibernateAccessorFactory.lambda( lookup );
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
+			return AccessorFactory.lambda( lookup );
 		}
 	},
 	ASM {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
-			return reflectiveFactory( name(), "org.hibernate.accessor.asm.HibernateAccessorAsmFactory", lookup );
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
+			return reflectiveFactory( name(), "org.hibernate.accessor.asm.AsmAccessorFactory", lookup );
 		}
 	},
 	BYTE_BUDDY {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
-			return reflectiveFactory( name(), "org.hibernate.accessor.bytebuddy.HibernateAccessorByteBuddyFactory", lookup );
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
+			return reflectiveFactory( name(), "org.hibernate.accessor.bytebuddy.ByteBuddyAccessorFactory", lookup );
 		}
 	},
 	ASM_PER_MEMBER {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
-			return reflectiveFactory( name(), "org.hibernate.accessor.asm.HibernateAccessorAsmFactory", perMemberConfig( lookup ) );
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
+			return reflectiveFactory( name(), "org.hibernate.accessor.asm.AsmAccessorFactory", perMemberConfig( lookup ) );
 		}
 	},
 	BYTE_BUDDY_PER_MEMBER {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
-			return reflectiveFactory( name(), "org.hibernate.accessor.bytebuddy.HibernateAccessorByteBuddyFactory", perMemberConfig( lookup ) );
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
+			return reflectiveFactory( name(), "org.hibernate.accessor.bytebuddy.ByteBuddyAccessorFactory", perMemberConfig( lookup ) );
 		}
 	},
 	/**
@@ -76,12 +76,12 @@ public enum Strategy {
 	 * {@code tableswitch(classIndex)} into an entity host method that in turn does
 	 * {@code tableswitch(memberIndex)} to a direct field/getter read. It is whole-model (the shared
 	 * reader is generated over all types at once) rather than per-{@code Field}, so it has no
-	 * {@link HibernateAccessorFactory}; {@code GeneratedGraphBenchmark} constructs its readers
+	 * {@link AccessorFactory}; {@code GeneratedGraphBenchmark} constructs its readers
 	 * directly from the generated model. Only exercised by that benchmark.
 	 */
 	GENERATED_DOUBLE_SWITCH {
 		@Override
-		public HibernateAccessorFactory create(MethodHandles.Lookup lookup) {
+		public AccessorFactory create(MethodHandles.Lookup lookup) {
 			throw new UnsupportedOperationException(
 					"GENERATED_DOUBLE_SWITCH is whole-model and has no per-member factory; "
 							+ "GeneratedGraphBenchmark builds its readers from the generated model." );
@@ -94,14 +94,14 @@ public enum Strategy {
 	 * @param lookup a full-privilege lookup with access to the benchmark entities
 	 * @return the factory implementing this strategy
 	 */
-	public abstract HibernateAccessorFactory create(MethodHandles.Lookup lookup);
+	public abstract AccessorFactory create(MethodHandles.Lookup lookup);
 
-	private static HibernateAccessorFactory reflectiveFactory(
+	private static AccessorFactory reflectiveFactory(
 			String strategyName, String className, MethodHandles.Lookup lookup) {
 		try {
 			Class<?> factoryClass = Class.forName( className );
 			Method factoryMethod = factoryClass.getMethod( "factory", MethodHandles.Lookup.class );
-			return (HibernateAccessorFactory) factoryMethod.invoke( null, lookup );
+			return (AccessorFactory) factoryMethod.invoke( null, lookup );
 		}
 		catch (ReflectiveOperationException e) {
 			throw new IllegalStateException(
@@ -111,12 +111,12 @@ public enum Strategy {
 		}
 	}
 
-	private static HibernateAccessorFactory reflectiveFactory(
-			String strategyName, String className, HibernateAccessorConfiguration configuration) {
+	private static AccessorFactory reflectiveFactory(
+			String strategyName, String className, AccessorConfiguration configuration) {
 		try {
 			Class<?> factoryClass = Class.forName( className );
-			Method factoryMethod = factoryClass.getMethod( "factory", HibernateAccessorConfiguration.class );
-			return (HibernateAccessorFactory) factoryMethod.invoke( null, configuration );
+			Method factoryMethod = factoryClass.getMethod( "factory", AccessorConfiguration.class );
+			return (AccessorFactory) factoryMethod.invoke( null, configuration );
 		}
 		catch (ReflectiveOperationException e) {
 			throw new IllegalStateException(
@@ -129,7 +129,7 @@ public enum Strategy {
 	// The generation-strategy property is carried as a plain string so the core benchmark module
 	// need not depend on the ASM/ByteBuddy module that declares the key/enum; the factory resolves
 	// the string back to its generation-strategy enum.
-	private static HibernateAccessorConfiguration perMemberConfig(MethodHandles.Lookup lookup) {
-		return new HibernateAccessorConfiguration( lookup, Map.of( "hibernate.accessor.generation.strategy", "PER_MEMBER" ) );
+	private static AccessorConfiguration perMemberConfig(MethodHandles.Lookup lookup) {
+		return new AccessorConfiguration( lookup, Map.of( "hibernate.accessor.generation.strategy", "PER_MEMBER" ) );
 	}
 }

@@ -1,0 +1,31 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright: Red Hat Inc. and Hibernate Authors
+ */
+package org.hibernate.accessor.methodhandle.impl;
+
+import java.lang.invoke.MethodHandle;
+
+import org.hibernate.accessor.ValueWriter;
+import org.hibernate.accessor.logging.impl.CoreLog;
+
+public class MethodHandleFieldValueWriter implements ValueWriter {
+	private final MethodHandle setter;
+
+	public MethodHandleFieldValueWriter(MethodHandle setter) {
+		this.setter = setter;
+	}
+
+	@Override
+	public void set(Object instance, Object value) {
+		try {
+			setter.invoke( instance, value );
+		}
+		catch (Throwable t) {
+			if ( t instanceof Error ) {
+				throw (Error) t;
+			}
+			throw CoreLog.INSTANCE.errorInvokingHandle( setter, String.valueOf( instance ), t, t.getMessage() );
+		}
+	}
+}

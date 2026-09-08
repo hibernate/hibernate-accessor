@@ -4,8 +4,8 @@
  */
 package org.hibernate.accessor.performance.baseline;
 
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.performance.entities.WideEntity;
 
 /**
@@ -18,7 +18,7 @@ public final class DirectWideAccessors {
 	private DirectWideAccessors() {
 	}
 
-	public static final class WideReader implements HibernateAccessorMultiValueReader {
+	public static final class WideReader implements MultiValueReader {
 		private final int count;
 
 		public WideReader(int count) {
@@ -129,7 +129,7 @@ public final class DirectWideAccessors {
 		}
 	}
 
-	public static final class WideWriter implements HibernateAccessorMultiValueWriter {
+	public static final class WideWriter implements MultiValueWriter {
 		private final int count;
 
 		public WideWriter(int count) {

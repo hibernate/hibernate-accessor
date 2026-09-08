@@ -8,8 +8,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.performance.model.GeneratedModel;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -78,8 +78,8 @@ public class GeneratedGraphBenchmark {
 	private ReadMode readMode;
 
 	private Object[] roots;
-	private HibernateAccessorValueReader<?>[][] scalarReaders;
-	private HibernateAccessorValueReader<?>[][] referenceReaders;
+	private ValueReader<?>[][] scalarReaders;
+	private ValueReader<?>[][] referenceReaders;
 	private int[][] referenceLeafType;
 	private int hotScalarCount;
 
@@ -92,8 +92,8 @@ public class GeneratedGraphBenchmark {
 		int depth = model.depth();
 		this.hotScalarCount = readMode.hotScalarCount( fieldCount );
 
-		this.scalarReaders = new HibernateAccessorValueReader<?>[entityCount][fieldCount];
-		this.referenceReaders = new HibernateAccessorValueReader<?>[entityCount][depth];
+		this.scalarReaders = new ValueReader<?>[entityCount][fieldCount];
+		this.referenceReaders = new ValueReader<?>[entityCount][depth];
 		this.referenceLeafType = new int[entityCount][depth];
 
 		if ( strategy == Strategy.GENERATED_DOUBLE_SWITCH ) {
@@ -115,7 +115,7 @@ public class GeneratedGraphBenchmark {
 	}
 
 	private void buildFactoryReaders(GeneratedModel model, int entityCount, int fieldCount, int depth) {
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		boolean field = access == AccessKind.FIELD;
 
 		for ( int t = 0; t < entityCount; t++ ) {
@@ -141,10 +141,10 @@ public class GeneratedGraphBenchmark {
 
 		for ( int t = 0; t < entityCount; t++ ) {
 			for ( int i = 0; i < fieldCount; i++ ) {
-				scalarReaders[t][i] = (HibernateAccessorValueReader<?>) ctor.newInstance( t, i );
+				scalarReaders[t][i] = (ValueReader<?>) ctor.newInstance( t, i );
 			}
 			for ( int j = 0; j < depth; j++ ) {
-				referenceReaders[t][j] = (HibernateAccessorValueReader<?>) ctor.newInstance( t, fieldCount + j );
+				referenceReaders[t][j] = (ValueReader<?>) ctor.newInstance( t, fieldCount + j );
 				referenceLeafType[t][j] = model.referenceLeafType( t, j );
 			}
 		}
@@ -154,22 +154,22 @@ public class GeneratedGraphBenchmark {
 	public long walk() {
 		long acc = 1L;
 		Object[] r = this.roots;
-		HibernateAccessorValueReader<?>[][] sr = this.scalarReaders;
-		HibernateAccessorValueReader<?>[][] rr = this.referenceReaders;
+		ValueReader<?>[][] sr = this.scalarReaders;
+		ValueReader<?>[][] rr = this.referenceReaders;
 		int[][] rl = this.referenceLeafType;
 		int hot = this.hotScalarCount;
 
 		for ( int t = 0; t < r.length; t++ ) {
 			Object root = r[t];
-			HibernateAccessorValueReader<?>[] rootScalars = sr[t];
+			ValueReader<?>[] rootScalars = sr[t];
 			for ( int i = 0; i < hot; i++ ) {
 				acc = acc * 31 + (Integer) rootScalars[i].get( root );
 			}
-			HibernateAccessorValueReader<?>[] refs = rr[t];
+			ValueReader<?>[] refs = rr[t];
 			int[] leafTypes = rl[t];
 			for ( int j = 0; j < refs.length; j++ ) {
 				Object leaf = refs[j].get( root );
-				HibernateAccessorValueReader<?>[] leafScalars = sr[leafTypes[j]];
+				ValueReader<?>[] leafScalars = sr[leafTypes[j]];
 				for ( int i = 0; i < hot; i++ ) {
 					acc = acc * 31 + (Integer) leafScalars[i].get( leaf );
 				}

@@ -6,8 +6,8 @@ package org.hibernate.accessor.tck.jpms;
 
 import java.lang.invoke.MethodHandles;
 
-import org.hibernate.accessor.asm.HibernateAccessorAsmFactory;
-import org.hibernate.accessor.bytebuddy.HibernateAccessorByteBuddyFactory;
+import org.hibernate.accessor.asm.AsmAccessorFactory;
+import org.hibernate.accessor.bytebuddy.ByteBuddyAccessorFactory;
 import org.hibernate.accessor.tck.jpms.entities.BridgeGateProbe;
 import org.hibernate.accessor.tck.jpms.entities.SimpleEntity;
 
@@ -36,9 +36,9 @@ class BridgeGateTest {
 	private static void ensureBridgeInjected() {
 		MethodHandles.Lookup lookup = MethodHandles.lookup();
 		try {
-			HibernateAccessorAsmFactory.factory( lookup )
+			AsmAccessorFactory.factory( lookup )
 					.valueReader( SimpleEntity.class.getDeclaredMethod( "getName" ) );
-			HibernateAccessorByteBuddyFactory.factory( lookup )
+			ByteBuddyAccessorFactory.factory( lookup )
 					.valueReader( SimpleEntity.class.getDeclaredMethod( "getName" ) );
 		}
 		catch (NoSuchMethodException e) {

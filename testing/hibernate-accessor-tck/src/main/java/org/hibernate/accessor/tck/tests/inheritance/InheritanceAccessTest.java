@@ -1,8 +1,8 @@
 package org.hibernate.accessor.tck.tests.inheritance;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ChildBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ParentBean;
 import org.hibernate.accessor.tck.util.TckHelper;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("Inheritance field and method access")
 public class InheritanceAccessTest {
 
-    private HibernateAccessorFactory factory;
+    private AccessorFactory factory;
 
     @BeforeAll
     void setup() {
@@ -32,8 +32,8 @@ public class InheritanceAccessTest {
         Field field = ParentBean.class.getDeclaredField("parentField");
         field.setAccessible(true);
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(field);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+        ValueWriter writer = factory.valueWriter(field);
+        ValueReader<?> reader = factory.valueReader(field);
 
         ChildBean child = new ChildBean();
         writer.set(child, "inherited-value");
@@ -47,8 +47,8 @@ public class InheritanceAccessTest {
         setter.setAccessible(true);
         getter.setAccessible(true);
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(setter);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(getter);
+        ValueWriter writer = factory.valueWriter(setter);
+        ValueReader<?> reader = factory.valueReader(getter);
 
         ChildBean child = new ChildBean();
         writer.set(child, "method-inherited");
@@ -60,8 +60,8 @@ public class InheritanceAccessTest {
         Field field = ChildBean.class.getDeclaredField("childField");
         field.setAccessible(true);
 
-        HibernateAccessorValueWriter writer = factory.valueWriter(field);
-        HibernateAccessorValueReader<?> reader = factory.valueReader(field);
+        ValueWriter writer = factory.valueWriter(field);
+        ValueReader<?> reader = factory.valueReader(field);
 
         ChildBean child = new ChildBean();
         writer.set(child, "child-value");
@@ -75,10 +75,10 @@ public class InheritanceAccessTest {
         Field childField = ChildBean.class.getDeclaredField("childField");
         childField.setAccessible(true);
 
-        HibernateAccessorValueWriter parentWriter = factory.valueWriter(parentField);
-        HibernateAccessorValueReader<?> parentReader = factory.valueReader(parentField);
-        HibernateAccessorValueWriter childWriter = factory.valueWriter(childField);
-        HibernateAccessorValueReader<?> childReader = factory.valueReader(childField);
+        ValueWriter parentWriter = factory.valueWriter(parentField);
+        ValueReader<?> parentReader = factory.valueReader(parentField);
+        ValueWriter childWriter = factory.valueWriter(childField);
+        ValueReader<?> childReader = factory.valueReader(childField);
 
         ChildBean child = new ChildBean();
         parentWriter.set(child, "parent-val");

@@ -10,7 +10,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
- * Emits a shared value-reader implementing {@code HibernateAccessorValueReader}, carrying
+ * Emits a shared value-reader implementing {@code ValueReader}, carrying
  * {@code (classIndex, memberIndex)} and dispatching {@code get()} via an outer
  * {@code tableswitch(classIndex)} into the matching entity's host {@code $$read*} method.
  *

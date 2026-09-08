@@ -4,12 +4,12 @@
  */
 package org.hibernate.accessor.tck.tests.nested;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.nested.NestedClassBean;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Access nested classes with different visibility levels")
 public class NestedClassAccessTest {
 
-	private HibernateAccessorFactory factory;
+	private AccessorFactory factory;
 
 	@BeforeAll
 	void setup() {
@@ -53,7 +53,7 @@ public class NestedClassAccessTest {
 	void testInstantiation(String visibility, Class<?> nestedClass, Object ignored) throws Exception {
 		Constructor<?> constructor = nestedClass.getDeclaredConstructor();
 		constructor.setAccessible( true );
-		HibernateAccessorInstantiator<?> instantiator = factory.instantiator( constructor );
+		Instantiator<?> instantiator = factory.instantiator( constructor );
 
 		Object instance = instantiator.create();
 		assertNotNull( instance );
@@ -65,8 +65,8 @@ public class NestedClassAccessTest {
 	@DisplayName("Access public field on nested class")
 	void testPublicFieldAccess(String visibility, Class<?> nestedClass, Object instance) throws Exception {
 		Field field = nestedClass.getDeclaredField( "publicField" );
-		HibernateAccessorValueWriter writer = factory.valueWriter( field );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( field );
+		ValueWriter writer = factory.valueWriter( field );
+		ValueReader<?> reader = factory.valueReader( field );
 
 		writer.set( instance, "hello" );
 		assertEquals( "hello", reader.get( instance ) );
@@ -77,8 +77,8 @@ public class NestedClassAccessTest {
 	@DisplayName("Access private field on nested class")
 	void testPrivateFieldAccess(String visibility, Class<?> nestedClass, Object instance) throws Exception {
 		Field field = nestedClass.getDeclaredField( "privateField" );
-		HibernateAccessorValueWriter writer = factory.valueWriter( field );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( field );
+		ValueWriter writer = factory.valueWriter( field );
+		ValueReader<?> reader = factory.valueReader( field );
 
 		writer.set( instance, "secret" );
 		assertEquals( "secret", reader.get( instance ) );
@@ -91,8 +91,8 @@ public class NestedClassAccessTest {
 		Method setter = nestedClass.getDeclaredMethod( "setPublicField", String.class );
 		Method getter = nestedClass.getDeclaredMethod( "getPublicField" );
 
-		HibernateAccessorValueWriter writer = factory.valueWriter( setter );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( getter );
+		ValueWriter writer = factory.valueWriter( setter );
+		ValueReader<?> reader = factory.valueReader( getter );
 
 		writer.set( instance, "via-method" );
 		assertEquals( "via-method", reader.get( instance ) );
@@ -105,8 +105,8 @@ public class NestedClassAccessTest {
 		Method setter = nestedClass.getDeclaredMethod( "setPrivateField", String.class );
 		Method getter = nestedClass.getDeclaredMethod( "getPrivateField" );
 
-		HibernateAccessorValueWriter writer = factory.valueWriter( setter );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( getter );
+		ValueWriter writer = factory.valueWriter( setter );
+		ValueReader<?> reader = factory.valueReader( getter );
 
 		writer.set( instance, "via-private-method" );
 		assertEquals( "via-private-method", reader.get( instance ) );
@@ -119,8 +119,8 @@ public class NestedClassAccessTest {
 		Field publicField = nestedClass.getDeclaredField( "publicField" );
 		Field privateField = nestedClass.getDeclaredField( "privateField" );
 
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter( nestedClass, publicField, privateField );
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader( nestedClass, publicField, privateField );
+		MultiValueWriter writer = factory.multiValueWriter( nestedClass, publicField, privateField );
+		MultiValueReader reader = factory.multiValueReader( nestedClass, publicField, privateField );
 
 		writer.set( instance, new Object[]{ "pub-val", "priv-val" } );
 		Object[] values = reader.get( instance );
@@ -138,8 +138,8 @@ public class NestedClassAccessTest {
 		Method getPrivate = nestedClass.getDeclaredMethod( "getPrivateField" );
 		Method setPrivate = nestedClass.getDeclaredMethod( "setPrivateField", String.class );
 
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter( nestedClass, publicField, setPrivate );
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader( nestedClass, publicField, getPrivate );
+		MultiValueWriter writer = factory.multiValueWriter( nestedClass, publicField, setPrivate );
+		MultiValueReader reader = factory.multiValueReader( nestedClass, publicField, getPrivate );
 
 		writer.set( instance, new Object[]{ "field-val", "method-val" } );
 		Object[] values = reader.get( instance );

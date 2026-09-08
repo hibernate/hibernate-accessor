@@ -6,7 +6,7 @@ package org.hibernate.accessor.performance;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.performance.baseline.DirectAccessors;
 import org.hibernate.accessor.performance.entities.BenchEntity;
 
@@ -25,7 +25,7 @@ import org.openjdk.jmh.annotations.Warmup;
  * Hand-written reference points for {@link WriteBenchmark}. Not parameterized by strategy.
  *
  * <p>{@code raw*} writes the property directly (primitive stays unboxed); {@code iface*} writes it
- * through a hand-written {@link HibernateAccessorValueWriter}. See {@link ReadBaseline} for the
+ * through a hand-written {@link ValueWriter}. See {@link ReadBaseline} for the
  * rationale of the two flavors and why field vs method is not an axis here.
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -41,8 +41,8 @@ public class WriteBaseline {
 	private final Integer boxedIntValue = 42;
 	private final String stringValue = "benchmark";
 
-	private final HibernateAccessorValueWriter intWriter = new DirectAccessors.IntWriter();
-	private final HibernateAccessorValueWriter stringWriter = new DirectAccessors.StringWriter();
+	private final ValueWriter intWriter = new DirectAccessors.IntWriter();
+	private final ValueWriter stringWriter = new DirectAccessors.StringWriter();
 
 	@Setup
 	public void setUp() {

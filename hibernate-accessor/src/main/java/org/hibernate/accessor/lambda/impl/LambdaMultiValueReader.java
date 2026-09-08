@@ -4,14 +4,14 @@
  */
 package org.hibernate.accessor.lambda.impl;
 
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.ValueReader;
 
-public class LambdaMultiValueReader implements HibernateAccessorMultiValueReader {
+public class LambdaMultiValueReader implements MultiValueReader {
 
-	private final HibernateAccessorValueReader<?>[] readers;
+	private final ValueReader<?>[] readers;
 
-	public LambdaMultiValueReader(HibernateAccessorValueReader<?>[] readers) {
+	public LambdaMultiValueReader(ValueReader<?>[] readers) {
 		this.readers = readers;
 	}
 

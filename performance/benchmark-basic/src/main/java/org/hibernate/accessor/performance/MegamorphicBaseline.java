@@ -7,8 +7,8 @@ package org.hibernate.accessor.performance;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.performance.baseline.DirectMegaReaders;
 import org.hibernate.accessor.performance.baseline.DirectMegaWriters;
 import org.hibernate.accessor.performance.entities.mega.MegaEntities;
@@ -42,8 +42,8 @@ public class MegamorphicBaseline {
 	@Param({ "false", "true" })
 	private boolean polymorphic;
 
-	private HibernateAccessorValueReader<?>[] readers;
-	private HibernateAccessorValueWriter[] writers;
+	private ValueReader<?>[] readers;
+	private ValueWriter[] writers;
 	private Object[] instances;
 	private Object[] values;
 
@@ -51,10 +51,10 @@ public class MegamorphicBaseline {
 	public void setUp() throws ReflectiveOperationException {
 		List<Class<?>> classes = MegaEntities.CLASSES;
 		int n = classes.size();
-		HibernateAccessorValueReader<?>[] handWrittenReaders = DirectMegaReaders.readers();
-		HibernateAccessorValueWriter[] handWrittenWriters = DirectMegaWriters.writers();
-		this.readers = new HibernateAccessorValueReader<?>[n];
-		this.writers = new HibernateAccessorValueWriter[n];
+		ValueReader<?>[] handWrittenReaders = DirectMegaReaders.readers();
+		ValueWriter[] handWrittenWriters = DirectMegaWriters.writers();
+		this.readers = new ValueReader<?>[n];
+		this.writers = new ValueWriter[n];
 		this.instances = new Object[n];
 		this.values = new Object[n];
 		for ( int i = 0; i < n; i++ ) {
@@ -68,7 +68,7 @@ public class MegamorphicBaseline {
 
 	@Benchmark
 	public void megamorphicRead(Blackhole bh) {
-		HibernateAccessorValueReader<?>[] rs = this.readers;
+		ValueReader<?>[] rs = this.readers;
 		Object[] is = this.instances;
 		for ( int i = 0; i < rs.length; i++ ) {
 			bh.consume( rs[i].get( is[i] ) );
@@ -77,7 +77,7 @@ public class MegamorphicBaseline {
 
 	@Benchmark
 	public void megamorphicWrite() {
-		HibernateAccessorValueWriter[] ws = this.writers;
+		ValueWriter[] ws = this.writers;
 		Object[] is = this.instances;
 		Object[] vs = this.values;
 		for ( int i = 0; i < ws.length; i++ ) {

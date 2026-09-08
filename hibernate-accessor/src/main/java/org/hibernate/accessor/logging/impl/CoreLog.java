@@ -9,7 +9,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Member;
 import java.util.Locale;
 
-import org.hibernate.accessor.HibernateAccessorException;
+import org.hibernate.accessor.AccessorException;
 
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -30,17 +30,17 @@ public interface CoreLog {
 
 	@Message(id = 1,
 			value = "Exception while invoking '%1$s' on '%2$s': %3$s.")
-	HibernateAccessorException errorInvokingMember(Member member, String componentAsString,
+	AccessorException errorInvokingMember(Member member, String componentAsString,
 			@Cause Throwable cause, String causeMessage);
 
 	@Message(id = 2,
 			value = "Exception while invoking '%1$s' on '%2$s': %3$s.")
-	HibernateAccessorException errorInvokingHandle(MethodHandle handle, String componentAsString,
+	AccessorException errorInvokingHandle(MethodHandle handle, String componentAsString,
 			@Cause Throwable cause, String causeMessage);
 
 	@Message(id = 3,
 			value = "Exception while creating '%1$s': %2$s.")
-	HibernateAccessorException errorCreatingHandle(Member handle,
+	AccessorException errorCreatingHandle(Member handle,
 			@Cause Throwable cause, String causeMessage);
 
 }

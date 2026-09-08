@@ -1,9 +1,9 @@
 package org.hibernate.accessor.tck.tests.visibility;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractVisibilityBeanTest {
 
-    private HibernateAccessorFactory factory;
+    private AccessorFactory factory;
     private Class<?> beanClass;
 
     @BeforeAll
@@ -41,7 +41,7 @@ public abstract class AbstractVisibilityBeanTest {
     void testInstantiation() throws Exception {
         Constructor<?> constructor = beanClass.getDeclaredConstructor();
         constructor.setAccessible(true);
-        HibernateAccessorInstantiator<?> instantiator = factory.instantiator(constructor);
+        Instantiator<?> instantiator = factory.instantiator(constructor);
 
         Object instance = instantiator.create();
         assertNotNull(instance);
@@ -57,8 +57,8 @@ public abstract class AbstractVisibilityBeanTest {
         Object bean = instance();
         String testValue = "val-" + fieldName;
 
-        HibernateAccessorValueWriter writer = (HibernateAccessorValueWriter) factory.valueWriter(field);
-        HibernateAccessorValueReader<String> reader = (HibernateAccessorValueReader<String>) factory.valueReader(field);
+        ValueWriter writer = (ValueWriter) factory.valueWriter(field);
+        ValueReader<String> reader = (ValueReader<String>) factory.valueReader(field);
 
         writer.set(bean, testValue);
         assertEquals(testValue, reader.get(bean), "Failed for field: " + fieldName);
@@ -79,8 +79,8 @@ public abstract class AbstractVisibilityBeanTest {
         setter.setAccessible(true);
         getter.setAccessible(true);
 
-        HibernateAccessorValueWriter writer = (HibernateAccessorValueWriter) factory.valueWriter(setter);
-        HibernateAccessorValueReader<String> reader = (HibernateAccessorValueReader<String>) factory.valueReader(getter);
+        ValueWriter writer = (ValueWriter) factory.valueWriter(setter);
+        ValueReader<String> reader = (ValueReader<String>) factory.valueReader(getter);
 
         writer.set(bean, value);
         assertEquals(value, reader.get(bean), "Method pair failed: " + setterName + "/" + getterName);

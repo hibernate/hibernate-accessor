@@ -4,8 +4,8 @@
  */
 package org.hibernate.accessor.tck.tests.validation;
 
-import org.hibernate.accessor.HibernateAccessorException;
-import org.hibernate.accessor.HibernateAccessorFactory;
+import org.hibernate.accessor.AccessorException;
+import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.tck.tests.beans.PrimitiveFieldBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ChildBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ParentBean;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DisplayName("Member validation in factory methods")
 public class MemberValidationTest {
 
-	private HibernateAccessorFactory factory;
+	private AccessorFactory factory;
 
 	@BeforeAll
 	void setup() {
@@ -35,28 +35,28 @@ public class MemberValidationTest {
 	@DisplayName("valueReader rejects a setter method")
 	void testValueReaderRejectsSetter() throws Exception {
 		Method setter = PrimitiveFieldBean.class.getDeclaredMethod( "setIntField", int.class );
-		assertThrows( HibernateAccessorException.class, () -> factory.valueReader( setter ) );
+		assertThrows( AccessorException.class, () -> factory.valueReader( setter ) );
 	}
 
 	@Test
 	@DisplayName("valueWriter rejects a getter method")
 	void testValueWriterRejectsGetter() throws Exception {
 		Method getter = PrimitiveFieldBean.class.getDeclaredMethod( "getIntField" );
-		assertThrows( HibernateAccessorException.class, () -> factory.valueWriter( getter ) );
+		assertThrows( AccessorException.class, () -> factory.valueWriter( getter ) );
 	}
 
 	@Test
 	@DisplayName("multiValueReader rejects a setter method in mixed members")
 	void testMultiReaderRejectsSetter() throws Exception {
 		Method setter = PrimitiveFieldBean.class.getDeclaredMethod( "setIntField", int.class );
-		assertThrows( HibernateAccessorException.class, () -> factory.multiValueReader( PrimitiveFieldBean.class, setter ) );
+		assertThrows( AccessorException.class, () -> factory.multiValueReader( PrimitiveFieldBean.class, setter ) );
 	}
 
 	@Test
 	@DisplayName("multiValueWriter rejects a getter method in mixed members")
 	void testMultiWriterRejectsGetter() throws Exception {
 		Method getter = PrimitiveFieldBean.class.getDeclaredMethod( "getIntField" );
-		assertThrows( HibernateAccessorException.class, () -> factory.multiValueWriter( PrimitiveFieldBean.class, getter ) );
+		assertThrows( AccessorException.class, () -> factory.multiValueWriter( PrimitiveFieldBean.class, getter ) );
 	}
 
 	@Test
@@ -83,20 +83,20 @@ public class MemberValidationTest {
 	@DisplayName("valueReader rejects static field")
 	void testValueReaderRejectsStaticField() throws Exception {
 		Field staticField = Integer.class.getDeclaredField( "MAX_VALUE" );
-		assertThrows( HibernateAccessorException.class, () -> factory.valueReader( staticField ) );
+		assertThrows( AccessorException.class, () -> factory.valueReader( staticField ) );
 	}
 
 	@Test
 	@DisplayName("valueWriter rejects static field")
 	void testValueWriterRejectsStaticField() throws Exception {
 		Field staticField = Integer.class.getDeclaredField( "MAX_VALUE" );
-		assertThrows( HibernateAccessorException.class, () -> factory.valueWriter( staticField ) );
+		assertThrows( AccessorException.class, () -> factory.valueWriter( staticField ) );
 	}
 
 	@Test
 	@DisplayName("valueReader rejects static method")
 	void testValueReaderRejectsStaticMethod() throws Exception {
 		Method staticMethod = Integer.class.getDeclaredMethod( "valueOf", int.class );
-		assertThrows( HibernateAccessorException.class, () -> factory.valueReader( staticMethod ) );
+		assertThrows( AccessorException.class, () -> factory.valueReader( staticMethod ) );
 	}
 }

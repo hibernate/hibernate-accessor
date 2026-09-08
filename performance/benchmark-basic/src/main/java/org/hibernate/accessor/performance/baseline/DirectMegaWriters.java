@@ -4,7 +4,7 @@
  */
 package org.hibernate.accessor.performance.baseline;
 
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.performance.entities.mega.Entity00;
 import org.hibernate.accessor.performance.entities.mega.Entity01;
 import org.hibernate.accessor.performance.entities.mega.Entity02;
@@ -25,8 +25,8 @@ public final class DirectMegaWriters {
 	}
 
 	/** One writer per {@code MegaEntities.CLASSES} entry, in the same order. */
-	public static HibernateAccessorValueWriter[] writers() {
-		return new HibernateAccessorValueWriter[] {
+	public static ValueWriter[] writers() {
+		return new ValueWriter[] {
 				new W00(),
 				new W01(),
 				new W02(),
@@ -42,84 +42,84 @@ public final class DirectMegaWriters {
 		};
 	}
 
-	static final class W00 implements HibernateAccessorValueWriter {
+	static final class W00 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity00) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W01 implements HibernateAccessorValueWriter {
+	static final class W01 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity01) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W02 implements HibernateAccessorValueWriter {
+	static final class W02 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity02) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W03 implements HibernateAccessorValueWriter {
+	static final class W03 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity03) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W04 implements HibernateAccessorValueWriter {
+	static final class W04 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity04) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W05 implements HibernateAccessorValueWriter {
+	static final class W05 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity05) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W06 implements HibernateAccessorValueWriter {
+	static final class W06 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity06) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W07 implements HibernateAccessorValueWriter {
+	static final class W07 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity07) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W08 implements HibernateAccessorValueWriter {
+	static final class W08 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity08) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W09 implements HibernateAccessorValueWriter {
+	static final class W09 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity09) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W10 implements HibernateAccessorValueWriter {
+	static final class W10 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity10) instance ).setValue( (Integer) value );
 		}
 	}
 
-	static final class W11 implements HibernateAccessorValueWriter {
+	static final class W11 implements ValueWriter {
 		@Override
 		public void set(Object instance, Object value) {
 			( (Entity11) instance ).setValue( (Integer) value );

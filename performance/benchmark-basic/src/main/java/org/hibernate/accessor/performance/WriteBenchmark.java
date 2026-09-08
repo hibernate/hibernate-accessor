@@ -7,8 +7,8 @@ package org.hibernate.accessor.performance;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.performance.entities.BenchEntity;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -24,7 +24,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Writes a single property via {@link HibernateAccessorValueWriter#set} for a chosen strategy,
+ * Writes a single property via {@link ValueWriter#set} for a chosen strategy,
  * across the field/method and primitive/reference axes.
  *
  * @see WriteBaseline for the hand-written raw and interface-dispatch reference points
@@ -46,13 +46,13 @@ public class WriteBenchmark {
 	@Param({ "PRIMITIVE", "REFERENCE" })
 	private ValueKind valueKind;
 
-	private HibernateAccessorValueWriter writer;
+	private ValueWriter writer;
 	private BenchEntity entity;
 	private Object value;
 
 	@Setup
 	public void setUp() throws ReflectiveOperationException {
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		this.entity = new BenchEntity();
 
 		boolean primitive = valueKind == ValueKind.PRIMITIVE;

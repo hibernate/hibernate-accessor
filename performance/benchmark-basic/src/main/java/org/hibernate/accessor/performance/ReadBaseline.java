@@ -6,7 +6,7 @@ package org.hibernate.accessor.performance;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.performance.baseline.DirectAccessors;
 import org.hibernate.accessor.performance.entities.BenchEntity;
 
@@ -29,7 +29,7 @@ import org.openjdk.jmh.annotations.Warmup;
  *     absolute floor the JIT can fully inline -- the "is the abstraction worth it vs plain code" number.
  *     For the primitive case the value stays unboxed, so the boxing the strategies pay shows up as
  *     part of their overhead.</li>
- *     <li>{@code iface*}: the same read behind a hand-written {@link HibernateAccessorValueReader},
+ *     <li>{@code iface*}: the same read behind a hand-written {@link ValueReader},
  *     so the call shape matches the strategies and the delta isolates strategy-internal work.</li>
  * </ul>
  *
@@ -46,8 +46,8 @@ public class ReadBaseline {
 
 	private BenchEntity entity;
 
-	private final HibernateAccessorValueReader<Integer> intReader = new DirectAccessors.IntReader();
-	private final HibernateAccessorValueReader<String> stringReader = new DirectAccessors.StringReader();
+	private final ValueReader<Integer> intReader = new DirectAccessors.IntReader();
+	private final ValueReader<String> stringReader = new DirectAccessors.StringReader();
 
 	@Setup
 	public void setUp() {

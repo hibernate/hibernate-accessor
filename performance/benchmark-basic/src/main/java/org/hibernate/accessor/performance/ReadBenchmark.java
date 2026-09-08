@@ -7,8 +7,8 @@ package org.hibernate.accessor.performance;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorValueReader;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.performance.entities.BenchEntity;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -24,7 +24,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Reads a single property via {@link HibernateAccessorValueReader#get} for a chosen strategy,
+ * Reads a single property via {@link ValueReader#get} for a chosen strategy,
  * across the field/method and primitive/reference axes.
  *
  * @see ReadBaseline for the hand-written raw and interface-dispatch reference points
@@ -46,12 +46,12 @@ public class ReadBenchmark {
 	@Param({ "PRIMITIVE", "REFERENCE" })
 	private ValueKind valueKind;
 
-	private HibernateAccessorValueReader<?> reader;
+	private ValueReader<?> reader;
 	private BenchEntity entity;
 
 	@Setup
 	public void setUp() throws ReflectiveOperationException {
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		this.entity = new BenchEntity( 42, "benchmark" );
 
 		boolean primitive = valueKind == ValueKind.PRIMITIVE;

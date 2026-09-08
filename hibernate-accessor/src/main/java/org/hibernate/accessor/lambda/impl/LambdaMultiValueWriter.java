@@ -4,14 +4,14 @@
  */
 package org.hibernate.accessor.lambda.impl;
 
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.MultiValueWriter;
+import org.hibernate.accessor.ValueWriter;
 
-public class LambdaMultiValueWriter implements HibernateAccessorMultiValueWriter {
+public class LambdaMultiValueWriter implements MultiValueWriter {
 
-	private final HibernateAccessorValueWriter[] writers;
+	private final ValueWriter[] writers;
 
-	public LambdaMultiValueWriter(HibernateAccessorValueWriter[] writers) {
+	public LambdaMultiValueWriter(ValueWriter[] writers) {
 		this.writers = writers;
 	}
 

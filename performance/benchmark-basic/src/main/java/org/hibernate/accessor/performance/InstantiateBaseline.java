@@ -6,7 +6,7 @@ package org.hibernate.accessor.performance;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.performance.baseline.DirectAccessors;
 import org.hibernate.accessor.performance.entities.BenchEntity;
 
@@ -24,7 +24,7 @@ import org.openjdk.jmh.annotations.Warmup;
  * Hand-written reference points for {@link InstantiateBenchmark}. Not parameterized by strategy.
  *
  * <p>{@code raw*} calls {@code new BenchEntity(...)} directly; {@code iface*} goes through a
- * hand-written {@link HibernateAccessorInstantiator}. See {@link ReadBaseline} for the rationale.
+ * hand-written {@link Instantiator}. See {@link ReadBaseline} for the rationale.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -36,8 +36,8 @@ public class InstantiateBaseline {
 
 	private final Object[] args = { 42, "benchmark" };
 
-	private final HibernateAccessorInstantiator<BenchEntity> noArgInstantiator = new DirectAccessors.NoArgInstantiator();
-	private final HibernateAccessorInstantiator<BenchEntity> allArgsInstantiator = new DirectAccessors.AllArgsInstantiator();
+	private final Instantiator<BenchEntity> noArgInstantiator = new DirectAccessors.NoArgInstantiator();
+	private final Instantiator<BenchEntity> allArgsInstantiator = new DirectAccessors.AllArgsInstantiator();
 
 	@Benchmark
 	public BenchEntity rawNoArg() {

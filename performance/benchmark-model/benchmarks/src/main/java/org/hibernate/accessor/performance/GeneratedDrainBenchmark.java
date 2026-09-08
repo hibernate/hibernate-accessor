@@ -9,12 +9,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.performance.model.GeneratedModel;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -84,15 +84,15 @@ public class GeneratedDrainBenchmark {
 	private Object[][] rowValues;
 
 	// Instantiators (shared by both modes)
-	private HibernateAccessorInstantiator<?>[] instantiators;
+	private Instantiator<?>[] instantiators;
 
 	// SINGLE_ACCESSOR mode
-	private HibernateAccessorValueReader<?>[][] singleReaders;
-	private HibernateAccessorValueWriter[][] singleWriters;
+	private ValueReader<?>[][] singleReaders;
+	private ValueWriter[][] singleWriters;
 
 	// MULTI_ACCESSOR mode
-	private HibernateAccessorMultiValueReader[] multiReaders;
-	private HibernateAccessorMultiValueWriter[] multiWriters;
+	private MultiValueReader[] multiReaders;
+	private MultiValueWriter[] multiWriters;
 
 	@Setup
 	public void setUp() throws ReflectiveOperationException {
@@ -113,7 +113,7 @@ public class GeneratedDrainBenchmark {
 			buildDoubleSwitchAccessors( model );
 		}
 		else {
-			HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+			AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 			buildInstantiators( model, factory );
 			if ( drainMode == DrainMode.SINGLE_ACCESSOR ) {
 				buildSingleAccessors( model, factory );
@@ -141,24 +141,24 @@ public class GeneratedDrainBenchmark {
 	}
 
 	private void buildDoubleSwitchAccessors(GeneratedModel model) throws ReflectiveOperationException {
-		HibernateAccessorFactory reflectionFactory = HibernateAccessorFactory.reflection();
-		this.instantiators = new HibernateAccessorInstantiator<?>[entityCount];
+		AccessorFactory reflectionFactory = AccessorFactory.reflection();
+		this.instantiators = new Instantiator<?>[entityCount];
 		for ( int t = 0; t < entityCount; t++ ) {
 			instantiators[t] = reflectionFactory.instantiator( model.entityConstructor( t ) );
 		}
 
 		Constructor<?> readerCtor = model.switchMultiReaderClass( access ).getDeclaredConstructor( int.class );
 		Constructor<?> writerCtor = model.switchMultiWriterClass( access ).getDeclaredConstructor( int.class );
-		this.multiReaders = new HibernateAccessorMultiValueReader[entityCount];
-		this.multiWriters = new HibernateAccessorMultiValueWriter[entityCount];
+		this.multiReaders = new MultiValueReader[entityCount];
+		this.multiWriters = new MultiValueWriter[entityCount];
 		for ( int t = 0; t < entityCount; t++ ) {
-			multiReaders[t] = (HibernateAccessorMultiValueReader) readerCtor.newInstance( t );
-			multiWriters[t] = (HibernateAccessorMultiValueWriter) writerCtor.newInstance( t );
+			multiReaders[t] = (MultiValueReader) readerCtor.newInstance( t );
+			multiWriters[t] = (MultiValueWriter) writerCtor.newInstance( t );
 		}
 	}
 
-	private void buildInstantiators(GeneratedModel model, HibernateAccessorFactory factory) {
-		this.instantiators = new HibernateAccessorInstantiator<?>[entityCount];
+	private void buildInstantiators(GeneratedModel model, AccessorFactory factory) {
+		this.instantiators = new Instantiator<?>[entityCount];
 		for ( int t = 0; t < entityCount; t++ ) {
 			instantiators[t] = factory.instantiator( model.entityConstructor( t ) );
 		}
@@ -173,10 +173,10 @@ public class GeneratedDrainBenchmark {
 		}
 	}
 
-	private void buildSingleAccessors(GeneratedModel model, HibernateAccessorFactory factory) {
+	private void buildSingleAccessors(GeneratedModel model, AccessorFactory factory) {
 		boolean field = access == AccessKind.FIELD;
-		this.singleReaders = new HibernateAccessorValueReader<?>[entityCount][fieldCount];
-		this.singleWriters = new HibernateAccessorValueWriter[entityCount][fieldCount];
+		this.singleReaders = new ValueReader<?>[entityCount][fieldCount];
+		this.singleWriters = new ValueWriter[entityCount][fieldCount];
 
 		for ( int t = 0; t < entityCount; t++ ) {
 			for ( int i = 0; i < fieldCount; i++ ) {
@@ -192,10 +192,10 @@ public class GeneratedDrainBenchmark {
 		}
 	}
 
-	private void buildMultiAccessors(GeneratedModel model, HibernateAccessorFactory factory) {
+	private void buildMultiAccessors(GeneratedModel model, AccessorFactory factory) {
 		boolean field = access == AccessKind.FIELD;
-		this.multiReaders = new HibernateAccessorMultiValueReader[entityCount];
-		this.multiWriters = new HibernateAccessorMultiValueWriter[entityCount];
+		this.multiReaders = new MultiValueReader[entityCount];
+		this.multiWriters = new MultiValueWriter[entityCount];
 
 		for ( int t = 0; t < entityCount; t++ ) {
 			Member[] readMembers = new Member[fieldCount];
@@ -243,12 +243,12 @@ public class GeneratedDrainBenchmark {
 	private long drainReadSingle() {
 		long acc = 1L;
 		Object[] ents = this.entities;
-		HibernateAccessorValueReader<?>[][] sr = this.singleReaders;
+		ValueReader<?>[][] sr = this.singleReaders;
 		int fc = this.fieldCount;
 
 		for ( int t = 0; t < ents.length; t++ ) {
 			Object entity = ents[t];
-			HibernateAccessorValueReader<?>[] readers = sr[t];
+			ValueReader<?>[] readers = sr[t];
 			for ( int i = 0; i < fc; i++ ) {
 				acc = acc * 31 + (Integer) readers[i].get( entity );
 			}
@@ -259,7 +259,7 @@ public class GeneratedDrainBenchmark {
 	private long drainReadMulti() {
 		long acc = 1L;
 		Object[] ents = this.entities;
-		HibernateAccessorMultiValueReader[] mr = this.multiReaders;
+		MultiValueReader[] mr = this.multiReaders;
 
 		for ( int t = 0; t < ents.length; t++ ) {
 			Object[] values = mr[t].get( ents[t] );
@@ -286,14 +286,14 @@ public class GeneratedDrainBenchmark {
 
 	private Object[] drainWriteSingle() {
 		Object[] result = new Object[entityCount];
-		HibernateAccessorInstantiator<?>[] inst = this.instantiators;
-		HibernateAccessorValueWriter[][] sw = this.singleWriters;
+		Instantiator<?>[] inst = this.instantiators;
+		ValueWriter[][] sw = this.singleWriters;
 		Object[][] rv = this.rowValues;
 		int fc = this.fieldCount;
 
 		for ( int t = 0; t < entityCount; t++ ) {
 			Object entity = inst[t].create();
-			HibernateAccessorValueWriter[] writers = sw[t];
+			ValueWriter[] writers = sw[t];
 			Object[] vals = rv[t];
 			for ( int i = 0; i < fc; i++ ) {
 				writers[i].set( entity, vals[i] );
@@ -305,8 +305,8 @@ public class GeneratedDrainBenchmark {
 
 	private Object[] drainWriteMulti() {
 		Object[] result = new Object[entityCount];
-		HibernateAccessorInstantiator<?>[] inst = this.instantiators;
-		HibernateAccessorMultiValueWriter[] mw = this.multiWriters;
+		Instantiator<?>[] inst = this.instantiators;
+		MultiValueWriter[] mw = this.multiWriters;
 		Object[][] rv = this.rowValues;
 
 		for ( int t = 0; t < entityCount; t++ ) {
@@ -321,11 +321,11 @@ public class GeneratedDrainBenchmark {
 	private long drainReadEntities(Object[] ents) {
 		if ( drainMode == DrainMode.SINGLE_ACCESSOR ) {
 			long acc = 1L;
-			HibernateAccessorValueReader<?>[][] sr = this.singleReaders;
+			ValueReader<?>[][] sr = this.singleReaders;
 			int fc = this.fieldCount;
 			for ( int t = 0; t < ents.length; t++ ) {
 				Object entity = ents[t];
-				HibernateAccessorValueReader<?>[] readers = sr[t];
+				ValueReader<?>[] readers = sr[t];
 				for ( int i = 0; i < fc; i++ ) {
 					acc = acc * 31 + (Integer) readers[i].get( entity );
 				}
@@ -334,7 +334,7 @@ public class GeneratedDrainBenchmark {
 		}
 		else {
 			long acc = 1L;
-			HibernateAccessorMultiValueReader[] mr = this.multiReaders;
+			MultiValueReader[] mr = this.multiReaders;
 			for ( int t = 0; t < ents.length; t++ ) {
 				Object[] values = mr[t].get( ents[t] );
 				for ( int i = 0; i < values.length; i++ ) {

@@ -8,9 +8,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Member;
 import java.util.concurrent.TimeUnit;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.performance.entities.WideEntity;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -49,14 +49,14 @@ public class BulkBenchmark {
 	@Param({ "1", "8", "32" })
 	private int memberCount;
 
-	private HibernateAccessorMultiValueReader reader;
-	private HibernateAccessorMultiValueWriter writer;
+	private MultiValueReader reader;
+	private MultiValueWriter writer;
 	private WideEntity entity;
 	private Object[] values;
 
 	@Setup
 	public void setUp() throws ReflectiveOperationException {
-		HibernateAccessorFactory factory = strategy.create( MethodHandles.lookup() );
+		AccessorFactory factory = strategy.create( MethodHandles.lookup() );
 		this.entity = new WideEntity();
 
 		Member[] readMembers = new Member[memberCount];

@@ -6,10 +6,10 @@ package org.hibernate.accessor.lambda.impl;
 
 import java.lang.invoke.MethodHandle;
 
-import org.hibernate.accessor.HibernateAccessorValueWriter;
-import org.hibernate.accessor.internal.HibernateAccessorThrowables;
+import org.hibernate.accessor.ValueWriter;
+import org.hibernate.accessor.internal.AccessorThrowables;
 
-public class LambdaFieldValueWriter implements HibernateAccessorValueWriter {
+public class LambdaFieldValueWriter implements ValueWriter {
 	private final MethodHandle setter;
 
 	public LambdaFieldValueWriter(MethodHandle setter) {
@@ -23,7 +23,7 @@ public class LambdaFieldValueWriter implements HibernateAccessorValueWriter {
 		}
 		catch (Throwable t) {
 			// Propagate whatever the setter body threw, unchanged, so every strategy behaves alike.
-			throw HibernateAccessorThrowables.sneakyThrow( t );
+			throw AccessorThrowables.sneakyThrow( t );
 		}
 	}
 }

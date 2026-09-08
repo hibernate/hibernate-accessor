@@ -1,7 +1,7 @@
 package org.hibernate.accessor.tck.tests.instantiation;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.tck.tests.beans.SimpleRecord;
 import org.hibernate.accessor.tck.util.TckHelper;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @DisplayName("Constructor with arguments")
 public class ConstructorWithArgsTest {
 
-    private HibernateAccessorFactory factory;
+    private AccessorFactory factory;
 
     @BeforeAll
     void setup() {
@@ -30,7 +30,7 @@ public class ConstructorWithArgsTest {
     void testTwoArgConstructor() throws Exception {
         Constructor<SimpleRecord> ctor = SimpleRecord.class.getDeclaredConstructor(String.class, int.class);
         ctor.setAccessible(true);
-        HibernateAccessorInstantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
+        Instantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
 
         SimpleRecord record = instantiator.create("hello", 42);
         assertNotNull(record);
@@ -42,7 +42,7 @@ public class ConstructorWithArgsTest {
     void testConstructorWithNullStringArg() throws Exception {
         Constructor<SimpleRecord> ctor = SimpleRecord.class.getDeclaredConstructor(String.class, int.class);
         ctor.setAccessible(true);
-        HibernateAccessorInstantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
+        Instantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
 
         SimpleRecord record = instantiator.create(null, 0);
         assertNotNull(record);
@@ -54,7 +54,7 @@ public class ConstructorWithArgsTest {
     void testConstructorWithDifferentValues() throws Exception {
         Constructor<SimpleRecord> ctor = SimpleRecord.class.getDeclaredConstructor(String.class, int.class);
         ctor.setAccessible(true);
-        HibernateAccessorInstantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
+        Instantiator<SimpleRecord> instantiator = factory.instantiator(ctor);
 
         SimpleRecord r1 = instantiator.create("first", 1);
         SimpleRecord r2 = instantiator.create("second", 2);

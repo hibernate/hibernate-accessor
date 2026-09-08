@@ -4,12 +4,12 @@
  */
 package org.hibernate.accessor.tck.tests.crossclassloader;
 
-import org.hibernate.accessor.HibernateAccessorFactory;
-import org.hibernate.accessor.HibernateAccessorInstantiator;
-import org.hibernate.accessor.HibernateAccessorMultiValueReader;
-import org.hibernate.accessor.HibernateAccessorMultiValueWriter;
-import org.hibernate.accessor.HibernateAccessorValueReader;
-import org.hibernate.accessor.HibernateAccessorValueWriter;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
+import org.hibernate.accessor.ValueReader;
+import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.visibility.PropertyVisibilityBean;
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
@@ -44,7 +44,7 @@ public class CrossClassLoaderAccessTest {
 
 	private static final String BEAN_CLASS_NAME = PropertyVisibilityBean.class.getName();
 
-	private HibernateAccessorFactory factory;
+	private AccessorFactory factory;
 	private Class<?> isolatedClass;
 	private Object isolatedInstance;
 
@@ -74,7 +74,7 @@ public class CrossClassLoaderAccessTest {
 	void testInstantiation() throws Exception {
 		Constructor<?> ctor = isolatedClass.getDeclaredConstructor();
 		ctor.setAccessible( true );
-		HibernateAccessorInstantiator<?> instantiator = factory.instantiator( ctor );
+		Instantiator<?> instantiator = factory.instantiator( ctor );
 
 		Object instance = instantiator.create();
 		assertNotNull( instance );
@@ -85,8 +85,8 @@ public class CrossClassLoaderAccessTest {
 	@DisplayName("Read/write public field on foreign-classloader class")
 	void testPublicFieldAccess() throws Exception {
 		Field field = isolatedClass.getDeclaredField( "publicField" );
-		HibernateAccessorValueWriter writer = factory.valueWriter( field );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( field );
+		ValueWriter writer = factory.valueWriter( field );
+		ValueReader<?> reader = factory.valueReader( field );
 
 		writer.set( isolatedInstance, "cross-cl-public" );
 		assertEquals( "cross-cl-public", reader.get( isolatedInstance ) );
@@ -96,8 +96,8 @@ public class CrossClassLoaderAccessTest {
 	@DisplayName("Read/write private field on foreign-classloader class")
 	void testPrivateFieldAccess() throws Exception {
 		Field field = isolatedClass.getDeclaredField( "privateField" );
-		HibernateAccessorValueWriter writer = factory.valueWriter( field );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( field );
+		ValueWriter writer = factory.valueWriter( field );
+		ValueReader<?> reader = factory.valueReader( field );
 
 		writer.set( isolatedInstance, "cross-cl-private" );
 		assertEquals( "cross-cl-private", reader.get( isolatedInstance ) );
@@ -109,8 +109,8 @@ public class CrossClassLoaderAccessTest {
 		Method setter = isolatedClass.getDeclaredMethod( "setPublicField", String.class );
 		Method getter = isolatedClass.getDeclaredMethod( "getPublicField" );
 
-		HibernateAccessorValueWriter writer = factory.valueWriter( setter );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( getter );
+		ValueWriter writer = factory.valueWriter( setter );
+		ValueReader<?> reader = factory.valueReader( getter );
 
 		writer.set( isolatedInstance, "cross-cl-method" );
 		assertEquals( "cross-cl-method", reader.get( isolatedInstance ) );
@@ -122,8 +122,8 @@ public class CrossClassLoaderAccessTest {
 		Method setter = isolatedClass.getDeclaredMethod( "setPrivateField", String.class );
 		Method getter = isolatedClass.getDeclaredMethod( "getPrivateField" );
 
-		HibernateAccessorValueWriter writer = factory.valueWriter( setter );
-		HibernateAccessorValueReader<?> reader = factory.valueReader( getter );
+		ValueWriter writer = factory.valueWriter( setter );
+		ValueReader<?> reader = factory.valueReader( getter );
 
 		writer.set( isolatedInstance, "cross-cl-private-method" );
 		assertEquals( "cross-cl-private-method", reader.get( isolatedInstance ) );
@@ -135,8 +135,8 @@ public class CrossClassLoaderAccessTest {
 		Field publicField = isolatedClass.getDeclaredField( "publicField" );
 		Field privateField = isolatedClass.getDeclaredField( "privateField" );
 
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter( isolatedClass, publicField, privateField );
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader( isolatedClass, publicField, privateField );
+		MultiValueWriter writer = factory.multiValueWriter( isolatedClass, publicField, privateField );
+		MultiValueReader reader = factory.multiValueReader( isolatedClass, publicField, privateField );
 
 		writer.set( isolatedInstance, new Object[]{ "mv-pub", "mv-priv" } );
 		Object[] values = reader.get( isolatedInstance );
@@ -153,8 +153,8 @@ public class CrossClassLoaderAccessTest {
 		Method getSetter = isolatedClass.getDeclaredMethod( "setPrivateField", String.class );
 		Method getGetter = isolatedClass.getDeclaredMethod( "getPrivateField" );
 
-		HibernateAccessorMultiValueWriter writer = factory.multiValueWriter( isolatedClass, publicField, getSetter );
-		HibernateAccessorMultiValueReader reader = factory.multiValueReader( isolatedClass, publicField, getGetter );
+		MultiValueWriter writer = factory.multiValueWriter( isolatedClass, publicField, getSetter );
+		MultiValueReader reader = factory.multiValueReader( isolatedClass, publicField, getGetter );
 
 		writer.set( isolatedInstance, new Object[]{ "mv-field", "mv-method" } );
 		Object[] values = reader.get( isolatedInstance );

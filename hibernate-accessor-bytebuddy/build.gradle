@@ -12,7 +12,7 @@ def transformSharedSources = tasks.register( 'transformSharedSources', Copy ) {
         line.replace( 'org.objectweb.asm', 'net.bytebuddy.jar.asm' )
             .replace( 'org/hibernate/accessor/asm/', 'org/hibernate/accessor/bytebuddy/' )
             .replace( 'org.hibernate.accessor.asm', 'org.hibernate.accessor.bytebuddy' )
-            .replace( 'HibernateAccessorAsm', 'HibernateAccessorByteBuddy' )
+            .replaceAll( /Asm([A-Z])/, 'ByteBuddy$1' )
             .replace( 'standalone ASM', "ByteBuddy's shaded ASM" )
             .replace( ' ASM ', ' ByteBuddy ' )
     }
@@ -20,7 +20,7 @@ def transformSharedSources = tasks.register( 'transformSharedSources', Copy ) {
     eachFile { details ->
         details.path = details.path
             .replace( 'org/hibernate/accessor/asm/', 'org/hibernate/accessor/bytebuddy/' )
-            .replace( 'HibernateAccessorAsm', 'HibernateAccessorByteBuddy' )
+            .replaceAll( /Asm([A-Z])/, 'ByteBuddy$1' )
     }
 
     includeEmptyDirs = false

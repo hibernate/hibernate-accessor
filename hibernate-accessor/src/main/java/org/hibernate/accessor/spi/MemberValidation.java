@@ -9,12 +9,12 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import org.hibernate.accessor.HibernateAccessorException;
-import org.hibernate.accessor.HibernateAccessorFactory;
+import org.hibernate.accessor.AccessorException;
+import org.hibernate.accessor.AccessorFactory;
 
 /**
  * Shared validation for {@link Member} arguments passed to
- * {@link HibernateAccessorFactory} methods.
+ * {@link AccessorFactory} methods.
  */
 public final class MemberValidation {
 
@@ -24,11 +24,11 @@ public final class MemberValidation {
 	/**
 	 * Validates that the given member is an instance (non-static) member.
 	 *
-	 * @throws HibernateAccessorException if the member is static
+	 * @throws AccessorException if the member is static
 	 */
 	public static void validateInstanceMember(Member member) {
 		if ( Modifier.isStatic( member.getModifiers() ) ) {
-			throw new HibernateAccessorException(
+			throw new AccessorException(
 					"Static member '" + member.getName() + "' on " + member.getDeclaringClass().getName()
 							+ " cannot be used as an instance accessor"
 			);
@@ -38,18 +38,18 @@ public final class MemberValidation {
 	/**
 	 * Validates that the given method is suitable for reading (i.e. is a getter).
 	 *
-	 * @throws HibernateAccessorException if the method has parameters or returns void
+	 * @throws AccessorException if the method has parameters or returns void
 	 */
 	public static void validateReaderMethod(Method method) {
 		validateInstanceMember( method );
 		if ( method.getParameterCount() != 0 ) {
-			throw new HibernateAccessorException(
+			throw new AccessorException(
 					"Method '" + method.getName() + "' on " + method.getDeclaringClass().getName()
 							+ " cannot be used as a reader: expected 0 parameters, found " + method.getParameterCount()
 			);
 		}
 		if ( method.getReturnType() == void.class ) {
-			throw new HibernateAccessorException(
+			throw new AccessorException(
 					"Method '" + method.getName() + "' on " + method.getDeclaringClass().getName()
 							+ " cannot be used as a reader: returns void"
 			);
@@ -59,12 +59,12 @@ public final class MemberValidation {
 	/**
 	 * Validates that the given method is suitable for writing (i.e. is a setter).
 	 *
-	 * @throws HibernateAccessorException if the method does not have exactly one parameter
+	 * @throws AccessorException if the method does not have exactly one parameter
 	 */
 	public static void validateWriterMethod(Method method) {
 		validateInstanceMember( method );
 		if ( method.getParameterCount() != 1 ) {
-			throw new HibernateAccessorException(
+			throw new AccessorException(
 					"Method '" + method.getName() + "' on " + method.getDeclaringClass().getName()
 							+ " cannot be used as a writer: expected 1 parameter, found " + method.getParameterCount()
 			);
@@ -75,7 +75,7 @@ public final class MemberValidation {
 	 * Validates that the given member is a {@link Field} or a getter {@link Method}.
 	 *
 	 * @throws IllegalArgumentException if the member is not a Field or Method
-	 * @throws HibernateAccessorException if the member is a Method that is not a valid getter
+	 * @throws AccessorException if the member is a Method that is not a valid getter
 	 */
 	public static void validateReaderMember(Member member) {
 		validateInstanceMember( member );
@@ -93,7 +93,7 @@ public final class MemberValidation {
 	 * Validates that the given member is a {@link Field} or a setter {@link Method}.
 	 *
 	 * @throws IllegalArgumentException if the member is not a Field or Method
-	 * @throws HibernateAccessorException if the member is a Method that is not a valid setter
+	 * @throws AccessorException if the member is a Method that is not a valid setter
 	 */
 	public static void validateWriterMember(Member member) {
 		validateInstanceMember( member );
