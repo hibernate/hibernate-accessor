@@ -4,7 +4,7 @@
 
 A library that provides efficient field/property access and instance creation for main Hibernate projects.
 
-It provides a single API (`HibernateAccessorFactory`) with pluggable strategies for reading
+It provides a single API (`AccessorFactory`) with pluggable strategies for reading
 and writing object state and for instantiating objects via constructors.
 
 Requires Java 17 or later.
@@ -48,19 +48,19 @@ Built-in strategies are available via static factory methods:
 
 ```java
 // Reflection-based (simplest, no extra setup)
-HibernateAccessorFactory factory = HibernateAccessorFactory.reflection();
+AccessorFactory factory = AccessorFactory.reflection();
 
 // Method-handle-based (mostly better performance, requires a MethodHandles.Lookup)
-HibernateAccessorFactory factory = HibernateAccessorFactory.methodHandle(MethodHandles.lookup());
+AccessorFactory factory = AccessorFactory.methodHandle(MethodHandles.lookup());
 
 // Lambda-based (better performance, requires a MethodHandles.Lookup)
-HibernateAccessorFactory factory = HibernateAccessorFactory.lambda(MethodHandles.lookup());
+AccessorFactory factory = AccessorFactory.lambda(MethodHandles.lookup());
 
 // ASM-based (generates one bulk accessor class per entity with switch-based dispatch)
-HibernateAccessorFactory factory = HibernateAccessorAsmFactory.factory(MethodHandles.lookup());
+AccessorFactory factory = AsmAccessorFactory.factory(MethodHandles.lookup());
 
 // ByteBuddy-based (same approach as ASM, using ByteBuddy's shaded ASM)
-HibernateAccessorFactory factory = HibernateAccessorByteBuddyFactory.factory(MethodHandles.lookup());
+AccessorFactory factory = ByteBuddyAccessorFactory.factory(MethodHandles.lookup());
 ```
 
 ### Reading and writing fields
@@ -68,8 +68,8 @@ HibernateAccessorFactory factory = HibernateAccessorByteBuddyFactory.factory(Met
 ```java
 Field nameField = Person.class.getDeclaredField("name");
 
-HibernateAccessorValueReader<?> reader = factory.valueReader(nameField);
-HibernateAccessorValueWriter writer = factory.valueWriter(nameField);
+ValueReader<?> reader = factory.valueReader(nameField);
+ValueWriter writer = factory.valueWriter(nameField);
 
 Person person = new Person();
 writer.set(person, "Alice");
@@ -83,8 +83,8 @@ Object name = reader.get(person);  // "Alice"
 Method getter = Person.class.getDeclaredMethod("getName");
 Method setter = Person.class.getDeclaredMethod("setName", String.class);
 
-HibernateAccessorValueReader<?> reader = factory.valueReader(getter);
-HibernateAccessorValueWriter writer = factory.valueWriter(setter);
+ValueReader<?> reader = factory.valueReader(getter);
+ValueWriter writer = factory.valueWriter(setter);
 
 writer.set(person, "Bob");
 Object name = reader.get(person);  // "Bob"
@@ -101,8 +101,8 @@ one of its supertypes.
 Field name = Person.class.getDeclaredField("name");
 Field age = Person.class.getDeclaredField("age");
 
-HibernateAccessorMultiValueReader reader = factory.multiValueReader(Person.class, name, age);
-HibernateAccessorMultiValueWriter writer = factory.multiValueWriter(Person.class, name, age);
+MultiValueReader reader = factory.multiValueReader(Person.class, name, age);
+MultiValueWriter writer = factory.multiValueWriter(Person.class, name, age);
 
 writer.set(person, new Object[] { "Alice", 30 });
 
@@ -116,7 +116,7 @@ For the ASM and ByteBuddy strategies this generates a single bulk accessor class
 
 ```java
 Constructor<Person> ctor = Person.class.getDeclaredConstructor();
-HibernateAccessorInstantiator<Person> instantiator = factory.instantiator(ctor);
+Instantiator<Person> instantiator = factory.instantiator(ctor);
 
 Person person = instantiator.create();
 ```
@@ -125,38 +125,38 @@ For constructors that take arguments:
 
 ```java
 Constructor<Person> ctor = Person.class.getDeclaredConstructor(String.class, int.class);
-HibernateAccessorInstantiator<Person> instantiator = factory.instantiator(ctor);
+Instantiator<Person> instantiator = factory.instantiator(ctor);
 
 Person person = instantiator.create("Alice", 30);
 ```
 
 ## Configuration
 
-Every factory method also accepts a `HibernateAccessorConfiguration`, which carries the
+Every factory method also accepts a `AccessorConfiguration`, which carries the
 `MethodHandles.Lookup` along with additional properties:
 
 ```java
-HibernateAccessorConfiguration configuration = new HibernateAccessorConfiguration(
+AccessorConfiguration configuration = new AccessorConfiguration(
         MethodHandles.lookup(),
-        Map.of(HibernateAccessorConfiguration.DUMP_BYTECODE_DIR, "build/generated-accessors")
+        Map.of(AccessorConfiguration.DUMP_BYTECODE_DIR, "build/generated-accessors")
 );
 
-HibernateAccessorFactory factory = HibernateAccessorAsmFactory.factory(configuration);
+AccessorFactory factory = AsmAccessorFactory.factory(configuration);
 ```
 
 Supported properties:
 
 | Property | Constant | Purpose |
 |---|---|---|
-| `hibernate.accessor.lookup` | `HibernateAccessorConfiguration.LOOKUP` | The `MethodHandles.Lookup` used for access control. |
-| `hibernate.accessor.bytecode.dump.dir` | `HibernateAccessorConfiguration.DUMP_BYTECODE_DIR` | Directory to dump generated bytecode to (for debugging the ASM/ByteBuddy strategies). |
+| `hibernate.accessor.lookup` | `AccessorConfiguration.LOOKUP` | The `MethodHandles.Lookup` used for access control. |
+| `hibernate.accessor.bytecode.dump.dir` | `AccessorConfiguration.DUMP_BYTECODE_DIR` | Directory to dump generated bytecode to (for debugging the ASM/ByteBuddy strategies). |
 
 ## Strategies
 
 | Strategy | Factory method | Mechanism | Notes |
 |---|---|---|---|
-| Reflection | `HibernateAccessorFactory.reflection()` | `java.lang.reflect` | Simplest. Shared singleton instance. |
-| Lambda | `HibernateAccessorFactory.lambda(lookup)` | `LambdaMetafactory` | Better throughput after warm-up. Requires a `MethodHandles.Lookup` with appropriate access. |
-| Method handle | `HibernateAccessorFactory.methodHandle(lookup)` | `java.lang.invoke.MethodHandle` | Better throughput than reflection. Requires a `MethodHandles.Lookup` with appropriate access. |
-| ASM | `HibernateAccessorAsmFactory.factory(lookup)` | ASM bytecode generation | Generates one class per entity with `TABLESWITCH` dispatch on field/method index. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-asm` (which brings `org.ow2.asm:asm`). |
-| ByteBuddy | `HibernateAccessorByteBuddyFactory.factory(lookup)` | ByteBuddy bytecode generation | Same generated-class approach as ASM, using ByteBuddy's shaded ASM. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-bytebuddy`. |
+| Reflection | `AccessorFactory.reflection()` | `java.lang.reflect` | Simplest. Shared singleton instance. |
+| Lambda | `AccessorFactory.lambda(lookup)` | `LambdaMetafactory` | Better throughput after warm-up. Requires a `MethodHandles.Lookup` with appropriate access. |
+| Method handle | `AccessorFactory.methodHandle(lookup)` | `java.lang.invoke.MethodHandle` | Better throughput than reflection. Requires a `MethodHandles.Lookup` with appropriate access. |
+| ASM | `AsmAccessorFactory.factory(lookup)` | ASM bytecode generation | Generates one class per entity with `TABLESWITCH` dispatch on field/method index. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-asm` (which brings `org.ow2.asm:asm`). |
+| ByteBuddy | `ByteBuddyAccessorFactory.factory(lookup)` | ByteBuddy bytecode generation | Same generated-class approach as ASM, using ByteBuddy's shaded ASM. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-bytebuddy`. |

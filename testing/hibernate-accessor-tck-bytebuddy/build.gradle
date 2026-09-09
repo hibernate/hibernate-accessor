@@ -12,7 +12,7 @@ dependencies {
 
 // The default `test` task exercises the BULK_SWITCH generation strategy (the factory default).
 // This second task re-runs the whole TCK against the PER_MEMBER strategy; the value is read back by
-// ByteBuddyTckAccessorConfiguration via the HibernateAccessorByteBuddyConfiguration.GENERATION_STRATEGY property.
+// ByteBuddyTckAccessorConfiguration via the ByteBuddyAccessorConfiguration.GENERATION_STRATEGY property.
 def testPerMember = tasks.register( "testPerMember", Test ) {
     description = "Runs the TCK against the ByteBuddy factory using the PER_MEMBER generation strategy"
     group = "verification"
