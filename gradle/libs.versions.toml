@@ -17,7 +17,7 @@ log4j = "2.26.1"
 
 # plugins
 spotless="8.10.2"
-develocity="4.5.0"
+develocity="4.5.1"
 
 [libraries]
 # libs
