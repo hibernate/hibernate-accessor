@@ -8,11 +8,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import org.hibernate.accessor.AccessorException;
 
 /**
  * Defines a generated accessor class as a nestmate of a target class and returns a
@@ -48,12 +46,18 @@ import java.util.function.Function;
  *       (retains {@code PACKAGE} access; requires the target package to be
  *       {@code opens}-ed to the caller's module).</li>
  *   <li>Use {@link Lookup#defineClass(byte[])} (which only requires {@code PACKAGE}
- *       access) to inject a small bridge class into the target module. The bridge
- *       class exposes a single <em>package-private</em> method
- *       {@value #BRIDGE_METHOD_NAME} that calls {@link MethodHandles#lookup()}
+ *       access) to inject a small bridge class into the target module. The bridge is
+ *       placed at a predictable location: the target's own runtime package, under the
+ *       fixed name {@value #BRIDGE_CLASS_SIMPLE_NAME}, so it can be rediscovered later
+ *       with {@link Lookup#findClass(String)} -- no lookup tables are needed. The bridge
+ *       class exposes a single <em>package-private</em>
+ *       method {@value #BRIDGE_METHOD_NAME} that calls {@link MethodHandles#lookup()}
  *       (caller-sensitive, so full-privilege for the target module), defines the
  *       supplied bytecode as a hidden nestmate of the target class, and returns the
- *       defined class.</li>
+ *       defined class. The bridge also bakes its own {@link MethodHandle} to that method
+ *       into a {@code static final} field ({@value #BRIDGE_HANDLE_FIELD_NAME}) in its
+ *       class initializer, so users of the bridge read one shared handle instead of each
+ *       resolving the method again.</li>
  *   <li>Callers of this bridge must present a full-privilege {@link Lookup} belonging
  *       to the same module that created the bridge. This is verified at the entry
  *       point ({@link #defineAccessor}) before any bytecode is processed. A caller
@@ -67,9 +71,11 @@ import java.util.function.Function;
  * never returned to, cached by, or otherwise escapes this bridge. The full-privilege
  * lookup exists only as a local variable inside the injected method for the duration of
  * one {@code defineHiddenClass} call. Callers receive either the defined accessor class
- * or a constructed instance. The per-{@code (ClassLoader, Module)} cache holds a
- * {@link MethodHandle} to the injected method -- a single bounded operation, not a
- * reusable capability.
+ * or a constructed instance. The memoization holds a {@link MethodHandle} to the injected
+ * method -- a single bounded operation, not a reusable capability -- in a
+ * {@link ClassValue} keyed by the target class (all entries for classes in the same
+ * package share the bridge's pre-computed handle): entries are cleared automatically when
+ * the target class is unloaded, so nothing here can keep a foreign classloader alive.
  * <p>
  * <b>Supported posture:</b> a qualified {@code opens P to <caller module>} (for example
  * {@code opens com.acme.entities to org.hibernate.orm}). Under that posture the injected
@@ -91,7 +97,12 @@ import java.util.function.Function;
 public final class CrossClassLoaderLookupBridge {
 
 	/**
-	 * Simple name of the bridge class injected into foreign classloaders.
+	 * Simple name of the bridge class injected into foreign modules. The bridge is always
+	 * placed in the target's own runtime package under this fixed name, making its
+	 * location predictable: it can be rediscovered via {@link Lookup#findClass(String)}
+	 * without any lookup tables. The access check performed by {@code findClass} also
+	 * rejects a same-named class coming from an ancestor classloader, since that class is
+	 * in a different runtime package.
 	 */
 	public static final String BRIDGE_CLASS_SIMPLE_NAME = "$$HibernateAccessorBridge";
 
@@ -107,11 +118,20 @@ public final class CrossClassLoaderLookupBridge {
 	 */
 	public static final String BRIDGE_METHOD_NAME = "$$defineAccessor";
 
-	private static final MethodType BRIDGE_METHOD_TYPE =
-			MethodType.methodType( Object.class, Lookup.class, Class.class, byte[].class );
+	/**
+	 * Name of the {@code static final MethodHandle} field on the bridge class, initialized once
+	 * in the bridge's own class initializer with a handle to {@value #BRIDGE_METHOD_NAME}. The
+	 * bridge resolves this handle with its own full-privilege lookup, so every target class in
+	 * the package can share that single instance rather than resolving the method per class.
+	 */
+	public static final String BRIDGE_HANDLE_FIELD_NAME = "DEFINE_ACCESSOR_MH";
 
-	private final Map<ClassLoader, ConcurrentHashMap<Module, MethodHandle>> bridgeCache =
-			Collections.synchronizedMap( new WeakHashMap<>() );
+	private final ClassValue<MethodHandle> bridgeHandles = new ClassValue<>() {
+		@Override
+		protected MethodHandle computeValue(Class<?> type) {
+			return createBridgeHandle( type );
+		}
+	};
 	private final Lookup callerLookup;
 	private final Function<String, byte[]> bridgeBytecodeGenerator;
 
@@ -124,7 +144,10 @@ public final class CrossClassLoaderLookupBridge {
 	 *        class name. The generated class must have a {@code package-private static} method
 	 *        named {@value #BRIDGE_METHOD_NAME} with the signature described on that constant
 	 *        that performs the {@code defineHiddenClass}+instantiate and returns the instance,
-	 *        gated on the supplied lookup being full-privilege and belonging to this SPI's module.
+	 *        gated on the supplied lookup being full-privilege and belonging to this SPI's module,
+	 *        plus a {@code package-private static final MethodHandle} field named
+	 *        {@value #BRIDGE_HANDLE_FIELD_NAME}, initialized in the class initializer with a
+	 *        handle to that method (the bridge resolves it with its own full-privilege lookup).
 	 */
 	public CrossClassLoaderLookupBridge(Lookup callerLookup, Function<String, byte[]> bridgeBytecodeGenerator) {
 		if ( !callerLookup.hasFullPrivilegeAccess() ) {
@@ -196,7 +219,7 @@ public final class CrossClassLoaderLookupBridge {
 					.defineHiddenClass( bytecode, true, Lookup.ClassOption.NESTMATE )
 					.lookupClass();
 		}
-		final MethodHandle bridge = bridgeHandle( targetClass );
+		final MethodHandle bridge = bridgeHandles.get( targetClass );
 		try {
 			return (Class<?>) bridge.invoke( callerProof, targetClass, bytecode );
 		}
@@ -218,15 +241,6 @@ public final class CrossClassLoaderLookupBridge {
 		}
 	}
 
-	private MethodHandle bridgeHandle(Class<?> targetClass) {
-		final ConcurrentHashMap<Module, MethodHandle> moduleHandles = bridgeCache.computeIfAbsent(
-				targetClass.getClassLoader(), k -> new ConcurrentHashMap<>()
-		);
-		return moduleHandles.computeIfAbsent(
-				targetClass.getModule(), m -> createBridgeHandle( targetClass )
-		);
-	}
-
 	private MethodHandle createBridgeHandle(Class<?> targetClass) {
 		try {
 			final Lookup crossClLookup = MethodHandles.privateLookupIn( targetClass, callerLookup );
@@ -234,30 +248,67 @@ public final class CrossClassLoaderLookupBridge {
 			final String bridgeClassName = pkg.isEmpty()
 					? BRIDGE_CLASS_SIMPLE_NAME
 					: pkg + "." + BRIDGE_CLASS_SIMPLE_NAME;
-			Class<?> bridgeClass;
-			try {
-				final byte[] bridgeBytecode = bridgeBytecodeGenerator.apply( bridgeClassName );
-				bridgeClass = crossClLookup.defineClass( bridgeBytecode );
+			Class<?> bridgeClass = findBridgeClass( crossClLookup, bridgeClassName );
+			if ( bridgeClass == null ) {
+				// Absent, or shadowed by a same-named class from an ancestor loader (findClass
+				// rejects those: they live in a different runtime package). Ours must live in
+				// the target's runtime package, so define it there.
+				bridgeClass = defineBridgeClass( crossClLookup, bridgeClassName );
 			}
-			catch (LinkageError e) {
-				// Another factory instance already defined the bridge in this classloader --
-				// reuse the existing class (defineClass creates non-hidden named classes,
-				// so a second defineClass for the same name throws LinkageError)
-				bridgeClass = targetClass.getClassLoader().loadClass( bridgeClassName );
-			}
-			// PACKAGE access (retained across the module boundary) is sufficient to resolve
-			// the package-private bridge method.
-			return crossClLookup.findStatic( bridgeClass, BRIDGE_METHOD_NAME, BRIDGE_METHOD_TYPE );
+			// PACKAGE access (retained across the module boundary) is sufficient to read the
+			// package-private handle field; the handle itself was resolved by the bridge with
+			// its own full-privilege lookup, so all classes in this package share it.
+			return (MethodHandle) crossClLookup
+					.findStaticGetter( bridgeClass, BRIDGE_HANDLE_FIELD_NAME, MethodHandle.class )
+					.invoke();
 		}
 		catch (IllegalAccessException e) {
-			throw new RuntimeException(
+			throw new AccessorException(
 					"Cannot create lookup bridge for classloader of " + targetClass.getName()
 							+ ": privateLookupIn failed across module boundary",
 					e );
 		}
-		catch (Exception e) {
-			throw new RuntimeException(
-					"Failed to create lookup bridge for classloader of " + targetClass.getName(), e );
+		catch (Throwable t) {
+			// invoke() declares Throwable: this also covers errors raised while initializing
+			// the bridge class itself.
+			if ( t instanceof Error ) {
+				throw (Error) t;
+			}
+			throw new AccessorException(
+					"Failed to create lookup bridge for classloader of " + targetClass.getName(), t );
+		}
+	}
+
+	private Class<?> defineBridgeClass(Lookup crossClLookup, String bridgeClassName)
+			throws IllegalAccessException {
+		try {
+			return crossClLookup.defineClass( bridgeBytecodeGenerator.apply( bridgeClassName ) );
+		}
+		catch (LinkageError e) {
+			// Another factory instance already defined the bridge in this runtime package --
+			// reuse it (defineClass creates non-hidden named classes, so a second defineClass
+			// for the same name throws LinkageError). findClass sees a class that is already
+			// loaded in this runtime package before parent delegation, so it finds ours without
+			// needing a shared cache.
+			try {
+				return crossClLookup.findClass( bridgeClassName );
+			}
+			catch (ClassNotFoundException | IllegalAccessException ex) {
+				throw new IllegalStateException(
+						"Bridge class '" + bridgeClassName + "' was defined but cannot be found "
+								+ "via lookup -- possibly shadowed by an ancestor classloader",
+						e );
+			}
+		}
+	}
+
+	private static Class<?> findBridgeClass(Lookup lookup, String bridgeClassName) {
+		try {
+			return lookup.findClass( bridgeClassName );
+		}
+		catch (ClassNotFoundException | IllegalAccessException e) {
+			// Absent, or present only in an ancestor classloader (different runtime package).
+			return null;
 		}
 	}
 }
