@@ -21,6 +21,23 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+
+	jacoco {
+		// The agent cannot instrument classes of the JDK it runs on when that JDK is newer than the agent's ASM support.
+		excludes = ['java.*', 'javax.*', 'jdk.*', 'sun.*', 'com.sun.*']
+	}
+
+	// Run the tests on a specific JDK (e.g. -PtestJavaVersion=28) while Gradle itself runs on another one.
+	def testJavaVersion = providers.gradleProperty("testJavaVersion").orNull
+	if (testJavaVersion != null) {
+		javaLauncher = javaToolchains.launcherFor {
+			languageVersion = JavaLanguageVersion.of(testJavaVersion as int)
+		}
+		doFirst {
+			def launcher = javaLauncher.get()
+			logger.lifecycle("Running tests with JDK ${launcher.metadata.languageVersion} from ${launcher.metadata.installationPath}")
+		}
+	}
 }
 
 
