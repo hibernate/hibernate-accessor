@@ -41,14 +41,26 @@ jobs:
             distribution: 'temurin'
             test-java-version: 26
             coverage: false
-          # Temurin 27 GA not published yet (OpenJDK 27 went GA 2026-09-15); switch to '27' once available
-          - java-version: '27-ea'
+          - java-version: '27'
             distribution: 'temurin'
             test-java-version: 27
             coverage: false
           - java-version: '28-ea'
             distribution: 'temurin'
             test-java-version: 28
+            coverage: false
+            # also test a few other distributions, as there known to be issues when switching from hotspot
+          - java-version: '25'
+            distribution: 'semeru'
+            test-java-version: 25
+            coverage: false
+          - java-version: '25'
+            distribution: 'corretto'
+            test-java-version: 25
+            coverage: false
+          - java-version: '25'
+            distribution: 'redhat'
+            test-java-version: 25
             coverage: false
 
     steps:
