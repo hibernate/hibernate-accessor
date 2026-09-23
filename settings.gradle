@@ -92,6 +92,8 @@ include 'hibernate-accessor-tck-asm'
 project(':hibernate-accessor-tck-asm').projectDir = file( 'testing/hibernate-accessor-tck-asm' )
 include 'hibernate-accessor-tck-bytebuddy'
 project(':hibernate-accessor-tck-bytebuddy').projectDir = file( 'testing/hibernate-accessor-tck-bytebuddy' )
+include 'hibernate-accessor-tck-classfile'
+project(':hibernate-accessor-tck-classfile').projectDir = file( 'testing/hibernate-accessor-tck-classfile' )
 
 include 'hibernate-accessor-tck-jpms-entities'
 project(':hibernate-accessor-tck-jpms-entities').projectDir = file( 'testing/hibernate-accessor-tck-jpms-entities' )

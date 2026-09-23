@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
+import org.hibernate.accessor.classfile.impl.ClassFileFactoryBootstrap;
 import org.hibernate.accessor.lambda.impl.LambdaAccessorFactory;
 import org.hibernate.accessor.methodhandle.impl.MethodHandleAccessorFactory;
 import org.hibernate.accessor.reflection.impl.ReflectionAccessorFactory;
@@ -19,7 +20,7 @@ import org.hibernate.accessor.spi.AccessorConfiguration;
  * Factory for creating accessors that read and write object state and instantiate objects.
  *
  * <p>Obtain an instance via the static factory methods {@link #reflection()}, {@link #lambda(MethodHandles.Lookup)},
- * or {@link #methodHandle(MethodHandles.Lookup)},
+ * {@link #methodHandle(MethodHandles.Lookup)}, or {@link #classFile(MethodHandles.Lookup)},
  * then use it to create {@link Instantiator instantiators},
  * {@link ValueReader readers}, and {@link ValueWriter writers}.
  */
@@ -80,6 +81,32 @@ public interface AccessorFactory {
 	 */
 	static AccessorFactory methodHandle(AccessorConfiguration configuration) {
 		return new MethodHandleAccessorFactory( configuration );
+	}
+
+	/**
+	 * Returns a ClassFile API-based factory that uses the given lookup for access control.
+	 *
+	 * <p>The returned factory generates bytecode accessors via the ClassFile API.
+	 * On JDK 24+ it uses the built-in {@code java.lang.classfile} from {@code java.base};
+	 * on JDK 17-23 it requires the SmallRye {@code jdk-classfile-backport} library at runtime.
+	 *
+	 * @param lookup the lookup object that determines access rights
+	 * @return a new ClassFile API-based factory instance
+	 * @throws AccessorException if the ClassFile API is not available
+	 */
+	static AccessorFactory classFile(MethodHandles.Lookup lookup) {
+		return classFile( new AccessorConfiguration( lookup ) );
+	}
+
+	/**
+	 * Returns a ClassFile API-based factory with the given configuration.
+	 *
+	 * @param configuration the accessor configuration (must contain a {@link AccessorConfiguration#LOOKUP lookup})
+	 * @return a new ClassFile API-based factory instance
+	 * @throws AccessorException if the ClassFile API is not available
+	 */
+	static AccessorFactory classFile(AccessorConfiguration configuration) {
+		return ClassFileFactoryBootstrap.instance( configuration );
 	}
 
 	/**
