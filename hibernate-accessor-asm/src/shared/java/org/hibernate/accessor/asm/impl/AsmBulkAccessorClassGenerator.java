@@ -4,6 +4,7 @@
  */
 package org.hibernate.accessor.asm.impl;
 
+import static org.hibernate.accessor.asm.impl.AsmUtils.GENERATED_CLASS_MAJOR_VERSION;
 import static org.hibernate.accessor.asm.impl.AsmUtils.emitBox;
 import static org.hibernate.accessor.asm.impl.AsmUtils.emitIntConstant;
 import static org.hibernate.accessor.asm.impl.AsmUtils.emitWideningUnbox;
@@ -33,7 +34,7 @@ final class AsmBulkAccessorClassGenerator implements Opcodes {
 
 		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
 		cw.visit(
-				V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null,
+				GENERATED_CLASS_MAJOR_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null,
 				"java/lang/Object", new String[] { BULK_ACCESSOR_INTERNAL }
 		);
 
