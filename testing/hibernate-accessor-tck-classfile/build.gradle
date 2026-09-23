@@ -1,0 +1,12 @@
+plugins {
+    id "testing"
+}
+
+description = "TCK runner for ClassFile API-based accessor implementation"
+
+dependencies {
+    testImplementation project( ":hibernate-accessor-tck" )
+    testImplementation project( ":hibernate-accessor" )
+    testImplementation libs.test.junitPlatformSuiteEngine
+    testRuntimeOnly libs.smallryeClassfile
+}

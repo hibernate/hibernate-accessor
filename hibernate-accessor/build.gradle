@@ -3,3 +3,72 @@ plugins {
 }
 
 description = "A property accessor abstraction with multiple strategy implementations"
+
+// ---------------------------------------------------------------------------
+// ClassFile API: SmallRye backport source set (JDK 17 baseline)
+// ---------------------------------------------------------------------------
+
+sourceSets {
+    classfile {
+        java {
+            srcDir 'src/classfile/java'
+        }
+    }
+}
+
+dependencies {
+    // SmallRye on main compileOnly so module-info's `requires static` resolves
+    compileOnly libs.smallryeClassfile
+
+    classfileImplementation sourceSets.main.output
+    classfileImplementation libs.smallryeClassfile
+    classfileImplementation libs.loggingCore
+}
+
+// ---------------------------------------------------------------------------
+// ClassFile API: text-transform SmallRye -> native java.lang.classfile (JDK 24+)
+// ---------------------------------------------------------------------------
+
+def transformClassFileSources = tasks.register( 'transformClassFileSources', Copy ) {
+    from 'src/classfile/java'
+    into layout.buildDirectory.dir( 'generated-sources/classfile-jdk24' )
+    filter { line ->
+        line.replace( 'io.smallrye.classfile', 'java.lang.classfile' )
+    }
+    includeEmptyDirs = false
+}
+
+sourceSets {
+    classfileJdk24 {
+        java {
+            srcDir transformClassFileSources
+        }
+    }
+}
+
+dependencies {
+    classfileJdk24Implementation sourceSets.main.output
+    classfileJdk24Implementation libs.loggingCore
+}
+
+tasks.named( 'compileClassfileJdk24Java' ) {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of( 25 )
+    }
+    sourceCompatibility = 24
+    targetCompatibility = 24
+}
+
+// ---------------------------------------------------------------------------
+// Multi-Release JAR
+// ---------------------------------------------------------------------------
+
+jar {
+    manifest {
+        attributes 'Multi-Release': 'true'
+    }
+    from( sourceSets.classfile.output )
+    from( sourceSets.classfileJdk24.output ) {
+        into 'META-INF/versions/24'
+    }
+}
