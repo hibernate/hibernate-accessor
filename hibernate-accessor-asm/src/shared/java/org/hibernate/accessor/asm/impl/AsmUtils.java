@@ -37,6 +37,8 @@ final class AsmUtils {
 			double.class, List.of( byte.class, short.class, char.class, int.class, long.class, float.class )
 	);
 
+	static int GENERATED_CLASS_MAJOR_VERSION = Opcodes.V17;
+
 	private AsmUtils() {
 	}
 

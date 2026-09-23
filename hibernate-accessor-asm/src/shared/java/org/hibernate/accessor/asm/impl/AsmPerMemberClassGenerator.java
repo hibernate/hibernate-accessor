@@ -4,6 +4,7 @@
  */
 package org.hibernate.accessor.asm.impl;
 
+import static org.hibernate.accessor.asm.impl.AsmUtils.GENERATED_CLASS_MAJOR_VERSION;
 import static org.hibernate.accessor.asm.impl.AsmUtils.emitBox;
 import static org.hibernate.accessor.asm.impl.AsmUtils.emitWideningUnbox;
 
@@ -46,7 +47,7 @@ final class AsmPerMemberClassGenerator implements Opcodes {
 		final String generatedName = targetInternal + "$$HibernateAccessorReader_" + member.getName();
 
 		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		cw.visit( V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
+		cw.visit( GENERATED_CLASS_MAJOR_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
 
 		generateConstructor( cw );
 
@@ -80,7 +81,7 @@ final class AsmPerMemberClassGenerator implements Opcodes {
 		final String generatedName = targetInternal + "$$HibernateAccessorWriter_" + member.getName();
 
 		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		cw.visit( V17, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
+		cw.visit( GENERATED_CLASS_MAJOR_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
 
 		generateConstructor( cw );
 
