@@ -139,6 +139,7 @@ final class AsmBridgeClassGenerator {
 		mv.visitLabel( catchHandler );
 		mv.visitTypeInsn( Opcodes.NEW, "java/lang/ExceptionInInitializerError" );
 		mv.visitInsn( Opcodes.DUP_X1 );
+		mv.visitInsn( Opcodes.SWAP );
 		mv.visitMethodInsn( Opcodes.INVOKESPECIAL, "java/lang/ExceptionInInitializerError", "<init>",
 				"(Ljava/lang/Throwable;)V", false );
 		mv.visitInsn( Opcodes.ATHROW );
