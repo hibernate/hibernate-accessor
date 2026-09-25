@@ -13,7 +13,7 @@ public class LambdaFieldValueWriter implements ValueWriter {
 	private final MethodHandle setter;
 
 	public LambdaFieldValueWriter(MethodHandle setter) {
-		this.setter = setter;
+		this.setter = setter.asFixedArity();
 	}
 
 	@Override

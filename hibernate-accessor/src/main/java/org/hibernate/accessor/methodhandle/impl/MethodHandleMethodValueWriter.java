@@ -13,7 +13,7 @@ public class MethodHandleMethodValueWriter implements ValueWriter {
 	private final MethodHandle target;
 
 	public MethodHandleMethodValueWriter(MethodHandle target) {
-		this.target = target;
+		this.target = target.asFixedArity();
 	}
 
 	@Override
