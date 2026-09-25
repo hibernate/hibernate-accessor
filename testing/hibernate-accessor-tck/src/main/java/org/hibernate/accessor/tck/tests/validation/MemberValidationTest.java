@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,6 +24,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Member validation in factory methods")
 public class MemberValidationTest {
+	public static class InvalidMethods {
+		public static void staticSetter(String value) {
+		}
+
+		public void twoArguments(String first, String second) {
+		}
+
+		public void noArgumentVoid() {
+		}
+	}
 
 	private AccessorFactory factory;
 
@@ -98,5 +109,40 @@ public class MemberValidationTest {
 	void testValueReaderRejectsStaticMethod() throws Exception {
 		Method staticMethod = Integer.class.getDeclaredMethod( "valueOf", int.class );
 		assertThrows( AccessorException.class, () -> factory.valueReader( staticMethod ) );
+	}
+
+	@Test
+	void multiValueAccessRejectsAnInvalidLaterMember() throws Exception {
+		Field valid = PrimitiveFieldBean.class.getDeclaredField( "intField" );
+		Method setter = PrimitiveFieldBean.class.getDeclaredMethod( "setIntField", int.class );
+		Method getter = PrimitiveFieldBean.class.getDeclaredMethod( "getIntField" );
+
+		assertThrows( AccessorException.class,
+				() -> factory.multiValueReader( PrimitiveFieldBean.class, valid, setter ) );
+		assertThrows( AccessorException.class,
+				() -> factory.multiValueWriter( PrimitiveFieldBean.class, valid, getter ) );
+	}
+
+	@Test
+	void methodsWithWrongArityOrStaticModifierAreRejected() throws Exception {
+		Method twoArguments = InvalidMethods.class.getMethod( "twoArguments", String.class, String.class );
+		Method noArgumentVoid = InvalidMethods.class.getMethod( "noArgumentVoid" );
+		Method staticSetter = InvalidMethods.class.getMethod( "staticSetter", String.class );
+
+		assertThrows( AccessorException.class, () -> factory.valueWriter( twoArguments ) );
+		assertThrows( AccessorException.class, () -> factory.valueReader( noArgumentVoid ) );
+		assertThrows( AccessorException.class, () -> factory.valueWriter( staticSetter ) );
+		assertThrows( AccessorException.class,
+				() -> factory.multiValueWriter( InvalidMethods.class, staticSetter ) );
+	}
+
+	@Test
+	void multiValueAccessRejectsConstructorsAsMembers() throws Exception {
+		Member constructor = PrimitiveFieldBean.class.getConstructor();
+
+		assertThrows( IllegalArgumentException.class,
+				() -> factory.multiValueReader( PrimitiveFieldBean.class, constructor ) );
+		assertThrows( IllegalArgumentException.class,
+				() -> factory.multiValueWriter( PrimitiveFieldBean.class, constructor ) );
 	}
 }
