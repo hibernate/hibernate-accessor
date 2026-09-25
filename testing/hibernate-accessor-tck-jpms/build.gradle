@@ -5,6 +5,7 @@ plugins {
 description = "JPMS cross-module accessor tests"
 
 dependencies {
+	testRuntimeOnly libs.smallryeClassfile
 	implementation project( ":hibernate-accessor" )
 	implementation project( ":hibernate-accessor-asm" )
 	implementation project( ":hibernate-accessor-bytebuddy" )

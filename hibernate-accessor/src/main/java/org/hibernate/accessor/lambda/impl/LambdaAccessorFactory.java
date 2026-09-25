@@ -15,6 +15,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
@@ -30,6 +32,17 @@ import org.jboss.logging.Logger;
 public class LambdaAccessorFactory implements AccessorFactory {
 
 	private static final Logger LOG = Logger.getLogger( LambdaAccessorFactory.class );
+
+	// LambdaMetafactory classes are strongly linked to their defining loader. Share
+	// successful call sites across factories so repeated requests cannot grow metaspace
+	// indefinitely. JDK-owned maps avoid attaching a library-defined holder to the key.
+	// Values contain no factory or caller lookup; access is checked before consulting this cache.
+	private static final ClassValue<Map<Method, Object>> METHOD_ACCESSORS = new ClassValue<>() {
+		@Override
+		protected Map<Method, Object> computeValue(Class<?> type) {
+			return new HashMap<>();
+		}
+	};
 
 	private final MethodHandles.Lookup lookup;
 	private final AccessorFactory reflectionFallback = AccessorFactory.reflection();
@@ -74,22 +87,33 @@ public class LambdaAccessorFactory implements AccessorFactory {
 		try {
 			MethodHandles.Lookup lookup = MethodHandles.privateLookupIn( method.getDeclaringClass(), this.lookup );
 			MethodHandle target = lookup.unreflect( method );
+			// Spin only when the lookup and classloader lifetimes permit safe caching.
+			if ( !lookup.hasFullPrivilegeAccess() || !canCacheLambdaFor( method.getDeclaringClass() ) ) {
+				return new LambdaFieldValueReader<>( target );
+			}
 			try {
-				CallSite site = LambdaMetafactory.metafactory(
-						lookup,
-						"get",
-						MethodType.methodType( ValueReader.class ),
-						MethodType.methodType( Object.class, Object.class ),
-						target,
-						MethodType.methodType( method.getReturnType(), method.getDeclaringClass() )
-				);
-				return (ValueReader<?>) site.getTarget().invokeExact();
+				Map<Method, Object> accessors = METHOD_ACCESSORS.get( method.getDeclaringClass() );
+				synchronized (accessors) {
+					Object cached = accessors.get( method );
+					if ( cached != null ) {
+						return (ValueReader<?>) cached;
+					}
+					CallSite site = LambdaMetafactory.metafactory(
+							lookup,
+							"get",
+							MethodType.methodType( ValueReader.class ),
+							MethodType.methodType( Object.class, Object.class ),
+							target,
+							MethodType.methodType( method.getReturnType(), method.getDeclaringClass() )
+					);
+					ValueReader<?> accessor = (ValueReader<?>) site.getTarget().invokeExact();
+					accessors.put( method, accessor );
+					return accessor;
+				}
 			}
 			catch (LambdaConversionException e) {
-				// LambdaMetafactory internally calls defineHiddenClass which requires
-				// full privilege access (MODULE bit). Cross-classloader lookups lose
-				// MODULE (JDK-8228624), so metafactory fails. Fall back to MethodHandle
-				// which only needs PRIVATE access and works cross-CL.
+				// Some method shapes cannot be represented by the metafactory.
+				// Keep the already-authorized handle as the fallback.
 				return new LambdaFieldValueReader<>( target );
 			}
 		}
@@ -134,19 +158,32 @@ public class LambdaAccessorFactory implements AccessorFactory {
 
 			Class<?> paramType = setter.getParameterTypes()[0];
 
+			// Spin only when the lookup and classloader lifetimes permit safe caching.
+			if ( !lookup.hasFullPrivilegeAccess() || !canCacheLambdaFor( setter.getDeclaringClass() ) ) {
+				return new LambdaFieldValueWriter( target );
+			}
 			try {
-				CallSite site = LambdaMetafactory.metafactory(
-						lookup,
-						"set",
-						MethodType.methodType( ValueWriter.class ),
-						MethodType.methodType( void.class, Object.class, Object.class ),
-						target,
-						MethodType.methodType( void.class, setter.getDeclaringClass(), paramType )
-				);
-				return (ValueWriter) site.getTarget().invokeExact();
+				Map<Method, Object> accessors = METHOD_ACCESSORS.get( setter.getDeclaringClass() );
+				synchronized (accessors) {
+					Object cached = accessors.get( setter );
+					if ( cached != null ) {
+						return (ValueWriter) cached;
+					}
+					CallSite site = LambdaMetafactory.metafactory(
+							lookup,
+							"set",
+							MethodType.methodType( ValueWriter.class ),
+							MethodType.methodType( void.class, Object.class, Object.class ),
+							target,
+							MethodType.methodType( void.class, setter.getDeclaringClass(), paramType )
+					);
+					ValueWriter accessor = (ValueWriter) site.getTarget().invokeExact();
+					accessors.put( setter, accessor );
+					return accessor;
+				}
 			}
 			catch (LambdaConversionException e) {
-				// See valueReader(Method) — same cross-CL MODULE bit issue (JDK-8228624)
+				// As for readers, preserve method-handle support for unsupported lambda shapes.
 				return new LambdaFieldValueWriter( target );
 			}
 		}
@@ -157,6 +194,23 @@ public class LambdaAccessorFactory implements AccessorFactory {
 			LOG.debugf( t, "Failed to create lambda method writer for %s, falling back to reflection", setter );
 			return reflectionFallback.valueWriter( setter );
 		}
+	}
+
+	private static boolean canCacheLambdaFor(Class<?> target) {
+		if ( target.isHidden() ) {
+			// A strongly linked lambda would keep a weak hidden target alive.
+			return false;
+		}
+		ClassLoader implementationLoader = LambdaAccessorFactory.class.getClassLoader();
+		// The target must keep this implementation (and its shared cache) alive.
+		// Otherwise reloading the implementation would spin another permanent lambda
+		// into a surviving parent/sibling loader on every redeployment.
+		for ( ClassLoader loader = target.getClassLoader(); loader != null; loader = loader.getParent() ) {
+			if ( loader == implementationLoader ) {
+				return true;
+			}
+		}
+		return implementationLoader == null;
 	}
 
 	@Override

@@ -19,8 +19,9 @@ dependencies {
 	testImplementation libs.test.log4jCore
 }
 
-test {
+tasks.withType(Test).configureEach {
 	useJUnitPlatform()
+	jvmArgs "-Xverify:all"
 
 	jacoco {
 		// The agent cannot instrument classes of the JDK it runs on when that JDK is newer than the agent's ASM support.

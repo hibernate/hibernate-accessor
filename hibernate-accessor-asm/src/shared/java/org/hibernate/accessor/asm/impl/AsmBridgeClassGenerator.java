@@ -17,8 +17,8 @@ import org.objectweb.asm.Type;
 /**
  * Generates the bridge class bytecode used by {@link CrossClassLoaderLookupBridge}
  * to define a generated accessor as a hidden nestmate of a target class in a foreign
- * classloader, without ever letting a full-privilege
- * {@link java.lang.invoke.MethodHandles.Lookup} escape. Uses standalone ASM.
+ * classloader. Uses standalone ASM. Supplied bytecode must be trusted; it runs
+ * with the target module's authority (see the bridge SPI security contract).
  * <p>
  * The generated class is equivalent to:
  * <pre>{@code
@@ -38,6 +38,7 @@ import org.objectweb.asm.Type;
  *     static Object $$defineAccessor(MethodHandles.Lookup proof, Class<?> target, byte[] bytecode)
  *             throws Throwable {
  *         MethodHandles.privateLookupIn( $$HibernateAccessorBridge.class, proof ); // access check
+ *         MethodHandles.privateLookupIn( target, proof ); // authorize the requested target
  *         MethodHandles.Lookup here = MethodHandles.lookup();            // full-priv, target module
  *         MethodHandles.Lookup tl   = MethodHandles.privateLookupIn( target, here );
  *         Class<?> a = tl.defineHiddenClass( bytecode, true, NESTMATE ).lookupClass();
@@ -173,12 +174,18 @@ final class AsmBridgeClassGenerator {
 		mv.visitMethodInsn( Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandles", "privateLookupIn",
 				"(Ljava/lang/Class;" + LOOKUP_DESC + ")" + LOOKUP_DESC, false );
 		mv.visitInsn( Opcodes.POP );
+		// Authorize the requested target as well as the package hosting this bridge.
+		mv.visitVarInsn( Opcodes.ALOAD, 1 );
+		mv.visitVarInsn( Opcodes.ALOAD, 0 );
+		mv.visitMethodInsn( Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandles", "privateLookupIn",
+				"(Ljava/lang/Class;" + LOOKUP_DESC + ")" + LOOKUP_DESC, false );
+		mv.visitInsn( Opcodes.POP );
 		mv.visitLabel( tryEnd );
 		mv.visitJumpInsn( Opcodes.GOTO, afterCheck );
 
 		mv.visitLabel( catchHandler );
 		mv.visitInsn( Opcodes.POP );
-		throwIllegalAccessError( mv, "caller's lookup cannot access the bridge's package" );
+		throwIllegalAccessError( mv, "caller's lookup cannot access the bridge or target package" );
 
 		mv.visitLabel( afterCheck );
 
