@@ -21,6 +21,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,6 +95,10 @@ final class ClassFileBulkAccessorClassGenerator {
 			}
 			else {
 				generateTableSwitch( cb, 2, fields.length, i -> {
+					if ( Modifier.isFinal( fields[i].getModifiers() ) ) {
+						emitThrow( cb, "Cannot write a final field through bytecode" );
+						return;
+					}
 					cb.aload( 1 );
 					cb.checkcast( targetDesc );
 					Field f = fields[i];

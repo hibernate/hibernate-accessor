@@ -5,6 +5,7 @@
 package org.hibernate.accessor.classfile.impl;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -13,6 +14,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
@@ -34,7 +36,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	private static final Logger LOG = Logger.getLogger( ClassFileAccessorFactory.class );
 
 	private static final MethodHandles.Lookup ACCESSOR_MODULE_LOOKUP = MethodHandles.lookup();
-	private final ClassValue<ClassFileClassAccessorInfo> cache;
+	private final ClassValue<AtomicReference<WeakReference<ClassFileClassAccessorInfo>>> cache;
 	private final MethodHandles.Lookup callerLookup;
 	private final CrossClassLoaderLookupBridge lookupBridge;
 	private final BytecodeDumper bytecodeDumper;
@@ -50,8 +52,8 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		this.bytecodeDumper = new BytecodeDumper( configuration );
 		this.cache = new ClassValue<>() {
 			@Override
-			protected ClassFileClassAccessorInfo computeValue(Class<?> type) {
-				return ClassFileClassAccessorInfo.create( type, lookupBridge, callerLookup, bytecodeDumper );
+			protected AtomicReference<WeakReference<ClassFileClassAccessorInfo>> computeValue(Class<?> type) {
+				return new AtomicReference<>();
 			}
 		};
 	}
@@ -60,7 +62,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
 		try {
 			ClassFileClassAccessorInfo info = getOrCreate( constructor.getDeclaringClass() );
-			return new ClassFileInstantiator<>( info.bulkAccessor(), info.constructorIndex( constructor ) );
+			return new ClassFileInstantiator<>( info.bulkAccessor(), info, info.constructorIndex( constructor ), constructor.getParameterCount() );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile instantiator for %s, falling back to reflection", constructor.getDeclaringClass() );
@@ -73,7 +75,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		MemberValidation.validateInstanceMember( field );
 		try {
 			ClassFileClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
-			return new ClassFileFieldValueReader<>( info.bulkAccessor(), info.fieldIndex( field ) );
+			return new ClassFileFieldValueReader<>( info.bulkAccessor(), info, info.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value reader for %s, falling back to reflection", field );
@@ -86,7 +88,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		MemberValidation.validateReaderMethod( method );
 		try {
 			ClassFileClassAccessorInfo info = getOrCreate( method.getDeclaringClass() );
-			return new ClassFileMethodValueReader<>( info.bulkAccessor(), info.methodIndex( method ) );
+			return new ClassFileMethodValueReader<>( info.bulkAccessor(), info, info.methodIndex( method ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value reader for %s, falling back to reflection", method );
@@ -102,7 +104,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		}
 		try {
 			ClassFileClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
-			return new ClassFileFieldValueWriter( info.bulkAccessor(), info.fieldIndex( field ) );
+			return new ClassFileFieldValueWriter( info.bulkAccessor(), info, info.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value writer for %s, falling back to reflection", field );
@@ -115,7 +117,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		MemberValidation.validateWriterMethod( setter );
 		try {
 			ClassFileClassAccessorInfo info = getOrCreate( setter.getDeclaringClass() );
-			return new ClassFileMethodValueWriter( info.bulkAccessor(), info.methodIndex( setter ) );
+			return new ClassFileMethodValueWriter( info.bulkAccessor(), info, info.methodIndex( setter ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value writer for %s, falling back to reflection", setter );
@@ -152,6 +154,13 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		for ( Member member : members ) {
 			MemberValidation.validateMemberDeclaringType( declaringClass, member );
 			MemberValidation.validateWriterMember( member );
+		}
+		// Nestmate access does not permit PUTFIELD on another class's final field.
+		// Reject before the generation/fallback block so the caller can use per-property access.
+		for ( Member member : members ) {
+			if ( member instanceof Field field && Modifier.isFinal( field.getModifiers() ) ) {
+				throw new MultiValueAccessorGenerationException( "Cannot generate a multi-value writer for final field " + field );
+			}
 		}
 		try {
 			if ( allSameDeclaringClass( declaringClass, members ) ) {
@@ -271,6 +280,23 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	}
 
 	private ClassFileClassAccessorInfo getOrCreate(Class<?> declaringClass) {
-		return cache.get( declaringClass );
+		// A ClassValue entry can outlive its ClassValue until the key's map is cleaned.
+		// Do not attach a library-defined value strongly to a longer-lived entity class:
+		// it would retain the library's loader even after the factory is discarded.
+		var slot = cache.get( declaringClass );
+		var current = slot.get();
+		ClassFileClassAccessorInfo cached = current == null ? null : current.get();
+		if ( cached != null ) {
+			return cached;
+		}
+		synchronized (slot) {
+			var reference = slot.get();
+			ClassFileClassAccessorInfo info = reference == null ? null : reference.get();
+			if ( info == null ) {
+				info = ClassFileClassAccessorInfo.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
+				slot.set( new WeakReference<>( info ) );
+			}
+			return info;
+		}
 	}
 }

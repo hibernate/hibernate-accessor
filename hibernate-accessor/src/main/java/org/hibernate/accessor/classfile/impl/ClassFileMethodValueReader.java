@@ -7,7 +7,8 @@ package org.hibernate.accessor.classfile.impl;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.classfile.spi.ClassFileBulkAccessor;
 
-record ClassFileMethodValueReader<T>(ClassFileBulkAccessor accessor, int index) implements ValueReader<T> {
+// Keep the weakly cached metadata alive for as long as an accessor uses it.
+record ClassFileMethodValueReader<T>(ClassFileBulkAccessor accessor, Object cacheOwner, int index) implements ValueReader<T> {
 
 	@Override
 	@SuppressWarnings("unchecked")

@@ -7,7 +7,7 @@ package org.hibernate.accessor.asm.impl;
 import static org.hibernate.accessor.asm.impl.AsmUtils.GENERATED_CLASS_MAJOR_VERSION;
 import static org.hibernate.accessor.asm.impl.AsmUtils.emitBox;
 import static org.hibernate.accessor.asm.impl.AsmUtils.emitIntConstant;
-import static org.hibernate.accessor.asm.impl.AsmUtils.emitUnboxOrCast;
+import static org.hibernate.accessor.asm.impl.AsmUtils.emitWideningUnbox;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -117,7 +117,7 @@ final class AsmMultiValueClassGenerator implements Opcodes {
 				mv.visitVarInsn( ALOAD, 2 );
 				emitIntConstant( mv, i );
 				mv.visitInsn( AALOAD );
-				emitUnboxOrCast( mv, field.getType() );
+				emitWideningUnbox( mv, field.getType() );
 				mv.visitFieldInsn( PUTFIELD, ownerInternal, field.getName(), Type.getDescriptor( field.getType() ) );
 			}
 			else {
@@ -128,7 +128,7 @@ final class AsmMultiValueClassGenerator implements Opcodes {
 				mv.visitVarInsn( ALOAD, 2 );
 				emitIntConstant( mv, i );
 				mv.visitInsn( AALOAD );
-				emitUnboxOrCast( mv, method.getParameterTypes()[0] );
+				emitWideningUnbox( mv, method.getParameterTypes()[0] );
 				mv.visitMethodInsn( isInterface ? INVOKEINTERFACE : INVOKEVIRTUAL, ownerInternal, method.getName(), Type.getMethodDescriptor( method ), isInterface );
 				if ( method.getReturnType() != void.class ) {
 					Type retType = Type.getType( method.getReturnType() );

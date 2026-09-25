@@ -128,6 +128,12 @@ final class ClassFileBridgeClassGenerator {
 			cb.invokestatic( CD_METHOD_HANDLES, "privateLookupIn",
 					MethodTypeDesc.of( CD_LOOKUP, ConstantDescs.CD_Class, CD_LOOKUP ) );
 			cb.pop();
+			// Authorize the requested target as well as the bridge package.
+			cb.aload( 1 );
+			cb.aload( 0 );
+			cb.invokestatic( CD_METHOD_HANDLES, "privateLookupIn",
+					MethodTypeDesc.of( CD_LOOKUP, ConstantDescs.CD_Class, CD_LOOKUP ) );
+			cb.pop();
 			cb.labelBinding( tryEnd );
 			cb.goto_( afterCheck );
 
@@ -136,7 +142,7 @@ final class ClassFileBridgeClassGenerator {
 			// throw new IllegalAccessError(message)
 			cb.new_( CD_ILLEGAL_ACCESS_ERROR );
 			cb.dup();
-			cb.loadConstant( "caller's lookup cannot access the bridge's package" );
+			cb.loadConstant( "caller's lookup cannot access the bridge or target package" );
 			cb.invokespecial( CD_ILLEGAL_ACCESS_ERROR, CONSTRUCTOR_NAME,
 					MethodTypeDesc.of( ConstantDescs.CD_void, ConstantDescs.CD_String ) );
 			cb.athrow();

@@ -12,6 +12,7 @@ import static org.hibernate.accessor.asm.impl.AsmUtils.emitWideningUnbox;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
 
@@ -117,6 +118,10 @@ final class AsmBulkAccessorClassGenerator implements Opcodes {
 
 			for ( int i = 0; i < fields.length; i++ ) {
 				mv.visitLabel( labels[i] );
+				if ( Modifier.isFinal( fields[i].getModifiers() ) ) {
+					emitThrow( mv, "Cannot write a final field through bytecode" );
+					continue;
+				}
 				mv.visitVarInsn( ALOAD, 1 );
 				mv.visitTypeInsn( CHECKCAST, targetInternal );
 				Field f = fields[i];

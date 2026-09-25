@@ -41,7 +41,7 @@ public class MethodHandleAccessorFactory implements AccessorFactory {
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
 		try {
 			return new MethodHandleInstantiator<>(
-					privateLookup( constructor.getDeclaringClass() ).unreflectConstructor( constructor )
+					privateLookup( constructor.getDeclaringClass() ).unreflectConstructor( constructor ).asFixedArity()
 							.asSpreader( Object[].class, constructor.getParameterCount() ) );
 		}
 		catch (RuntimeException | IllegalAccessException e) {

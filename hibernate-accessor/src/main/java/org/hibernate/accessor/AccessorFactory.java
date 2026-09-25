@@ -23,6 +23,11 @@ import org.hibernate.accessor.spi.AccessorConfiguration;
  * {@link #methodHandle(MethodHandles.Lookup)}, or {@link #classFile(MethodHandles.Lookup)},
  * then use it to create {@link Instantiator instantiators},
  * {@link ValueReader readers}, and {@link ValueWriter writers}.
+ *
+ * <p>Factories are intended for trusted callers. Lookup-based strategies may fall back
+ * to reflection, whose access checks use the library module's permissions. Supplying
+ * a restricted lookup therefore does not establish an authorization boundary for
+ * the factory as a whole.
  */
 public interface AccessorFactory {
 

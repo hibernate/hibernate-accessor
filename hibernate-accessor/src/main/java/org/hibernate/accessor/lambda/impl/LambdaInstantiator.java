@@ -17,7 +17,7 @@ public class LambdaInstantiator<T> implements Instantiator<T> {
 
 	public LambdaInstantiator(MethodHandles.Lookup lookup, Constructor<T> constructor) {
 		try {
-			this.handle = lookup.unreflectConstructor( constructor )
+			this.handle = lookup.unreflectConstructor( constructor ).asFixedArity()
 					.asSpreader( Object[].class, constructor.getParameterCount() );
 		}
 		catch (IllegalAccessException e) {

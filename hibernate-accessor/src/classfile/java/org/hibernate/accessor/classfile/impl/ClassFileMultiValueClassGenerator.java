@@ -9,7 +9,7 @@ import static org.hibernate.accessor.classfile.impl.ClassFileUtils.GENERATED_CLA
 import static org.hibernate.accessor.classfile.impl.ClassFileUtils.classDesc;
 import static org.hibernate.accessor.classfile.impl.ClassFileUtils.emitBox;
 import static org.hibernate.accessor.classfile.impl.ClassFileUtils.emitIntConstant;
-import static org.hibernate.accessor.classfile.impl.ClassFileUtils.emitUnboxOrCast;
+import static org.hibernate.accessor.classfile.impl.ClassFileUtils.emitWideningUnbox;
 import static org.hibernate.accessor.classfile.impl.ClassFileUtils.generatedClassDesc;
 import static org.hibernate.accessor.classfile.impl.ClassFileUtils.methodTypeDesc;
 
@@ -108,7 +108,7 @@ final class ClassFileMultiValueClassGenerator {
 						cb.aload( 2 );
 						emitIntConstant( cb, i );
 						cb.aaload();
-						emitUnboxOrCast( cb, field.getType() );
+						emitWideningUnbox( cb, field.getType() );
 						cb.putfield( ownerDesc, field.getName(), classDesc( field.getType() ) );
 					}
 					else {
@@ -119,7 +119,7 @@ final class ClassFileMultiValueClassGenerator {
 						cb.aload( 2 );
 						emitIntConstant( cb, i );
 						cb.aaload();
-						emitUnboxOrCast( cb, method.getParameterTypes()[0] );
+						emitWideningUnbox( cb, method.getParameterTypes()[0] );
 						if ( isInterface ) {
 							cb.invokeinterface( ownerDesc, method.getName(), methodTypeDesc( method ) );
 						}
