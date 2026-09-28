@@ -30,7 +30,10 @@ class CrossModuleAccessorTest {
 		MethodHandles.Lookup lookup = MethodHandles.lookup();
 		return Stream.of(
 				AccessorFactory.reflection(),
+				AccessorFactory.reflection( lookup ),
+				AccessorFactory.methodHandle( lookup ),
 				AccessorFactory.lambda( lookup ),
+				AccessorFactory.classFile( lookup ),
 				AsmAccessorFactory.factory( lookup ),
 				ByteBuddyAccessorFactory.factory( lookup )
 		);
@@ -49,7 +52,6 @@ class CrossModuleAccessorTest {
 	@MethodSource("factories")
 	void testFieldAccess(AccessorFactory factory) throws Exception {
 		Field nameField = SimpleEntity.class.getDeclaredField( "name" );
-		nameField.setAccessible( true );
 
 		ValueReader<?> reader = factory.valueReader( nameField );
 		ValueWriter writer = factory.valueWriter( nameField );
@@ -91,9 +93,7 @@ class CrossModuleAccessorTest {
 	@MethodSource("factories")
 	void testMultiValueAccess(AccessorFactory factory) throws Exception {
 		Field idField = SimpleEntity.class.getDeclaredField( "id" );
-		idField.setAccessible( true );
 		Field nameField = SimpleEntity.class.getDeclaredField( "name" );
-		nameField.setAccessible( true );
 
 		MultiValueReader reader = factory.multiValueReader(
 				SimpleEntity.class, idField, nameField

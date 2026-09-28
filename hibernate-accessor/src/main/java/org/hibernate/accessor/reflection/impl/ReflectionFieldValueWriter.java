@@ -9,14 +9,15 @@ import java.util.Objects;
 
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.logging.impl.CoreLog;
+import org.hibernate.accessor.spi.LookupAccess;
 
 public class ReflectionFieldValueWriter implements ValueWriter {
 
 	private final Field field;
 
-	public ReflectionFieldValueWriter(Field field) {
+	ReflectionFieldValueWriter(Field field, LookupAccess access) {
 		this.field = field;
-		field.setAccessible( true );
+		access.makeAccessible( field );
 	}
 
 	@Override

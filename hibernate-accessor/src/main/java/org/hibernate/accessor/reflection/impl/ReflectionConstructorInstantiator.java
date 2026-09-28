@@ -11,14 +11,15 @@ import java.util.Objects;
 
 import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.logging.impl.CoreLog;
+import org.hibernate.accessor.spi.LookupAccess;
 
 public class ReflectionConstructorInstantiator<T> implements Instantiator<T> {
 
 	private final Constructor<T> constructor;
 
-	public ReflectionConstructorInstantiator(Constructor<T> constructor) {
+	ReflectionConstructorInstantiator(Constructor<T> constructor, LookupAccess access) {
 		this.constructor = constructor;
-		constructor.setAccessible( true );
+		access.makeAccessible( constructor );
 	}
 
 	@Override

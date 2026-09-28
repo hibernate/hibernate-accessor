@@ -4,6 +4,7 @@
  */
 package org.hibernate.accessor.reflection.impl;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -15,42 +16,52 @@ import org.hibernate.accessor.MultiValueReader;
 import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
+import org.hibernate.accessor.spi.LookupAccess;
 import org.hibernate.accessor.spi.MemberValidation;
 
 public class ReflectionAccessorFactory implements AccessorFactory {
 
+	private static final LookupAccess LIBRARY_ACCESS = new LookupAccess( MethodHandles.lookup() );
+
 	public static final ReflectionAccessorFactory INSTANCE = new ReflectionAccessorFactory();
 
+	private final LookupAccess access;
+
 	private ReflectionAccessorFactory() {
+		access = LIBRARY_ACCESS;
+	}
+
+	public ReflectionAccessorFactory(MethodHandles.Lookup lookup) {
+		access = new LookupAccess( lookup );
 	}
 
 	@Override
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
-		return new ReflectionConstructorInstantiator<>( constructor );
+		return new ReflectionConstructorInstantiator<>( constructor, access );
 	}
 
 	@Override
 	public ValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
-		return new ReflectionFieldValueReader<>( field );
+		return new ReflectionFieldValueReader<>( field, access );
 	}
 
 	@Override
 	public ValueReader<?> valueReader(Method method) {
 		MemberValidation.validateReaderMethod( method );
-		return new ReflectionMethodValueReader<>( method );
+		return new ReflectionMethodValueReader<>( method, access );
 	}
 
 	@Override
 	public ValueWriter valueWriter(Field field) {
 		MemberValidation.validateInstanceMember( field );
-		return new ReflectionFieldValueWriter( field );
+		return new ReflectionFieldValueWriter( field, access );
 	}
 
 	@Override
 	public ValueWriter valueWriter(Method setter) {
 		MemberValidation.validateWriterMethod( setter );
-		return new ReflectionMethodValueWriter( setter );
+		return new ReflectionMethodValueWriter( setter, access );
 	}
 
 	@Override

@@ -22,6 +22,7 @@ import io.smallrye.classfile.Label;
 
 final class ClassFileBridgeClassGenerator {
 
+	private static final ClassDesc CD_MODULE = ClassDesc.of( "java.lang.Module" );
 	private static final ClassDesc CD_LOOKUP = ClassDesc.of( "java.lang.invoke.MethodHandles$Lookup" );
 	private static final ClassDesc CD_CLASS_OPTION = ClassDesc.of( "java.lang.invoke.MethodHandles$Lookup$ClassOption" );
 	private static final ClassDesc CD_METHOD_HANDLE = ClassDesc.of( "java.lang.invoke.MethodHandle" );
@@ -71,9 +72,9 @@ final class ClassFileBridgeClassGenerator {
 			cb.loadConstant( bridgeDesc );
 			// method name
 			cb.loadConstant( CrossClassLoaderLookupBridge.BRIDGE_METHOD_NAME );
-			// MethodType.methodType(Object.class, new Class[]{Lookup.class, Class.class, byte[].class})
+			// MethodType.methodType(Object.class, new Class[]{Lookup.class, Class.class, byte[].class, Module[].class})
 			cb.loadConstant( ConstantDescs.CD_Object );
-			cb.loadConstant( 3 );
+			cb.loadConstant( 4 );
 			cb.anewarray( ConstantDescs.CD_Class );
 			cb.dup();
 			cb.loadConstant( 0 );
@@ -86,6 +87,10 @@ final class ClassFileBridgeClassGenerator {
 			cb.dup();
 			cb.loadConstant( 2 );
 			cb.loadConstant( CD_BYTE_ARRAY );
+			cb.aastore();
+			cb.dup();
+			cb.loadConstant( 3 );
+			cb.loadConstant( CD_MODULE.arrayType() );
 			cb.aastore();
 			cb.invokestatic( CD_METHOD_TYPE, "methodType",
 					MethodTypeDesc.of( CD_METHOD_TYPE, ConstantDescs.CD_Class, ConstantDescs.CD_Class.arrayType() ) );
@@ -110,7 +115,7 @@ final class ClassFileBridgeClassGenerator {
 
 	private static void generateDefineAccessorMethod(io.smallrye.classfile.ClassBuilder clb, ClassDesc bridgeDesc) {
 		MethodTypeDesc defineMethodType = MethodTypeDesc.of(
-				ConstantDescs.CD_Object, CD_LOOKUP, ConstantDescs.CD_Class, CD_BYTE_ARRAY
+				ConstantDescs.CD_Object, CD_LOOKUP, ConstantDescs.CD_Class, CD_BYTE_ARRAY, CD_MODULE.arrayType()
 		);
 
 		clb.withMethod( CrossClassLoaderLookupBridge.BRIDGE_METHOD_NAME, defineMethodType, ClassFile.ACC_STATIC, mb -> mb.withCode( cb -> {
@@ -149,19 +154,40 @@ final class ClassFileBridgeClassGenerator {
 
 			cb.labelBinding( afterCheck );
 
+			// Add accessor dependencies only after both proof checks have succeeded.
+			cb.loadConstant( 0 );
+			cb.istore( 4 );
+			Label nextModule = cb.newLabel();
+			Label modulesDone = cb.newLabel();
+			cb.labelBinding( nextModule );
+			cb.iload( 4 );
+			cb.aload( 3 );
+			cb.arraylength();
+			cb.if_icmpge( modulesDone );
+			cb.loadConstant( bridgeDesc );
+			cb.invokevirtual( ConstantDescs.CD_Class, "getModule", methodTypeDesc( CD_MODULE ) );
+			cb.aload( 3 );
+			cb.iload( 4 );
+			cb.aaload();
+			cb.invokevirtual( CD_MODULE, "addReads", MethodTypeDesc.of( CD_MODULE, CD_MODULE ) );
+			cb.pop();
+			cb.iinc( 4, 1 );
+			cb.goto_( nextModule );
+			cb.labelBinding( modulesDone );
+
 			// Lookup here = MethodHandles.lookup();
 			cb.invokestatic( CD_METHOD_HANDLES, "lookup", methodTypeDesc( CD_LOOKUP ) );
-			cb.astore( 3 );
+			cb.astore( 4 );
 
 			// Lookup tl = MethodHandles.privateLookupIn(target, here);
 			cb.aload( 1 );
-			cb.aload( 3 );
+			cb.aload( 4 );
 			cb.invokestatic( CD_METHOD_HANDLES, "privateLookupIn",
 					MethodTypeDesc.of( CD_LOOKUP, ConstantDescs.CD_Class, CD_LOOKUP ) );
-			cb.astore( 4 );
+			cb.astore( 5 );
 
 			// tl.defineHiddenClass(bytecode, true, new ClassOption[]{NESTMATE}).lookupClass()
-			cb.aload( 4 );
+			cb.aload( 5 );
 			cb.aload( 2 );
 			cb.loadConstant( 1 );
 			cb.loadConstant( 1 );

@@ -99,3 +99,5 @@ include 'hibernate-accessor-tck-jpms-entities'
 project(':hibernate-accessor-tck-jpms-entities').projectDir = file( 'testing/hibernate-accessor-tck-jpms-entities' )
 include 'hibernate-accessor-tck-jpms'
 project(':hibernate-accessor-tck-jpms').projectDir = file( 'testing/hibernate-accessor-tck-jpms' )
+include 'hibernate-accessor-tck-integration'
+project(':hibernate-accessor-tck-integration').projectDir = file( 'testing/hibernate-accessor-tck-integration' )

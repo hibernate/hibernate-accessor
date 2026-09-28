@@ -62,7 +62,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 	private final CrossClassLoaderLookupBridge lookupBridge;
 	private final BytecodeDumper bytecodeDumper;
 	private final AsmGenerationStrategy generationStrategy;
-	private final AccessorFactory reflectionFallback = AccessorFactory.reflection();
+	private final AccessorFactory reflectionFallback;
 
 	public AsmAccessorFactory(MethodHandles.Lookup lookup) {
 		this( new AccessorConfiguration( lookup ) );
@@ -70,7 +70,9 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 
 	public AsmAccessorFactory(AccessorConfiguration configuration) {
 		this.callerLookup = configuration.lookup();
-		this.lookupBridge = new CrossClassLoaderLookupBridge( callerLookup, AsmBridgeClassGenerator::generate );
+		this.reflectionFallback = AccessorFactory.reflection( callerLookup );
+		this.lookupBridge = new CrossClassLoaderLookupBridge( callerLookup, AsmBridgeClassGenerator::generate,
+				AccessorFactory.class.getModule(), AsmAccessorFactory.class.getModule() );
 		this.bytecodeDumper = new BytecodeDumper( configuration );
 		this.generationStrategy = AsmAccessorConfiguration.generationStrategy( configuration );
 		this.cache = new ClassValue<>() {

@@ -24,11 +24,6 @@ test {
 			"--add-reads", "org.hibernate.accessor.tck.jpms=org.junit.jupiter.api",
 			"--add-reads", "org.hibernate.accessor.tck.jpms=org.junit.jupiter.params",
 			"--add-reads", "org.hibernate.accessor.tck.jpms=org.assertj.core",
-			// The generated hidden classes live in the entity module (NESTMATE) but implement
-			// interfaces from the accessor modules — the entity module must be able to read them.
-			"--add-reads", "org.hibernate.accessor.tck.jpms.entities=org.hibernate.accessor",
-			"--add-reads", "org.hibernate.accessor.tck.jpms.entities=org.hibernate.accessor.asm",
-			"--add-reads", "org.hibernate.accessor.tck.jpms.entities=org.hibernate.accessor.bytebuddy",
 			"--patch-module", "org.hibernate.accessor.tck.jpms=" + sourceSets.test.output.classesDirs.asPath,
 			"--add-opens", "org.hibernate.accessor.tck.jpms/org.hibernate.accessor.tck.jpms=ALL-UNNAMED",
 			"--add-opens", "org.hibernate.accessor.tck.jpms/org.hibernate.accessor.tck.jpms=org.junit.platform.commons",

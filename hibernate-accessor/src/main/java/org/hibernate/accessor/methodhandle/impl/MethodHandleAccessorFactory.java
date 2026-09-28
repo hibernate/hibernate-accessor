@@ -18,6 +18,7 @@ import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.spi.AccessorConfiguration;
+import org.hibernate.accessor.spi.LookupAccess;
 import org.hibernate.accessor.spi.MemberValidation;
 
 import org.jboss.logging.Logger;
@@ -26,15 +27,16 @@ public class MethodHandleAccessorFactory implements AccessorFactory {
 
 	private static final Logger LOG = Logger.getLogger( MethodHandleAccessorFactory.class );
 
-	private final MethodHandles.Lookup lookup;
-	private final AccessorFactory reflectionFallback = AccessorFactory.reflection();
+	private final LookupAccess access;
+	private final AccessorFactory reflectionFallback;
 
 	public MethodHandleAccessorFactory(MethodHandles.Lookup lookup) {
 		this( new AccessorConfiguration( lookup ) );
 	}
 
 	public MethodHandleAccessorFactory(AccessorConfiguration configuration) {
-		this.lookup = configuration.lookup();
+		this.access = new LookupAccess( configuration.lookup() );
+		this.reflectionFallback = AccessorFactory.reflection( configuration.lookup() );
 	}
 
 	@Override
@@ -164,6 +166,6 @@ public class MethodHandleAccessorFactory implements AccessorFactory {
 	}
 
 	private MethodHandles.Lookup privateLookup(Class<?> targetClass) throws IllegalAccessException {
-		return MethodHandles.privateLookupIn( targetClass, this.lookup );
+		return access.privateLookup( targetClass );
 	}
 }

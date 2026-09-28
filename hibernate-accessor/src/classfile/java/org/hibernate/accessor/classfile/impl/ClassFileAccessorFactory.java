@@ -40,7 +40,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	private final MethodHandles.Lookup callerLookup;
 	private final CrossClassLoaderLookupBridge lookupBridge;
 	private final BytecodeDumper bytecodeDumper;
-	private final AccessorFactory reflectionFallback = AccessorFactory.reflection();
+	private final AccessorFactory reflectionFallback;
 
 	public ClassFileAccessorFactory(MethodHandles.Lookup lookup) {
 		this( new AccessorConfiguration( lookup ) );
@@ -48,7 +48,9 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 
 	public ClassFileAccessorFactory(AccessorConfiguration configuration) {
 		this.callerLookup = configuration.lookup();
-		this.lookupBridge = new CrossClassLoaderLookupBridge( callerLookup, ClassFileBridgeClassGenerator::generate );
+		this.reflectionFallback = AccessorFactory.reflection( callerLookup );
+		this.lookupBridge = new CrossClassLoaderLookupBridge( callerLookup, ClassFileBridgeClassGenerator::generate,
+				AccessorFactory.class.getModule() );
 		this.bytecodeDumper = new BytecodeDumper( configuration );
 		this.cache = new ClassValue<>() {
 			@Override

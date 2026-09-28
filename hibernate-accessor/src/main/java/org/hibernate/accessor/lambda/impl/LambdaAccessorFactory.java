@@ -25,6 +25,7 @@ import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.spi.AccessorConfiguration;
+import org.hibernate.accessor.spi.LookupAccess;
 import org.hibernate.accessor.spi.MemberValidation;
 
 import org.jboss.logging.Logger;
@@ -44,22 +45,23 @@ public class LambdaAccessorFactory implements AccessorFactory {
 		}
 	};
 
-	private final MethodHandles.Lookup lookup;
-	private final AccessorFactory reflectionFallback = AccessorFactory.reflection();
+	private final LookupAccess access;
+	private final AccessorFactory reflectionFallback;
 
 	public LambdaAccessorFactory(MethodHandles.Lookup lookup) {
 		this( new AccessorConfiguration( lookup ) );
 	}
 
 	public LambdaAccessorFactory(AccessorConfiguration configuration) {
-		this.lookup = configuration.lookup();
+		this.access = new LookupAccess( configuration.lookup() );
+		this.reflectionFallback = AccessorFactory.reflection( configuration.lookup() );
 	}
 
 	@Override
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
 		try {
 			return new LambdaInstantiator<>(
-					MethodHandles.privateLookupIn( constructor.getDeclaringClass(), this.lookup ),
+					access.privateLookup( constructor.getDeclaringClass() ),
 					constructor
 			);
 		}
@@ -73,7 +75,7 @@ public class LambdaAccessorFactory implements AccessorFactory {
 	public ValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
 		try {
-			return new LambdaFieldValueReader<>( MethodHandles.privateLookupIn( field.getDeclaringClass(), this.lookup ).unreflectGetter( field ) );
+			return new LambdaFieldValueReader<>( access.privateLookup( field.getDeclaringClass() ).unreflectGetter( field ) );
 		}
 		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create lambda field reader for %s, falling back to reflection", field );
@@ -85,7 +87,7 @@ public class LambdaAccessorFactory implements AccessorFactory {
 	public ValueReader<?> valueReader(Method method) {
 		MemberValidation.validateReaderMethod( method );
 		try {
-			MethodHandles.Lookup lookup = MethodHandles.privateLookupIn( method.getDeclaringClass(), this.lookup );
+			MethodHandles.Lookup lookup = access.privateLookup( method.getDeclaringClass() );
 			MethodHandle target = lookup.unreflect( method );
 			// Spin only when the lookup and classloader lifetimes permit safe caching.
 			if ( !lookup.hasFullPrivilegeAccess() || !canCacheLambdaFor( method.getDeclaringClass() ) ) {
@@ -133,7 +135,7 @@ public class LambdaAccessorFactory implements AccessorFactory {
 			return reflectionFallback.valueWriter( field );
 		}
 		try {
-			return new LambdaFieldValueWriter( MethodHandles.privateLookupIn( field.getDeclaringClass(), this.lookup ).unreflectSetter( field ) );
+			return new LambdaFieldValueWriter( access.privateLookup( field.getDeclaringClass() ).unreflectSetter( field ) );
 		}
 		catch (IllegalAccessException t) {
 			LOG.debugf( t, "Failed to create lambda field writer for %s, falling back to reflection", field );
@@ -145,7 +147,7 @@ public class LambdaAccessorFactory implements AccessorFactory {
 	public ValueWriter valueWriter(Method setter) {
 		MemberValidation.validateWriterMethod( setter );
 		try {
-			MethodHandles.Lookup lookup = MethodHandles.privateLookupIn( setter.getDeclaringClass(), this.lookup );
+			MethodHandles.Lookup lookup = access.privateLookup( setter.getDeclaringClass() );
 			MethodHandle target = lookup.unreflect( setter );
 
 			if ( setter.getParameterTypes()[0].isPrimitive() ) {

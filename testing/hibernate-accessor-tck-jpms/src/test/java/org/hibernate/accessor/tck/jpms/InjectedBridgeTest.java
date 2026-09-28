@@ -39,28 +39,32 @@ class InjectedBridgeTest {
 		var bridge = (MethodHandle) lookup.findStaticGetter( bridgeClass,
 				CrossClassLoaderLookupBridge.BRIDGE_HANDLE_FIELD_NAME, MethodHandle.class ).invoke();
 		var closed = Class.forName( "org.hibernate.accessor.tck.jpms.closed.GateEntity" );
-		assertThatThrownBy( () -> bridge.invoke( proof, closed, new byte[0] ) )
+		Module unrelatedModule = InjectedBridgeTest.class.getModule();
+		Module[] requestedReads = { unrelatedModule };
+		assertThat( target.getModule().canRead( unrelatedModule ) ).isFalse();
+		assertThatThrownBy( () -> bridge.invoke( proof, closed, new byte[0], requestedReads ) )
 				.isInstanceOf( IllegalAccessError.class );
-		assertThatThrownBy( () -> bridge.invoke( MethodHandles.publicLookup(), target, new byte[0] ) )
+		assertThatThrownBy( () -> bridge.invoke( MethodHandles.publicLookup(), target, new byte[0], requestedReads ) )
 				.isInstanceOf( IllegalAccessError.class );
-		assertThatThrownBy( () -> bridge.invoke( lookup, target, new byte[0] ) )
+		assertThatThrownBy( () -> bridge.invoke( lookup, target, new byte[0], requestedReads ) )
 				.isInstanceOf( IllegalAccessError.class );
 		// The library module has not been granted this qualified opens.
 		assertThatThrownBy( () -> bridge.invoke( org.hibernate.accessor.tck.jpms.entities.BridgeGateProbe
-				.entityModuleLookup().dropLookupMode( MethodHandles.Lookup.PRIVATE ), target, new byte[0] ) )
+				.entityModuleLookup().dropLookupMode( MethodHandles.Lookup.PRIVATE ), target, new byte[0], requestedReads ) )
 				.isInstanceOf( IllegalAccessError.class );
+		assertThat( target.getModule().canRead( unrelatedModule ) ).isFalse();
 		// Trusted bytecode can acquire and return its own full module authority.
 		byte[] bytes;
 		try ( var stream = target.getResourceAsStream( "GateEntity.class" ) ) {
 			bytes = stream.readAllBytes();
 		}
-		var hidden = (Class<?>) bridge.invoke( proof, target, bytes );
+		var hidden = (Class<?>) bridge.invoke( proof, target, bytes, new Module[0] );
 		var leaked = (MethodHandles.Lookup) MethodHandles.privateLookupIn( hidden, proof )
 				.findStatic( hidden, "lookup", MethodType.methodType( MethodHandles.Lookup.class ) ).invoke();
 		assertThat( leaked.hasFullPrivilegeAccess() ).isTrue();
 		assertThat( leaked.lookupClass().getModule() ).isSameAs( target.getModule() );
 		// A valid proof reaches bytecode verification: the gate itself accepts it.
-		assertThatThrownBy( () -> bridge.invoke( proof, target, new byte[0] ) )
+		assertThatThrownBy( () -> bridge.invoke( proof, target, new byte[0], new Module[0] ) )
 				.isInstanceOf( ClassFormatError.class );
 	}
 }

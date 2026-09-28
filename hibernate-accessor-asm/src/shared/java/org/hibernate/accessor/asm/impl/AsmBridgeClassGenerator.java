@@ -28,17 +28,20 @@ import org.objectweb.asm.Type;
  *         try {
  *             DEFINE_ACCESSOR_MH = MethodHandles.lookup().findStatic(
  *                     $$HibernateAccessorBridge.class, "$$defineAccessor",
- *                     MethodType.methodType( Object.class, Lookup.class, Class.class, byte[].class ));
+ *                     MethodType.methodType( Object.class, Lookup.class, Class.class, byte[].class, Module[].class ));
  *         }
  *         catch (NoSuchMethodException | IllegalAccessException e) {
  *             throw new ExceptionInInitializerError( e );
  *         }
  *     }
  *
- *     static Object $$defineAccessor(MethodHandles.Lookup proof, Class<?> target, byte[] bytecode)
+ *     static Object $$defineAccessor(MethodHandles.Lookup proof, Class<?> target, byte[] bytecode, Module[] reads)
  *             throws Throwable {
  *         MethodHandles.privateLookupIn( $$HibernateAccessorBridge.class, proof ); // access check
  *         MethodHandles.privateLookupIn( target, proof ); // authorize the requested target
+ *         for (Module dependency : reads) {
+ *             $$HibernateAccessorBridge.class.getModule().addReads(dependency);
+ *         }
  *         MethodHandles.Lookup here = MethodHandles.lookup();            // full-priv, target module
  *         MethodHandles.Lookup tl   = MethodHandles.privateLookupIn( target, here );
  *         Class<?> a = tl.defineHiddenClass( bytecode, true, NESTMATE ).lookupClass();
@@ -112,9 +115,9 @@ final class AsmBridgeClassGenerator {
 				"()" + LOOKUP_DESC, false );
 		mv.visitLdcInsn( Type.getObjectType( internalName ) );
 		mv.visitLdcInsn( CrossClassLoaderLookupBridge.BRIDGE_METHOD_NAME );
-		// MethodType.methodType( Object.class, Lookup.class, Class.class, byte[].class )
+		// MethodType.methodType( Object.class, Lookup.class, Class.class, byte[].class, Module[].class )
 		mv.visitLdcInsn( Type.getObjectType( "java/lang/Object" ) );
-		mv.visitInsn( Opcodes.ICONST_3 );
+		mv.visitInsn( Opcodes.ICONST_4 );
 		mv.visitTypeInsn( Opcodes.ANEWARRAY, "java/lang/Class" );
 		mv.visitInsn( Opcodes.DUP );
 		mv.visitInsn( Opcodes.ICONST_0 );
@@ -127,6 +130,10 @@ final class AsmBridgeClassGenerator {
 		mv.visitInsn( Opcodes.DUP );
 		mv.visitInsn( Opcodes.ICONST_2 );
 		mv.visitLdcInsn( Type.getType( "[B" ) );
+		mv.visitInsn( Opcodes.AASTORE );
+		mv.visitInsn( Opcodes.DUP );
+		mv.visitInsn( Opcodes.ICONST_3 );
+		mv.visitLdcInsn( Type.getType( "[Ljava/lang/Module;" ) );
 		mv.visitInsn( Opcodes.AASTORE );
 		mv.visitMethodInsn( Opcodes.INVOKESTATIC, "java/lang/invoke/MethodType", "methodType",
 				"(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;", false );
@@ -151,11 +158,11 @@ final class AsmBridgeClassGenerator {
 		mv.visitEnd();
 	}
 
-	// static Object $$defineAccessor(Lookup proof, Class<?> target, byte[] bytecode)
+	// static Object $$defineAccessor(Lookup proof, Class<?> target, byte[] bytecode, Module[] reads)
 	private static void generateDefineAccessorMethod(ClassWriter cw, String internalName) {
 		final MethodVisitor mv = cw.visitMethod( Opcodes.ACC_STATIC,
 				CrossClassLoaderLookupBridge.BRIDGE_METHOD_NAME,
-				"(" + LOOKUP_DESC + "Ljava/lang/Class;[B)Ljava/lang/Object;", null, null );
+				"(" + LOOKUP_DESC + "Ljava/lang/Class;[B[Ljava/lang/Module;)Ljava/lang/Object;", null, null );
 		mv.visitCode();
 
 		// Access check: MethodHandles.privateLookupIn( $$bridge.class, proof )
@@ -189,20 +196,42 @@ final class AsmBridgeClassGenerator {
 
 		mv.visitLabel( afterCheck );
 
+		// Only an authorized caller may request the entity module's accessor dependencies.
+		mv.visitInsn( Opcodes.ICONST_0 );
+		mv.visitVarInsn( Opcodes.ISTORE, 4 );
+		Label nextModule = new Label();
+		Label modulesDone = new Label();
+		mv.visitLabel( nextModule );
+		mv.visitVarInsn( Opcodes.ILOAD, 4 );
+		mv.visitVarInsn( Opcodes.ALOAD, 3 );
+		mv.visitInsn( Opcodes.ARRAYLENGTH );
+		mv.visitJumpInsn( Opcodes.IF_ICMPGE, modulesDone );
+		mv.visitLdcInsn( Type.getObjectType( internalName ) );
+		mv.visitMethodInsn( Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getModule", "()Ljava/lang/Module;", false );
+		mv.visitVarInsn( Opcodes.ALOAD, 3 );
+		mv.visitVarInsn( Opcodes.ILOAD, 4 );
+		mv.visitInsn( Opcodes.AALOAD );
+		mv.visitMethodInsn( Opcodes.INVOKEVIRTUAL, "java/lang/Module", "addReads",
+				"(Ljava/lang/Module;)Ljava/lang/Module;", false );
+		mv.visitInsn( Opcodes.POP );
+		mv.visitIincInsn( 4, 1 );
+		mv.visitJumpInsn( Opcodes.GOTO, nextModule );
+		mv.visitLabel( modulesDone );
+
 		// Lookup here = MethodHandles.lookup();
 		mv.visitMethodInsn( Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup",
 				"()" + LOOKUP_DESC, false );
-		mv.visitVarInsn( Opcodes.ASTORE, 3 );
+		mv.visitVarInsn( Opcodes.ASTORE, 4 );
 
 		// Lookup tl = MethodHandles.privateLookupIn( target, here );
 		mv.visitVarInsn( Opcodes.ALOAD, 1 );
-		mv.visitVarInsn( Opcodes.ALOAD, 3 );
+		mv.visitVarInsn( Opcodes.ALOAD, 4 );
 		mv.visitMethodInsn( Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandles", "privateLookupIn",
 				"(Ljava/lang/Class;" + LOOKUP_DESC + ")" + LOOKUP_DESC, false );
-		mv.visitVarInsn( Opcodes.ASTORE, 4 );
+		mv.visitVarInsn( Opcodes.ASTORE, 5 );
 
 		// Class<?> a = tl.defineHiddenClass( bytecode, true, new ClassOption[]{ NESTMATE } ).lookupClass();
-		mv.visitVarInsn( Opcodes.ALOAD, 4 );
+		mv.visitVarInsn( Opcodes.ALOAD, 5 );
 		mv.visitVarInsn( Opcodes.ALOAD, 2 );
 		mv.visitInsn( Opcodes.ICONST_1 );
 		mv.visitInsn( Opcodes.ICONST_1 );

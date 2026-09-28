@@ -1,0 +1,23 @@
+plugins {
+	id "testing"
+}
+
+description = "Forked classpath and module-path framework integration tests"
+
+configurations {
+	accessorRuntime
+}
+
+dependencies {
+	accessorRuntime project( ":hibernate-accessor" )
+	accessorRuntime project( ":hibernate-accessor-asm" )
+	accessorRuntime project( ":hibernate-accessor-bytebuddy" )
+	accessorRuntime libs.smallryeClassfile
+}
+
+test {
+	inputs.files configurations.accessorRuntime
+	doFirst {
+		systemProperty "accessor.runtime.path", configurations.accessorRuntime.asPath
+	}
+}

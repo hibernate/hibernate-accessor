@@ -24,10 +24,10 @@ import org.hibernate.accessor.spi.AccessorConfiguration;
  * then use it to create {@link Instantiator instantiators},
  * {@link ValueReader readers}, and {@link ValueWriter writers}.
  *
- * <p>Factories are intended for trusted callers. Lookup-based strategies may fall back
- * to reflection, whose access checks use the library module's permissions. Supplying
- * a restricted lookup therefore does not establish an authorization boundary for
- * the factory as a whole.
+ * <p>Factories are intended for trusted callers. An original framework lookup enables
+ * lazy module reads and reflection fallbacks using that framework's permissions.
+ * Derived/restricted lookups retain the historical library reflection fallback, so
+ * a restricted lookup does not establish an authorization boundary for the factory as a whole.
  */
 public interface AccessorFactory {
 
@@ -38,8 +38,21 @@ public interface AccessorFactory {
 	 *
 	 * @return a shared, reflection-based factory instance
 	 */
+	@Deprecated(since = "0.1.0.Alpha4")
 	static AccessorFactory reflection() {
 		return ReflectionAccessorFactory.INSTANCE;
+	}
+
+	/**
+	 * Returns a reflection-based factory using the framework's original lookup to enable access.
+	 * Entity packages need only be opened to the framework module that created the lookup.
+	 * Derived lookups retain the library's historical reflection access checks.
+	 *
+	 * @param lookup the original lookup obtained by the framework from {@link MethodHandles#lookup()}
+	 * @return a new reflection-based factory instance
+	 */
+	static AccessorFactory reflection(MethodHandles.Lookup lookup) {
+		return new ReflectionAccessorFactory( lookup );
 	}
 
 	/**
