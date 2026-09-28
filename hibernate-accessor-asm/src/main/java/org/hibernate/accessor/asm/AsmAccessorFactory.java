@@ -30,7 +30,7 @@ public interface AsmAccessorFactory extends AccessorFactory {
 	/**
 	 * Creates an ASM-based accessor factory using the given configuration.
 	 *
-	 * @param configuration the accessor configuration (must contain a {@link AccessorConfiguration#LOOKUP lookup})
+	 * @param configuration the accessor configuration (must contain a lookup or framework access context)
 	 * @return a new ASM-based factory instance
 	 */
 	static AsmAccessorFactory factory(AccessorConfiguration configuration) {

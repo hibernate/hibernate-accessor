@@ -15,8 +15,10 @@ import org.hibernate.accessor.AccessorException;
  * Performs module and reflection access using the original lookup supplied by a framework.
  * Caller-sensitive method handles retain that framework's identity when invoked by this library.
  * Read edges are added lazily, because entity modules need not be known at factory bootstrap.
+ * Native integrations should supply a framework-owned {@link AccessContext} instead:
+ * native VMs may not preserve the lookup's caller identity for these JDK methods.
  */
-public final class LookupAccess {
+public final class LookupAccess implements AccessContext {
 	private final MethodHandles.Lookup lookup;
 	private final MethodHandle addReads;
 	private final MethodHandle makeAccessible;
@@ -42,11 +44,18 @@ public final class LookupAccess {
 		}
 	}
 
+	@Override
+	public MethodHandles.Lookup lookup() {
+		return lookup;
+	}
+
+	@Override
 	public MethodHandles.Lookup privateLookup(Class<?> target) throws IllegalAccessException {
 		ensureReads( target.getModule() );
 		return MethodHandles.privateLookupIn( target, lookup );
 	}
 
+	@Override
 	public void ensureReads(Module target) {
 		if ( addReads != null && !lookup.lookupClass().getModule().canRead( target ) ) {
 			try {
@@ -61,6 +70,7 @@ public final class LookupAccess {
 		}
 	}
 
+	@Override
 	public void makeAccessible(AccessibleObject member) {
 		if ( makeAccessible == null ) {
 			member.setAccessible( true );

@@ -70,8 +70,8 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 
 	public AsmAccessorFactory(AccessorConfiguration configuration) {
 		this.callerLookup = configuration.lookup();
-		this.reflectionFallback = AccessorFactory.reflection( callerLookup );
-		this.lookupBridge = new CrossClassLoaderLookupBridge( callerLookup, AsmBridgeClassGenerator::generate,
+		this.reflectionFallback = AccessorFactory.reflection( configuration );
+		this.lookupBridge = new CrossClassLoaderLookupBridge( configuration.accessContext(), AsmBridgeClassGenerator::generate,
 				AccessorFactory.class.getModule(), AsmAccessorFactory.class.getModule() );
 		this.bytecodeDumper = new BytecodeDumper( configuration );
 		this.generationStrategy = AsmAccessorConfiguration.generationStrategy( configuration );

@@ -11,13 +11,13 @@ import java.util.Objects;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.internal.AccessorThrowables;
 import org.hibernate.accessor.logging.impl.CoreLog;
-import org.hibernate.accessor.spi.LookupAccess;
+import org.hibernate.accessor.spi.AccessContext;
 
 public class ReflectionMethodValueReader<T> implements ValueReader<T> {
 
 	private final Method method;
 
-	ReflectionMethodValueReader(Method getter, LookupAccess access) {
+	ReflectionMethodValueReader(Method getter, AccessContext access) {
 		this.method = getter;
 		access.makeAccessible( getter );
 	}

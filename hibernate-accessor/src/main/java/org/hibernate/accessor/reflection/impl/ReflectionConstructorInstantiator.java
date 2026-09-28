@@ -11,13 +11,13 @@ import java.util.Objects;
 
 import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.logging.impl.CoreLog;
-import org.hibernate.accessor.spi.LookupAccess;
+import org.hibernate.accessor.spi.AccessContext;
 
 public class ReflectionConstructorInstantiator<T> implements Instantiator<T> {
 
 	private final Constructor<T> constructor;
 
-	ReflectionConstructorInstantiator(Constructor<T> constructor, LookupAccess access) {
+	ReflectionConstructorInstantiator(Constructor<T> constructor, AccessContext access) {
 		this.constructor = constructor;
 		access.makeAccessible( constructor );
 	}

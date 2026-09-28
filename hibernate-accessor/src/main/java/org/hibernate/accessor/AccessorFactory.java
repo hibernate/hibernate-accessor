@@ -56,6 +56,17 @@ public interface AccessorFactory {
 	}
 
 	/**
+	 * Returns a reflection-based factory using the configured framework access context,
+	 * or the configured lookup when no context is supplied.
+	 *
+	 * @param configuration the framework access configuration
+	 * @return a new reflection-based factory instance
+	 */
+	static AccessorFactory reflection(AccessorConfiguration configuration) {
+		return new ReflectionAccessorFactory( configuration );
+	}
+
+	/**
 	 * Returns a lambda-based factory that uses the given lookup for access control.
 	 *
 	 * <p>The returned factory generates lambda-based accessors via {@link java.lang.invoke.LambdaMetafactory},
@@ -71,7 +82,7 @@ public interface AccessorFactory {
 	/**
 	 * Returns a lambda-based factory with the given configuration.
 	 *
-	 * @param configuration the accessor configuration (must contain a {@link AccessorConfiguration#LOOKUP lookup})
+	 * @param configuration the accessor configuration (must contain a lookup or framework access context)
 	 * @return a new lambda-based factory instance
 	 */
 	static AccessorFactory lambda(AccessorConfiguration configuration) {
@@ -94,7 +105,7 @@ public interface AccessorFactory {
 	/**
 	 * Returns a method-handle-based factory with the given configuration.
 	 *
-	 * @param configuration the accessor configuration (must contain a {@link AccessorConfiguration#LOOKUP lookup})
+	 * @param configuration the accessor configuration (must contain a lookup or framework access context)
 	 * @return a new method-handle-based factory instance
 	 */
 	static AccessorFactory methodHandle(AccessorConfiguration configuration) {
@@ -119,7 +130,7 @@ public interface AccessorFactory {
 	/**
 	 * Returns a ClassFile API-based factory with the given configuration.
 	 *
-	 * @param configuration the accessor configuration (must contain a {@link AccessorConfiguration#LOOKUP lookup})
+	 * @param configuration the accessor configuration (must contain a lookup or framework access context)
 	 * @return a new ClassFile API-based factory instance
 	 * @throws AccessorException if the ClassFile API is not available
 	 */

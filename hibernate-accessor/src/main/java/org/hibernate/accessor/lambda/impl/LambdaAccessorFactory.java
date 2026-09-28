@@ -24,8 +24,8 @@ import org.hibernate.accessor.MultiValueReader;
 import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
+import org.hibernate.accessor.spi.AccessContext;
 import org.hibernate.accessor.spi.AccessorConfiguration;
-import org.hibernate.accessor.spi.LookupAccess;
 import org.hibernate.accessor.spi.MemberValidation;
 
 import org.jboss.logging.Logger;
@@ -45,7 +45,7 @@ public class LambdaAccessorFactory implements AccessorFactory {
 		}
 	};
 
-	private final LookupAccess access;
+	private final AccessContext access;
 	private final AccessorFactory reflectionFallback;
 
 	public LambdaAccessorFactory(MethodHandles.Lookup lookup) {
@@ -53,8 +53,8 @@ public class LambdaAccessorFactory implements AccessorFactory {
 	}
 
 	public LambdaAccessorFactory(AccessorConfiguration configuration) {
-		this.access = new LookupAccess( configuration.lookup() );
-		this.reflectionFallback = AccessorFactory.reflection( configuration.lookup() );
+		this.access = configuration.accessContext();
+		this.reflectionFallback = AccessorFactory.reflection( configuration );
 	}
 
 	@Override

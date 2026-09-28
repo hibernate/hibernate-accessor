@@ -11,13 +11,13 @@ import java.util.Objects;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.internal.AccessorThrowables;
 import org.hibernate.accessor.logging.impl.CoreLog;
-import org.hibernate.accessor.spi.LookupAccess;
+import org.hibernate.accessor.spi.AccessContext;
 
 public class ReflectionMethodValueWriter implements ValueWriter {
 
 	private final Method method;
 
-	ReflectionMethodValueWriter(Method setter, LookupAccess access) {
+	ReflectionMethodValueWriter(Method setter, AccessContext access) {
 		this.method = setter;
 		access.makeAccessible( setter );
 	}

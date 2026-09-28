@@ -48,8 +48,8 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 
 	public ClassFileAccessorFactory(AccessorConfiguration configuration) {
 		this.callerLookup = configuration.lookup();
-		this.reflectionFallback = AccessorFactory.reflection( callerLookup );
-		this.lookupBridge = new CrossClassLoaderLookupBridge( callerLookup, ClassFileBridgeClassGenerator::generate,
+		this.reflectionFallback = AccessorFactory.reflection( configuration );
+		this.lookupBridge = new CrossClassLoaderLookupBridge( configuration.accessContext(), ClassFileBridgeClassGenerator::generate,
 				AccessorFactory.class.getModule() );
 		this.bytecodeDumper = new BytecodeDumper( configuration );
 		this.cache = new ClassValue<>() {

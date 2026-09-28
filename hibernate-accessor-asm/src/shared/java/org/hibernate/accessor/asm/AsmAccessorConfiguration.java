@@ -7,7 +7,9 @@ package org.hibernate.accessor.asm;
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
 
+import org.hibernate.accessor.spi.AccessContext;
 import org.hibernate.accessor.spi.AccessorConfiguration;
+import org.hibernate.accessor.spi.LookupAccess;
 
 /**
  * ASM-specific {@link AccessorConfiguration} that adds the code-generation strategy flag.
@@ -28,12 +30,16 @@ public class AsmAccessorConfiguration extends AccessorConfiguration {
 		super( lookup, Map.of( GENERATION_STRATEGY, strategy ) );
 	}
 
-	public AsmAccessorConfiguration(MethodHandles.Lookup lookup, Map<String, Object> properties) {
-		super( lookup, properties );
+	public AsmAccessorConfiguration(MethodHandles.Lookup lookup) {
+		super( lookup, Map.of() );
 	}
 
-	public AsmAccessorConfiguration(Map<String, Object> properties) {
-		super( properties );
+	public AsmAccessorConfiguration(MethodHandles.Lookup lookup, Map<String, Object> properties) {
+		super( new LookupAccess( lookup ), properties );
+	}
+
+	public AsmAccessorConfiguration(AccessContext accessContext, Map<String, Object> properties) {
+		super( accessContext, properties );
 	}
 
 	/** The generation strategy configured on this instance, defaulting to {@link AsmGenerationStrategy#BULK_SWITCH}. */

@@ -5,6 +5,7 @@
 package org.hibernate.accessor.reflection.impl;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -16,23 +17,43 @@ import org.hibernate.accessor.MultiValueReader;
 import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
-import org.hibernate.accessor.spi.LookupAccess;
+import org.hibernate.accessor.spi.AccessContext;
+import org.hibernate.accessor.spi.AccessorConfiguration;
 import org.hibernate.accessor.spi.MemberValidation;
 
 public class ReflectionAccessorFactory implements AccessorFactory {
 
-	private static final LookupAccess LIBRARY_ACCESS = new LookupAccess( MethodHandles.lookup() );
+	private static final AccessContext LIBRARY_ACCESS = new AccessContext() {
+		@Override
+		public MethodHandles.Lookup lookup() {
+			return MethodHandles.lookup();
+		}
+
+		@Override
+		public void ensureReads(Module target) {
+			ReflectionAccessorFactory.class.getModule().addReads( target );
+		}
+
+		@Override
+		public void makeAccessible(AccessibleObject member) {
+			member.setAccessible( true );
+		}
+	};
 
 	public static final ReflectionAccessorFactory INSTANCE = new ReflectionAccessorFactory();
 
-	private final LookupAccess access;
+	private final AccessContext access;
 
 	private ReflectionAccessorFactory() {
 		access = LIBRARY_ACCESS;
 	}
 
 	public ReflectionAccessorFactory(MethodHandles.Lookup lookup) {
-		access = new LookupAccess( lookup );
+		this( new AccessorConfiguration( lookup ) );
+	}
+
+	public ReflectionAccessorFactory(AccessorConfiguration configuration) {
+		access = configuration.accessContext();
 	}
 
 	@Override

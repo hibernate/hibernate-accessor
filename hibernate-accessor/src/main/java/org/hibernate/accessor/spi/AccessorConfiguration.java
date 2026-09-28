@@ -7,32 +7,44 @@ package org.hibernate.accessor.spi;
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class AccessorConfiguration {
 
-	public static final AccessorConfiguration EMPTY = new AccessorConfiguration( Map.of() );
+	public static final AccessorConfiguration EMPTY = new AccessorConfiguration( MethodHandles.lookup() );
 
+	public static final String ACCESS_CONTEXT = "hibernate.accessor.access.context";
 	public static final String LOOKUP = "hibernate.accessor.lookup";
 	public static final String DUMP_BYTECODE_DIR = "hibernate.accessor.bytecode.dump.dir";
 
 	private final Map<String, Object> properties;
-
-	public AccessorConfiguration(Map<String, Object> properties) {
-		this.properties = properties;
-	}
+	private final AccessContext accessContext;
 
 	public AccessorConfiguration(MethodHandles.Lookup lookup) {
-		this( Map.of( LOOKUP, lookup ) );
+		this( lookup, Map.of() );
 	}
 
 	public AccessorConfiguration(MethodHandles.Lookup lookup, Map<String, Object> properties) {
+		this( new LookupAccess( lookup ), properties );
+	}
+
+	public AccessorConfiguration(AccessContext accessContext, Map<String, Object> properties) {
 		final Map<String, Object> merged = new HashMap<>( properties );
-		merged.put( LOOKUP, lookup );
+		merged.put( LOOKUP, accessContext.lookup() );
+		merged.put( ACCESS_CONTEXT, Objects.requireNonNull( accessContext, "context" ) );
 		this.properties = merged;
+		this.accessContext = accessContext;
 	}
 
 	public MethodHandles.Lookup lookup() {
-		return getProperty( LOOKUP, MethodHandles.Lookup.class );
+		return accessContext.lookup();
+	}
+
+	/**
+	 * @return the supplied context, or a lookup-based JVM implementation
+	 */
+	public AccessContext accessContext() {
+		return accessContext;
 	}
 
 	@SuppressWarnings("unchecked")
