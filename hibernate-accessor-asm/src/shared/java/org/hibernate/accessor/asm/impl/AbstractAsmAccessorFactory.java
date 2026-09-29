@@ -5,7 +5,6 @@
 package org.hibernate.accessor.asm.impl;
 
 import java.lang.invoke.MethodHandles;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -14,10 +13,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.hibernate.accessor.AccessorException;
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.MultiValueAccessorGenerationException;
@@ -25,8 +21,6 @@ import org.hibernate.accessor.MultiValueReader;
 import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
-import org.hibernate.accessor.asm.AsmAccessorConfiguration;
-import org.hibernate.accessor.asm.AsmGenerationStrategy;
 import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
 import org.hibernate.accessor.spi.AccessorConfiguration;
 import org.hibernate.accessor.spi.BytecodeDumper;
@@ -37,130 +31,44 @@ import org.jboss.logging.Logger;
 
 import org.objectweb.asm.Type;
 
-public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccessorFactory {
+/**
+ * Abstract base class for ASM-based accessor factories.
+ * Provides shared logic for multi-value accessors and common infrastructure.
+ */
+public abstract class AbstractAsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccessorFactory {
 
-	private static final Logger LOG = Logger.getLogger( AsmAccessorFactory.class );
+	private static final Logger LOG = Logger.getLogger( AbstractAsmAccessorFactory.class );
 
 	// we only need it to create hidden classes for generated multi readers/writers
 	private static final MethodHandles.Lookup ACCESSOR_MODULE_LOOKUP = MethodHandles.lookup();
-	private final ClassValue<AtomicReference<WeakReference<AsmClassAccessorInfo>>> cache;
-	// JDK-owned containers avoid pinning the implementation loader through stale entries.
-	private final ClassValue<ConcurrentHashMap<Member, ValueReader<?>>> perMemberReaders = new ClassValue<>() {
-		@Override
-		protected ConcurrentHashMap<Member, ValueReader<?>> computeValue(Class<?> type) {
-			return new ConcurrentHashMap<>();
-		}
-	};
-	// JDK-owned containers avoid pinning the implementation loader through stale entries.
-	private final ClassValue<ConcurrentHashMap<Member, ValueWriter>> perMemberWriters = new ClassValue<>() {
-		@Override
-		protected ConcurrentHashMap<Member, ValueWriter> computeValue(Class<?> type) {
-			return new ConcurrentHashMap<>();
-		}
-	};
-	private final MethodHandles.Lookup callerLookup;
-	private final CrossClassLoaderLookupBridge lookupBridge;
-	private final BytecodeDumper bytecodeDumper;
-	private final AsmGenerationStrategy generationStrategy;
-	private final AccessorFactory reflectionFallback;
 
-	public AsmAccessorFactory(MethodHandles.Lookup lookup) {
-		this( new AccessorConfiguration( lookup ) );
-	}
+	protected final MethodHandles.Lookup callerLookup;
+	protected final CrossClassLoaderLookupBridge lookupBridge;
+	protected final BytecodeDumper bytecodeDumper;
+	protected final AccessorFactory reflectionFallback;
 
-	public AsmAccessorFactory(AccessorConfiguration configuration) {
+	protected AbstractAsmAccessorFactory(AccessorConfiguration configuration) {
 		this.callerLookup = configuration.lookup();
 		this.reflectionFallback = AccessorFactory.reflection( configuration );
 		this.lookupBridge = new CrossClassLoaderLookupBridge( configuration.accessContext(), AsmBridgeClassGenerator::generate,
-				AccessorFactory.class.getModule(), AsmAccessorFactory.class.getModule() );
+				AccessorFactory.class.getModule(), AbstractAsmAccessorFactory.class.getModule() );
 		this.bytecodeDumper = new BytecodeDumper( configuration );
-		this.generationStrategy = AsmAccessorConfiguration.generationStrategy( configuration );
-		this.cache = new ClassValue<>() {
-			@Override
-			protected AtomicReference<WeakReference<AsmClassAccessorInfo>> computeValue(Class<?> type) {
-				return new AtomicReference<>();
-			}
-		};
 	}
 
 	@Override
-	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
-		try {
-			AsmClassAccessorInfo info = getOrCreate( constructor.getDeclaringClass() );
-			return new AsmInstantiator<>( info.bulkAccessor(), info, info.constructorIndex( constructor ), constructor.getParameterCount() );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ASM instantiator for %s, falling back to reflection", constructor.getDeclaringClass() );
-			return reflectionFallback.instantiator( constructor );
-		}
-	}
+	public abstract <T> Instantiator<T> instantiator(Constructor<T> constructor);
 
 	@Override
-	public ValueReader<?> valueReader(Field field) {
-		MemberValidation.validateInstanceMember( field );
-		try {
-			if ( generationStrategy == AsmGenerationStrategy.PER_MEMBER ) {
-				return perMemberReaders.get( field.getDeclaringClass() ).computeIfAbsent( field, this::generatePerMemberReader );
-			}
-			AsmClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
-			return new AsmFieldValueReader<>( info.bulkAccessor(), info, info.fieldIndex( field ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", field );
-			return reflectionFallback.valueReader( field );
-		}
-	}
+	public abstract ValueReader<?> valueReader(Field field);
 
 	@Override
-	public ValueReader<?> valueReader(Method method) {
-		MemberValidation.validateReaderMethod( method );
-		try {
-			if ( generationStrategy == AsmGenerationStrategy.PER_MEMBER ) {
-				return perMemberReaders.get( method.getDeclaringClass() ).computeIfAbsent( method, this::generatePerMemberReader );
-			}
-			AsmClassAccessorInfo info = getOrCreate( method.getDeclaringClass() );
-			return new AsmMethodValueReader<>( info.bulkAccessor(), info, info.methodIndex( method ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", method );
-			return reflectionFallback.valueReader( method );
-		}
-	}
+	public abstract ValueReader<?> valueReader(Method method);
 
 	@Override
-	public ValueWriter valueWriter(Field field) {
-		MemberValidation.validateInstanceMember( field );
-		if ( Modifier.isFinal( field.getModifiers() ) ) {
-			return reflectionFallback.valueWriter( field );
-		}
-		try {
-			if ( generationStrategy == AsmGenerationStrategy.PER_MEMBER ) {
-				return perMemberWriters.get( field.getDeclaringClass() ).computeIfAbsent( field, this::generatePerMemberWriter );
-			}
-			AsmClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
-			return new AsmFieldValueWriter( info.bulkAccessor(), info, info.fieldIndex( field ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", field );
-			return reflectionFallback.valueWriter( field );
-		}
-	}
+	public abstract ValueWriter valueWriter(Field field);
 
 	@Override
-	public ValueWriter valueWriter(Method setter) {
-		MemberValidation.validateWriterMethod( setter );
-		try {
-			if ( generationStrategy == AsmGenerationStrategy.PER_MEMBER ) {
-				return perMemberWriters.get( setter.getDeclaringClass() ).computeIfAbsent( setter, this::generatePerMemberWriter );
-			}
-			AsmClassAccessorInfo info = getOrCreate( setter.getDeclaringClass() );
-			return new AsmMethodValueWriter( info.bulkAccessor(), info, info.methodIndex( setter ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", setter );
-			return reflectionFallback.valueWriter( setter );
-		}
-	}
+	public abstract ValueWriter valueWriter(Method setter);
 
 	@Override
 	public MultiValueReader multiValueReader(Class<?> declaringClass, Member... members) {
@@ -211,31 +119,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		}
 	}
 
-	private ValueReader<?> generatePerMemberReader(Member member) {
-		final Class<?> targetClass = member.getDeclaringClass();
-		final byte[] bytecode = AsmPerMemberClassGenerator.generateReader( member );
-		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorReader_" + member.getName() + "_" + java.util.UUID.randomUUID(), bytecode );
-		try {
-			return (ValueReader<?>) lookupBridge.defineAccessor( callerLookup, targetClass, bytecode );
-		}
-		catch (Exception e) {
-			throw new AccessorException( "Failed to create per-member value reader for " + member, e );
-		}
-	}
-
-	private ValueWriter generatePerMemberWriter(Member member) {
-		final Class<?> targetClass = member.getDeclaringClass();
-		final byte[] bytecode = AsmPerMemberClassGenerator.generateWriter( member );
-		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorWriter_" + member.getName() + "_" + java.util.UUID.randomUUID(), bytecode );
-		try {
-			return (ValueWriter) lookupBridge.defineAccessor( callerLookup, targetClass, bytecode );
-		}
-		catch (Exception e) {
-			throw new AccessorException( "Failed to create per-member value writer for " + member, e );
-		}
-	}
-
-	private MultiValueReader generateDirectReader(Member[] members) {
+	protected MultiValueReader generateDirectReader(Member[] members) {
 		final Class<?> targetClass = members[0].getDeclaringClass();
 		final byte[] bytecode = AsmMultiValueClassGenerator.generateReader( targetClass, members );
 		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiReader_" + java.util.UUID.randomUUID(), bytecode );
@@ -248,7 +132,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		}
 	}
 
-	private MultiValueWriter generateDirectWriter(Member[] members) {
+	protected MultiValueWriter generateDirectWriter(Member[] members) {
 		final Class<?> targetClass = members[0].getDeclaringClass();
 		final byte[] bytecode = AsmMultiValueClassGenerator.generateWriter( targetClass, members );
 		bytecodeDumper.dump( Type.getInternalName( targetClass ) + "$$HibernateAccessorMultiWriter_" + java.util.UUID.randomUUID(), bytecode );
@@ -261,7 +145,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		}
 	}
 
-	private MultiValueReader generateBulkBasedReader(Member[] members) {
+	protected MultiValueReader generateBulkBasedReader(Member[] members) {
 		final BulkAccessorLayout layout = buildBulkAccessorLayout( members );
 		final byte[] bytecode = AsmMultiValueClassGenerator.generateBulkReader(
 				layout.accesses,
@@ -281,7 +165,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		}
 	}
 
-	private MultiValueWriter generateBulkBasedWriter(Member[] members) {
+	protected MultiValueWriter generateBulkBasedWriter(Member[] members) {
 		final BulkAccessorLayout layout = buildBulkAccessorLayout( members );
 		final byte[] bytecode = AsmMultiValueClassGenerator.generateBulkWriter(
 				layout.accesses,
@@ -301,6 +185,12 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		}
 	}
 
+	/**
+	 * Template method for subclasses to provide bulk accessor info for their target class.
+	 * Used by multi-value accessor generation.
+	 */
+	protected abstract AsmClassAccessorInfo getOrCreateClassAccessorInfo(Class<?> declaringClass);
+
 	private BulkAccessorLayout buildBulkAccessorLayout(Member[] members) {
 		final Map<Class<?>, Integer> classToFieldIndex = new LinkedHashMap<>();
 		for ( Member member : members ) {
@@ -310,7 +200,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		final AsmBulkAccessor[] accessors = new AsmBulkAccessor[classToFieldIndex.size()];
 		final AsmClassAccessorInfo[] infos = new AsmClassAccessorInfo[classToFieldIndex.size()];
 		for ( var entry : classToFieldIndex.entrySet() ) {
-			final AsmClassAccessorInfo info = getOrCreate( entry.getKey() );
+			final AsmClassAccessorInfo info = getOrCreateClassAccessorInfo( entry.getKey() );
 			accessors[entry.getValue()] = info.bulkAccessor();
 			infos[entry.getValue()] = info;
 		}
@@ -327,7 +217,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		return new BulkAccessorLayout( accesses, accessors );
 	}
 
-	private record BulkAccessorLayout(  BulkMemberAccess[] accesses,
+	protected record BulkAccessorLayout(BulkMemberAccess[] accesses,
 										AsmBulkAccessor[] accessors) {
 	}
 
@@ -343,25 +233,7 @@ public class AsmAccessorFactory implements org.hibernate.accessor.asm.AsmAccesso
 		return true;
 	}
 
-	private AsmClassAccessorInfo getOrCreate(Class<?> declaringClass) {
-		// A ClassValue entry can outlive its ClassValue until the key's map is cleaned.
-		// Do not attach a library-defined value strongly to a longer-lived entity class:
-		// it would retain the library's loader even after the factory is discarded.
-		var slot = cache.get( declaringClass );
-		var current = slot.get();
-		AsmClassAccessorInfo cached = current == null ? null : current.get();
-		if ( cached != null ) {
-			return cached;
-		}
-		synchronized (slot) {
-			var reference = slot.get();
-			AsmClassAccessorInfo info = reference == null ? null : reference.get();
-			if ( info == null ) {
-				info = AsmClassAccessorInfo.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
-				slot.set( new WeakReference<>( info ) );
-			}
-			return info;
-		}
+	protected Logger getLogger() {
+		return LOG;
 	}
-
 }
