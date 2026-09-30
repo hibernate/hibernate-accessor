@@ -7,8 +7,8 @@ package org.hibernate.accessor.classfile.impl;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.classfile.spi.ClassFileBulkAccessor;
 
-// Keep the weakly cached metadata alive for as long as an accessor uses it.
-record ClassFileFieldValueWriter(ClassFileBulkAccessor accessor, Object cacheOwner, int index) implements ValueWriter {
+// The bulk accessor retains its weakly cached index metadata.
+record ClassFileFieldValueWriter(ClassFileBulkAccessor accessor, int index) implements ValueWriter {
 
 	@Override
 	public void set(Object instance, Object value) {
