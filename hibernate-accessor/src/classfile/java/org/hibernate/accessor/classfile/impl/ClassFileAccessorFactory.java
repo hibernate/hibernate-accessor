@@ -36,7 +36,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	private static final Logger LOG = Logger.getLogger( ClassFileAccessorFactory.class );
 
 	private static final MethodHandles.Lookup ACCESSOR_MODULE_LOOKUP = MethodHandles.lookup();
-	private final ClassValue<AtomicReference<WeakReference<ClassFileClassAccessorInfo>>> cache;
+	private final ClassValue<AtomicReference<WeakReference<ClassFileBulkAccessor>>> cache;
 	private final MethodHandles.Lookup callerLookup;
 	private final CrossClassLoaderLookupBridge lookupBridge;
 	private final BytecodeDumper bytecodeDumper;
@@ -54,7 +54,7 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		this.bytecodeDumper = new BytecodeDumper( configuration );
 		this.cache = new ClassValue<>() {
 			@Override
-			protected AtomicReference<WeakReference<ClassFileClassAccessorInfo>> computeValue(Class<?> type) {
+			protected AtomicReference<WeakReference<ClassFileBulkAccessor>> computeValue(Class<?> type) {
 				return new AtomicReference<>();
 			}
 		};
@@ -63,8 +63,8 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	@Override
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
 		try {
-			ClassFileClassAccessorInfo info = getOrCreate( constructor.getDeclaringClass() );
-			return new ClassFileInstantiator<>( info.bulkAccessor(), info, info.constructorIndex( constructor ), constructor.getParameterCount() );
+			ClassFileBulkAccessor accessor = getOrCreate( constructor.getDeclaringClass() );
+			return new ClassFileInstantiator<>( accessor, accessor.constructorIndex( constructor ), constructor.getParameterCount() );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile instantiator for %s, falling back to reflection", constructor.getDeclaringClass() );
@@ -76,8 +76,8 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	public ValueReader<?> valueReader(Field field) {
 		MemberValidation.validateInstanceMember( field );
 		try {
-			ClassFileClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
-			return new ClassFileFieldValueReader<>( info.bulkAccessor(), info, info.fieldIndex( field ) );
+			ClassFileBulkAccessor accessor = getOrCreate( field.getDeclaringClass() );
+			return new ClassFileFieldValueReader<>( accessor, accessor.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value reader for %s, falling back to reflection", field );
@@ -89,8 +89,8 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	public ValueReader<?> valueReader(Method method) {
 		MemberValidation.validateReaderMethod( method );
 		try {
-			ClassFileClassAccessorInfo info = getOrCreate( method.getDeclaringClass() );
-			return new ClassFileMethodValueReader<>( info.bulkAccessor(), info, info.methodIndex( method ) );
+			ClassFileBulkAccessor accessor = getOrCreate( method.getDeclaringClass() );
+			return new ClassFileMethodValueReader<>( accessor, accessor.methodIndex( method ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value reader for %s, falling back to reflection", method );
@@ -105,8 +105,8 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 			return reflectionFallback.valueWriter( field );
 		}
 		try {
-			ClassFileClassAccessorInfo info = getOrCreate( field.getDeclaringClass() );
-			return new ClassFileFieldValueWriter( info.bulkAccessor(), info, info.fieldIndex( field ) );
+			ClassFileBulkAccessor accessor = getOrCreate( field.getDeclaringClass() );
+			return new ClassFileFieldValueWriter( accessor, accessor.fieldIndex( field ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value writer for %s, falling back to reflection", field );
@@ -118,8 +118,8 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 	public ValueWriter valueWriter(Method setter) {
 		MemberValidation.validateWriterMethod( setter );
 		try {
-			ClassFileClassAccessorInfo info = getOrCreate( setter.getDeclaringClass() );
-			return new ClassFileMethodValueWriter( info.bulkAccessor(), info, info.methodIndex( setter ) );
+			ClassFileBulkAccessor accessor = getOrCreate( setter.getDeclaringClass() );
+			return new ClassFileMethodValueWriter( accessor, accessor.methodIndex( setter ) );
 		}
 		catch (RuntimeException e) {
 			LOG.debugf( e, "Failed to create ClassFile value writer for %s, falling back to reflection", setter );
@@ -249,19 +249,17 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		}
 
 		ClassFileBulkAccessor[] accessors = new ClassFileBulkAccessor[classToFieldIndex.size()];
-		ClassFileClassAccessorInfo[] infos = new ClassFileClassAccessorInfo[classToFieldIndex.size()];
 		for ( var entry : classToFieldIndex.entrySet() ) {
-			ClassFileClassAccessorInfo info = getOrCreate( entry.getKey() );
-			accessors[entry.getValue()] = info.bulkAccessor();
-			infos[entry.getValue()] = info;
+			ClassFileBulkAccessor accessor = getOrCreate( entry.getKey() );
+			accessors[entry.getValue()] = accessor;
 		}
 
 		BulkMemberAccess[] accesses = new BulkMemberAccess[members.length];
 		for ( int i = 0; i < members.length; i++ ) {
 			int fieldIdx = classToFieldIndex.get( members[i].getDeclaringClass() );
-			ClassFileClassAccessorInfo info = infos[fieldIdx];
+			ClassFileBulkAccessor accessor = accessors[fieldIdx];
 			boolean isField = members[i] instanceof Field;
-			int memberIdx = isField ? info.fieldIndex( (Field) members[i] ) : info.methodIndex( (Method) members[i] );
+			int memberIdx = isField ? accessor.fieldIndex( (Field) members[i] ) : accessor.methodIndex( (Method) members[i] );
 			accesses[i] = new BulkMemberAccess( fieldIdx, memberIdx, isField );
 		}
 
@@ -281,24 +279,24 @@ public class ClassFileAccessorFactory implements AccessorFactory {
 		return true;
 	}
 
-	private ClassFileClassAccessorInfo getOrCreate(Class<?> declaringClass) {
+	private ClassFileBulkAccessor getOrCreate(Class<?> declaringClass) {
 		// A ClassValue entry can outlive its ClassValue until the key's map is cleaned.
 		// Do not attach a library-defined value strongly to a longer-lived entity class:
 		// it would retain the library's loader even after the factory is discarded.
 		var slot = cache.get( declaringClass );
 		var current = slot.get();
-		ClassFileClassAccessorInfo cached = current == null ? null : current.get();
+		ClassFileBulkAccessor cached = current == null ? null : current.get();
 		if ( cached != null ) {
 			return cached;
 		}
 		synchronized (slot) {
 			var reference = slot.get();
-			ClassFileClassAccessorInfo info = reference == null ? null : reference.get();
-			if ( info == null ) {
-				info = ClassFileClassAccessorInfo.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
-				slot.set( new WeakReference<>( info ) );
+			ClassFileBulkAccessor accessor = reference == null ? null : reference.get();
+			if ( accessor == null ) {
+				accessor = ClassFileBulkAccessorBuilder.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
+				slot.set( new WeakReference<>( accessor ) );
 			}
-			return info;
+			return accessor;
 		}
 	}
 }

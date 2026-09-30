@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.accessor.classfile.spi.ClassFileBulkAccessor;
+import org.hibernate.accessor.spi.BulkAccessorMetadata;
 
 import io.smallrye.classfile.ClassFile;
 import io.smallrye.classfile.CodeBuilder;
@@ -34,6 +35,7 @@ import io.smallrye.classfile.instruction.SwitchCase;
 
 final class ClassFileBulkAccessorClassGenerator {
 
+	private static final ClassDesc CD_METADATA = classDesc( BulkAccessorMetadata.class );
 	private static final ClassDesc CD_BULK_ACCESSOR = classDesc( ClassFileBulkAccessor.class );
 	private static final MethodTypeDesc MTD_READ = MethodTypeDesc.of( ConstantDescs.CD_Object, ConstantDescs.CD_Object, ConstantDescs.CD_int );
 	private static final MethodTypeDesc MTD_WRITE = MethodTypeDesc.of( ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ConstantDescs.CD_Object );
@@ -52,7 +54,14 @@ final class ClassFileBulkAccessorClassGenerator {
 			clb.withSuperclass( ConstantDescs.CD_Object );
 			clb.withInterfaceSymbols( CD_BULK_ACCESSOR );
 
-			generateConstructor( clb );
+			// Metadata belongs to the instance, never to an entity class or a static field.
+			clb.withField( "metadata", CD_METADATA, ClassFile.ACC_PRIVATE | ClassFile.ACC_FINAL );
+			generateConstructor( clb, generatedDesc );
+			clb.withMethod( "metadata", methodTypeDesc( CD_METADATA ), ClassFile.ACC_PUBLIC, mb -> mb.withCode( cb -> {
+				cb.aload( 0 );
+				cb.getfield( generatedDesc, "metadata", CD_METADATA );
+				cb.areturn();
+			} ) );
 			generateReadByField( clb, targetDesc, fields );
 			generateWriteByField( clb, targetDesc, fields );
 			generateReadByMethod( clb, targetDesc, isInterface, getterMethods );
@@ -61,10 +70,13 @@ final class ClassFileBulkAccessorClassGenerator {
 		} );
 	}
 
-	private static void generateConstructor(io.smallrye.classfile.ClassBuilder clb) {
-		clb.withMethod( CONSTRUCTOR_NAME, MTD_VOID_INIT, ClassFile.ACC_PUBLIC, mb -> mb.withCode( cb -> {
+	private static void generateConstructor(io.smallrye.classfile.ClassBuilder clb, ClassDesc generatedDesc) {
+		clb.withMethod( CONSTRUCTOR_NAME, MethodTypeDesc.of( ConstantDescs.CD_void, CD_METADATA ), ClassFile.ACC_PUBLIC, mb -> mb.withCode( cb -> {
 			cb.aload( 0 );
 			cb.invokespecial( ConstantDescs.CD_Object, CONSTRUCTOR_NAME, MTD_VOID_INIT );
+			cb.aload( 0 );
+			cb.aload( 1 );
+			cb.putfield( generatedDesc, "metadata", CD_METADATA );
 			cb.return_();
 		} ) );
 	}

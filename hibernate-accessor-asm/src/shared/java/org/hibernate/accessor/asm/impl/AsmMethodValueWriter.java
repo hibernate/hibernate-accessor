@@ -7,8 +7,8 @@ package org.hibernate.accessor.asm.impl;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
 
-// Keep the weakly cached metadata alive for as long as an accessor uses it.
-record AsmMethodValueWriter(AsmBulkAccessor accessor, Object cacheOwner, int index) implements ValueWriter {
+// The bulk accessor retains its weakly cached index metadata.
+record AsmMethodValueWriter(AsmBulkAccessor accessor, int index) implements ValueWriter {
 
 	@Override
 	public void set(Object instance, Object value) {

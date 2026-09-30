@@ -9,8 +9,8 @@ import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
 
 
-// Keep the weakly cached metadata alive for as long as an accessor uses it.
-record AsmInstantiator<T>(AsmBulkAccessor accessor, Object cacheOwner, int index, int parameterCount) implements Instantiator<T> {
+// The bulk accessor retains its weakly cached index metadata.
+record AsmInstantiator<T>(AsmBulkAccessor accessor, int index, int parameterCount) implements Instantiator<T> {
 
 	@Override
 	@SuppressWarnings("unchecked")

@@ -14,32 +14,18 @@ import java.util.Map;
 
 import org.hibernate.accessor.AccessorException;
 import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
+import org.hibernate.accessor.spi.BulkAccessorMetadata;
 import org.hibernate.accessor.spi.BytecodeDumper;
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
 
 import org.objectweb.asm.Type;
 
-final class AsmClassAccessorInfo {
+final class AsmBulkAccessorBuilder {
 
-	private final AsmBulkAccessor bulkAccessor;
-	private final Map<String, Integer> fieldIndices;
-	private final Map<String, Integer> getterMethodIndices;
-	private final Map<String, Integer> setterMethodIndices;
-	private final Map<String, Integer> constructorIndices;
-
-	private AsmClassAccessorInfo(AsmBulkAccessor bulkAccessor,
-			Map<String, Integer> fieldIndices,
-			Map<String, Integer> getterMethodIndices,
-			Map<String, Integer> setterMethodIndices,
-			Map<String, Integer> constructorIndices) {
-		this.bulkAccessor = bulkAccessor;
-		this.fieldIndices = fieldIndices;
-		this.getterMethodIndices = getterMethodIndices;
-		this.setterMethodIndices = setterMethodIndices;
-		this.constructorIndices = constructorIndices;
+	private AsmBulkAccessorBuilder() {
 	}
 
-	static AsmClassAccessorInfo create(Class<?> declaringClass, CrossClassLoaderLookupBridge lookupBridge, java.lang.invoke.MethodHandles.Lookup callerLookup, BytecodeDumper bytecodeDumper) {
+	static AsmBulkAccessor create(Class<?> declaringClass, CrossClassLoaderLookupBridge lookupBridge, java.lang.invoke.MethodHandles.Lookup callerLookup, BytecodeDumper bytecodeDumper) {
 		Field[] fields = Arrays.stream( declaringClass.getDeclaredFields() )
 				.filter( f -> !Modifier.isStatic( f.getModifiers() ) )
 				.toArray( Field[]::new );
@@ -77,50 +63,14 @@ final class AsmClassAccessorInfo {
 		bytecodeDumper.dump( Type.getInternalName( declaringClass ) + "$$HibernateAccessor", bytecode );
 
 		try {
-			AsmBulkAccessor instance =
-					(AsmBulkAccessor) lookupBridge.defineAccessor( callerLookup, declaringClass, bytecode );
-			return new AsmClassAccessorInfo( instance, fieldIndices, getterMethodIndices, setterMethodIndices, constructorIndices );
+			BulkAccessorMetadata metadata = new BulkAccessorMetadata(
+					fieldIndices, getterMethodIndices, setterMethodIndices, constructorIndices );
+			return (AsmBulkAccessor) lookupBridge.defineAccessor(
+					callerLookup, declaringClass, bytecode, new Class<?>[] { BulkAccessorMetadata.class }, metadata );
 		}
 		catch (Exception e) {
 			throw new AccessorException( "Failed to create bulk accessor for " + declaringClass.getName(), e );
 		}
-	}
-
-	AsmBulkAccessor bulkAccessor() {
-		return bulkAccessor;
-	}
-
-	int fieldIndex(Field field) {
-		Integer index = fieldIndices.get( field.getName() );
-		if ( index == null ) {
-			throw new AccessorException( "Unknown field: " + field );
-		}
-		return index;
-	}
-
-	int methodIndex(Method method) {
-		String key = methodKey( method );
-		if ( method.getParameterCount() == 0 && method.getReturnType() != void.class ) {
-			Integer index = getterMethodIndices.get( key );
-			if ( index != null ) {
-				return index;
-			}
-		}
-		else if ( method.getParameterCount() == 1 ) {
-			Integer index = setterMethodIndices.get( key );
-			if ( index != null ) {
-				return index;
-			}
-		}
-		throw new AccessorException( "Unknown method: " + method );
-	}
-
-	int constructorIndex(Constructor<?> constructor) {
-		Integer index = constructorIndices.get( Type.getConstructorDescriptor( constructor ) );
-		if ( index == null ) {
-			throw new AccessorException( "Unknown constructor: " + constructor );
-		}
-		return index;
 	}
 
 	private static String methodKey(Method method) {

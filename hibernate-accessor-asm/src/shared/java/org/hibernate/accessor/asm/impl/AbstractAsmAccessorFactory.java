@@ -48,7 +48,7 @@ public abstract class AbstractAsmAccessorFactory implements org.hibernate.access
 	protected final CrossClassLoaderLookupBridge lookupBridge;
 	protected final BytecodeDumper bytecodeDumper;
 	protected final AccessorFactory reflectionFallback;
-	private final ClassValue<AtomicReference<WeakReference<AsmClassAccessorInfo>>> cache;
+	private final ClassValue<AtomicReference<WeakReference<AsmBulkAccessor>>> cache;
 
 	protected AbstractAsmAccessorFactory(AccessorConfiguration configuration) {
 		this.callerLookup = configuration.lookup();
@@ -58,7 +58,7 @@ public abstract class AbstractAsmAccessorFactory implements org.hibernate.access
 		this.bytecodeDumper = new BytecodeDumper( configuration );
 		this.cache = new ClassValue<>() {
 			@Override
-			protected AtomicReference<WeakReference<AsmClassAccessorInfo>> computeValue(Class<?> type) {
+			protected AtomicReference<WeakReference<AsmBulkAccessor>> computeValue(Class<?> type) {
 				return new AtomicReference<>();
 			}
 		};
@@ -242,28 +242,28 @@ public abstract class AbstractAsmAccessorFactory implements org.hibernate.access
 	}
 
 	/**
-	 * Gets or creates the bulk accessor info for a given class.
+	 * Gets or creates the bulk accessor for a given class.
 	 * Uses weak references to avoid retaining the library classloader when the factory is discarded.
 	 * Used by multi-value accessor generation and by the BULK_SWITCH strategy.
 	 */
-	protected final AsmClassAccessorInfo getOrCreateClassAccessorInfo(Class<?> declaringClass) {
+	protected final AsmBulkAccessor getOrCreateBulkAccessor(Class<?> declaringClass) {
 		// A ClassValue entry can outlive its ClassValue until the key's map is cleaned.
 		// Do not attach a library-defined value strongly to a longer-lived entity class:
 		// it would retain the library's loader even after the factory is discarded.
 		var slot = cache.get( declaringClass );
 		var current = slot.get();
-		AsmClassAccessorInfo cached = current == null ? null : current.get();
+		AsmBulkAccessor cached = current == null ? null : current.get();
 		if ( cached != null ) {
 			return cached;
 		}
 		synchronized (slot) {
 			var reference = slot.get();
-			AsmClassAccessorInfo info = reference == null ? null : reference.get();
-			if ( info == null ) {
-				info = AsmClassAccessorInfo.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
-				slot.set( new WeakReference<>( info ) );
+			AsmBulkAccessor accessor = reference == null ? null : reference.get();
+			if ( accessor == null ) {
+				accessor = AsmBulkAccessorBuilder.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
+				slot.set( new WeakReference<>( accessor ) );
 			}
-			return info;
+			return accessor;
 		}
 	}
 
@@ -274,19 +274,17 @@ public abstract class AbstractAsmAccessorFactory implements org.hibernate.access
 		}
 
 		final AsmBulkAccessor[] accessors = new AsmBulkAccessor[classToFieldIndex.size()];
-		final AsmClassAccessorInfo[] infos = new AsmClassAccessorInfo[classToFieldIndex.size()];
 		for ( var entry : classToFieldIndex.entrySet() ) {
-			final AsmClassAccessorInfo info = getOrCreateClassAccessorInfo( entry.getKey() );
-			accessors[entry.getValue()] = info.bulkAccessor();
-			infos[entry.getValue()] = info;
+			final AsmBulkAccessor accessor = getOrCreateBulkAccessor( entry.getKey() );
+			accessors[entry.getValue()] = accessor;
 		}
 
 		final BulkMemberAccess[] accesses = new BulkMemberAccess[members.length];
 		for ( int i = 0; i < members.length; i++ ) {
 			final int fieldIdx = classToFieldIndex.get( members[i].getDeclaringClass() );
-			final AsmClassAccessorInfo info = infos[fieldIdx];
+			final AsmBulkAccessor accessor = accessors[fieldIdx];
 			final boolean isField = members[i] instanceof Field;
-			final int memberIdx = isField ? info.fieldIndex( (Field) members[i] ) : info.methodIndex( (Method) members[i] );
+			final int memberIdx = isField ? accessor.fieldIndex( (Field) members[i] ) : accessor.methodIndex( (Method) members[i] );
 			accesses[i] = new BulkMemberAccess( fieldIdx, memberIdx, isField );
 		}
 

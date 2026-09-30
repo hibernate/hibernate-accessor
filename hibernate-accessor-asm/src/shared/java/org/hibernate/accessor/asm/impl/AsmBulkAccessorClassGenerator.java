@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
+import org.hibernate.accessor.spi.BulkAccessorMetadata;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -26,6 +27,7 @@ import org.objectweb.asm.Type;
 final class AsmBulkAccessorClassGenerator implements Opcodes {
 
 	private static final String BULK_ACCESSOR_INTERNAL = Type.getInternalName( AsmBulkAccessor.class );
+	private static final String METADATA_DESCRIPTOR = Type.getDescriptor( BulkAccessorMetadata.class );
 	private static final String EXCEPTION_INTERNAL = "org/hibernate/accessor/AccessorException";
 
 	static byte[] generate(Class<?> targetClass, Field[] fields, Method[] getterMethods, Method[] setterMethods, Constructor<?>[] constructors) {
@@ -39,7 +41,16 @@ final class AsmBulkAccessorClassGenerator implements Opcodes {
 				"java/lang/Object", new String[] { BULK_ACCESSOR_INTERNAL }
 		);
 
-		generateConstructor( cw );
+		// Metadata belongs to the instance, never to an entity class or a static field.
+		cw.visitField( ACC_PRIVATE | ACC_FINAL, "metadata", METADATA_DESCRIPTOR, null, null ).visitEnd();
+		generateConstructor( cw, generatedName );
+		MethodVisitor metadataGetter = cw.visitMethod( ACC_PUBLIC, "metadata", "()" + METADATA_DESCRIPTOR, null, null );
+		metadataGetter.visitCode();
+		metadataGetter.visitVarInsn( ALOAD, 0 );
+		metadataGetter.visitFieldInsn( GETFIELD, generatedName, "metadata", METADATA_DESCRIPTOR );
+		metadataGetter.visitInsn( ARETURN );
+		metadataGetter.visitMaxs( 0, 0 );
+		metadataGetter.visitEnd();
 		generateReadByField( cw, targetInternal, fields );
 		generateWriteByField( cw, targetInternal, fields );
 		generateReadByMethod( cw, targetInternal, isInterface, getterMethods );
@@ -50,11 +61,14 @@ final class AsmBulkAccessorClassGenerator implements Opcodes {
 		return cw.toByteArray();
 	}
 
-	private static void generateConstructor(ClassWriter cw) {
-		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "<init>", "()V", null, null );
+	private static void generateConstructor(ClassWriter cw, String generatedName) {
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "<init>", "(" + METADATA_DESCRIPTOR + ")V", null, null );
 		mv.visitCode();
 		mv.visitVarInsn( ALOAD, 0 );
 		mv.visitMethodInsn( INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false );
+		mv.visitVarInsn( ALOAD, 0 );
+		mv.visitVarInsn( ALOAD, 1 );
+		mv.visitFieldInsn( PUTFIELD, generatedName, "metadata", METADATA_DESCRIPTOR );
 		mv.visitInsn( RETURN );
 		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();

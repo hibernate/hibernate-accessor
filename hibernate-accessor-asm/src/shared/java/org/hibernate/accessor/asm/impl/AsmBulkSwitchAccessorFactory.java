@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
+import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
 import org.hibernate.accessor.spi.AccessorConfiguration;
 
 /**
@@ -27,8 +28,8 @@ public class AsmBulkSwitchAccessorFactory extends AbstractAsmAccessorFactory {
 	@Override
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
 		try {
-			AsmClassAccessorInfo info = getOrCreateClassAccessorInfo( constructor.getDeclaringClass() );
-			return new AsmInstantiator<>( info.bulkAccessor(), info, info.constructorIndex( constructor ), constructor.getParameterCount() );
+			AsmBulkAccessor accessor = getOrCreateBulkAccessor( constructor.getDeclaringClass() );
+			return new AsmInstantiator<>( accessor, accessor.constructorIndex( constructor ), constructor.getParameterCount() );
 		}
 		catch (RuntimeException e) {
 			getLogger().debugf( e, "Failed to create ASM instantiator for %s, falling back to reflection", constructor.getDeclaringClass() );
@@ -38,26 +39,26 @@ public class AsmBulkSwitchAccessorFactory extends AbstractAsmAccessorFactory {
 
 	@Override
 	public ValueReader<?> doValueReader(Field field) {
-		final var info = getOrCreateClassAccessorInfo( field.getDeclaringClass() );
-		return new AsmFieldValueReader<>( info.bulkAccessor(), info, info.fieldIndex( field ) );
+		final var accessor = getOrCreateBulkAccessor( field.getDeclaringClass() );
+		return new AsmFieldValueReader<>( accessor, accessor.fieldIndex( field ) );
 
 	}
 
 	@Override
 	public ValueReader<?> doValueReader(Method method) {
-		final var info = getOrCreateClassAccessorInfo( method.getDeclaringClass() );
-		return new AsmMethodValueReader<>( info.bulkAccessor(), info, info.methodIndex( method ) );
+		final var accessor = getOrCreateBulkAccessor( method.getDeclaringClass() );
+		return new AsmMethodValueReader<>( accessor, accessor.methodIndex( method ) );
 	}
 
 	@Override
 	public ValueWriter doValueWriter(Field field) {
-		final var info = getOrCreateClassAccessorInfo( field.getDeclaringClass() );
-		return new AsmFieldValueWriter( info.bulkAccessor(), info, info.fieldIndex( field ) );
+		final var accessor = getOrCreateBulkAccessor( field.getDeclaringClass() );
+		return new AsmFieldValueWriter( accessor, accessor.fieldIndex( field ) );
 	}
 
 	@Override
 	public ValueWriter doValueWriter(Method setter) {
-		final var info = getOrCreateClassAccessorInfo( setter.getDeclaringClass() );
-		return new AsmMethodValueWriter( info.bulkAccessor(), info, info.methodIndex( setter ) );
+		final var accessor = getOrCreateBulkAccessor( setter.getDeclaringClass() );
+		return new AsmMethodValueWriter( accessor, accessor.methodIndex( setter ) );
 	}
 }

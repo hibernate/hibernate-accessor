@@ -7,8 +7,8 @@ package org.hibernate.accessor.asm.impl;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.asm.spi.AsmBulkAccessor;
 
-// Keep the weakly cached metadata alive for as long as an accessor uses it.
-record AsmMethodValueReader<T>(AsmBulkAccessor accessor, Object cacheOwner, int index) implements ValueReader<T> {
+// The bulk accessor retains its weakly cached index metadata.
+record AsmMethodValueReader<T>(AsmBulkAccessor accessor, int index) implements ValueReader<T> {
 
 	@Override
 	@SuppressWarnings("unchecked")
