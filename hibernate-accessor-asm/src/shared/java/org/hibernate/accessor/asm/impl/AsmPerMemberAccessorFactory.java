@@ -4,11 +4,14 @@
  */
 package org.hibernate.accessor.asm.impl;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import org.hibernate.accessor.AccessorException;
 import org.hibernate.accessor.Instantiator;
@@ -25,17 +28,18 @@ import org.objectweb.asm.Type;
  */
 public class AsmPerMemberAccessorFactory extends AbstractAsmAccessorFactory {
 
-	// JDK-owned containers avoid pinning the implementation loader through stale entries.
-	private final ClassValue<ConcurrentHashMap<Member, ValueReader<?>>> perMemberReaders = new ClassValue<>() {
+	// ClassValue entries can outlive their factory on a surviving entity class.
+	// Keep containers JDK-owned and accessors weak to avoid retaining generated
+	// hidden classes or the implementation loader through stale entries.
+	private final ClassValue<ConcurrentHashMap<Member, AtomicReference<WeakReference<ValueReader<?>>>>> perMemberReaders = new ClassValue<>() {
 		@Override
-		protected ConcurrentHashMap<Member, ValueReader<?>> computeValue(Class<?> type) {
+		protected ConcurrentHashMap<Member, AtomicReference<WeakReference<ValueReader<?>>>> computeValue(Class<?> type) {
 			return new ConcurrentHashMap<>();
 		}
 	};
-	// JDK-owned containers avoid pinning the implementation loader through stale entries.
-	private final ClassValue<ConcurrentHashMap<Member, ValueWriter>> perMemberWriters = new ClassValue<>() {
+	private final ClassValue<ConcurrentHashMap<Member, AtomicReference<WeakReference<ValueWriter>>>> perMemberWriters = new ClassValue<>() {
 		@Override
-		protected ConcurrentHashMap<Member, ValueWriter> computeValue(Class<?> type) {
+		protected ConcurrentHashMap<Member, AtomicReference<WeakReference<ValueWriter>>> computeValue(Class<?> type) {
 			return new ConcurrentHashMap<>();
 		}
 	};
@@ -53,34 +57,22 @@ public class AsmPerMemberAccessorFactory extends AbstractAsmAccessorFactory {
 
 	@Override
 	public ValueReader<?> doValueReader(Field field) {
-		return perMemberReaders.get( field.getDeclaringClass() ).computeIfAbsent(
-				field,
-				this::generatePerMemberReader
-		);
+		return getOrCreateAccessor( field, perMemberReaders, this::generatePerMemberReader );
 	}
 
 	@Override
 	public ValueReader<?> doValueReader(Method method) {
-		return perMemberReaders.get( method.getDeclaringClass() ).computeIfAbsent(
-				method,
-				this::generatePerMemberReader
-		);
+		return getOrCreateAccessor( method, perMemberReaders, this::generatePerMemberReader );
 	}
 
 	@Override
 	public ValueWriter doValueWriter(Field field) {
-		return perMemberWriters.get( field.getDeclaringClass() ).computeIfAbsent(
-				field,
-				this::generatePerMemberWriter
-		);
+		return getOrCreateAccessor( field, perMemberWriters, this::generatePerMemberWriter );
 	}
 
 	@Override
 	public ValueWriter doValueWriter(Method setter) {
-		return perMemberWriters.get( setter.getDeclaringClass() ).computeIfAbsent(
-				setter,
-				this::generatePerMemberWriter
-		);
+		return getOrCreateAccessor( setter, perMemberWriters, this::generatePerMemberWriter );
 	}
 
 	private ValueReader<?> generatePerMemberReader(Member member) {
@@ -104,6 +96,26 @@ public class AsmPerMemberAccessorFactory extends AbstractAsmAccessorFactory {
 		}
 		catch (Exception e) {
 			throw new AccessorException( "Failed to create per-member value writer for " + member, e );
+		}
+	}
+
+	private static <T> T getOrCreateAccessor(Member member,
+			ClassValue<ConcurrentHashMap<Member, AtomicReference<WeakReference<T>>>> cache,
+			Function<Member, T> generator) {
+		var slot = cache.get( member.getDeclaringClass() ).computeIfAbsent( member, ignored -> new AtomicReference<>() );
+		var current = slot.get();
+		T cached = current == null ? null : current.get();
+		if ( cached != null ) {
+			return cached;
+		}
+		synchronized (slot) {
+			var reference = slot.get();
+			T accessor = reference == null ? null : reference.get();
+			if ( accessor == null ) {
+				accessor = generator.apply( member );
+				slot.set( new WeakReference<>( accessor ) );
+			}
+			return accessor;
 		}
 	}
 }
