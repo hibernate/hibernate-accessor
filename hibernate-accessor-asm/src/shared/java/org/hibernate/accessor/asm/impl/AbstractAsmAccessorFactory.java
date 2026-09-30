@@ -5,6 +5,7 @@
 package org.hibernate.accessor.asm.impl;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -13,6 +14,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
@@ -46,6 +48,7 @@ public abstract class AbstractAsmAccessorFactory implements org.hibernate.access
 	protected final CrossClassLoaderLookupBridge lookupBridge;
 	protected final BytecodeDumper bytecodeDumper;
 	protected final AccessorFactory reflectionFallback;
+	private final ClassValue<AtomicReference<WeakReference<AsmClassAccessorInfo>>> cache;
 
 	protected AbstractAsmAccessorFactory(AccessorConfiguration configuration) {
 		this.callerLookup = configuration.lookup();
@@ -53,22 +56,75 @@ public abstract class AbstractAsmAccessorFactory implements org.hibernate.access
 		this.lookupBridge = new CrossClassLoaderLookupBridge( configuration.accessContext(), AsmBridgeClassGenerator::generate,
 				AccessorFactory.class.getModule(), AbstractAsmAccessorFactory.class.getModule() );
 		this.bytecodeDumper = new BytecodeDumper( configuration );
+		this.cache = new ClassValue<>() {
+			@Override
+			protected AtomicReference<WeakReference<AsmClassAccessorInfo>> computeValue(Class<?> type) {
+				return new AtomicReference<>();
+			}
+		};
 	}
 
 	@Override
 	public abstract <T> Instantiator<T> instantiator(Constructor<T> constructor);
 
 	@Override
-	public abstract ValueReader<?> valueReader(Field field);
+	public ValueReader<?> valueReader(Field field) {
+		MemberValidation.validateInstanceMember( field );
+		try {
+			return doValueReader( field );
+		}
+		catch (RuntimeException e) {
+			LOG.debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", field );
+			return reflectionFallback.valueReader( field );
+		}
+	}
+
+	protected abstract ValueReader<?> doValueReader(Field field);
 
 	@Override
-	public abstract ValueReader<?> valueReader(Method method);
+	public ValueReader<?> valueReader(Method method) {
+		MemberValidation.validateReaderMethod( method );
+		try {
+			return doValueReader( method );
+		}
+		catch (RuntimeException e) {
+			LOG.debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", method );
+			return reflectionFallback.valueReader( method );
+		}
+	}
+
+	protected abstract ValueReader<?> doValueReader(Method method);
 
 	@Override
-	public abstract ValueWriter valueWriter(Field field);
+	public ValueWriter valueWriter(Field field) {
+		MemberValidation.validateInstanceMember( field );
+		if ( Modifier.isFinal( field.getModifiers() ) ) {
+			return reflectionFallback.valueWriter( field );
+		}
+		try {
+			return doValueWriter( field );
+		}
+		catch (RuntimeException e) {
+			LOG.debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", field );
+			return reflectionFallback.valueWriter( field );
+		}
+	}
+
+	protected abstract ValueWriter doValueWriter(Field field);
 
 	@Override
-	public abstract ValueWriter valueWriter(Method setter);
+	public ValueWriter valueWriter(Method setter) {
+		MemberValidation.validateWriterMethod( setter );
+		try {
+			return doValueWriter( setter );
+		}
+		catch (RuntimeException e) {
+			LOG.debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", setter );
+			return reflectionFallback.valueWriter( setter );
+		}
+	}
+
+	protected abstract ValueWriter doValueWriter(Method setter);
 
 	@Override
 	public MultiValueReader multiValueReader(Class<?> declaringClass, Member... members) {
@@ -186,10 +242,30 @@ public abstract class AbstractAsmAccessorFactory implements org.hibernate.access
 	}
 
 	/**
-	 * Template method for subclasses to provide bulk accessor info for their target class.
-	 * Used by multi-value accessor generation.
+	 * Gets or creates the bulk accessor info for a given class.
+	 * Uses weak references to avoid retaining the library classloader when the factory is discarded.
+	 * Used by multi-value accessor generation and by the BULK_SWITCH strategy.
 	 */
-	protected abstract AsmClassAccessorInfo getOrCreateClassAccessorInfo(Class<?> declaringClass);
+	protected final AsmClassAccessorInfo getOrCreateClassAccessorInfo(Class<?> declaringClass) {
+		// A ClassValue entry can outlive its ClassValue until the key's map is cleaned.
+		// Do not attach a library-defined value strongly to a longer-lived entity class:
+		// it would retain the library's loader even after the factory is discarded.
+		var slot = cache.get( declaringClass );
+		var current = slot.get();
+		AsmClassAccessorInfo cached = current == null ? null : current.get();
+		if ( cached != null ) {
+			return cached;
+		}
+		synchronized (slot) {
+			var reference = slot.get();
+			AsmClassAccessorInfo info = reference == null ? null : reference.get();
+			if ( info == null ) {
+				info = AsmClassAccessorInfo.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
+				slot.set( new WeakReference<>( info ) );
+			}
+			return info;
+		}
+	}
 
 	private BulkAccessorLayout buildBulkAccessorLayout(Member[] members) {
 		final Map<Class<?>, Integer> classToFieldIndex = new LinkedHashMap<>();

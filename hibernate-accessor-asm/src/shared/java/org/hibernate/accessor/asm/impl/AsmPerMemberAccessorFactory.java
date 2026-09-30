@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.hibernate.accessor.AccessorException;
@@ -16,7 +15,6 @@ import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.spi.AccessorConfiguration;
-import org.hibernate.accessor.spi.MemberValidation;
 
 import org.objectweb.asm.Type;
 
@@ -42,14 +40,6 @@ public class AsmPerMemberAccessorFactory extends AbstractAsmAccessorFactory {
 		}
 	};
 
-	// Cache for bulk accessor info (needed for multi-value accessors)
-	private final ClassValue<AsmClassAccessorInfo> bulkAccessorInfoCache = new ClassValue<>() {
-		@Override
-		protected AsmClassAccessorInfo computeValue(Class<?> type) {
-			return AsmClassAccessorInfo.create( type, lookupBridge, callerLookup, bytecodeDumper );
-		}
-	};
-
 	public AsmPerMemberAccessorFactory(AccessorConfiguration configuration) {
 		super( configuration );
 	}
@@ -62,59 +52,35 @@ public class AsmPerMemberAccessorFactory extends AbstractAsmAccessorFactory {
 	}
 
 	@Override
-	public ValueReader<?> valueReader(Field field) {
-		MemberValidation.validateInstanceMember( field );
-		try {
-			return perMemberReaders.get( field.getDeclaringClass() ).computeIfAbsent( field, this::generatePerMemberReader );
-		}
-		catch (RuntimeException e) {
-			getLogger().debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", field );
-			return reflectionFallback.valueReader( field );
-		}
+	public ValueReader<?> doValueReader(Field field) {
+		return perMemberReaders.get( field.getDeclaringClass() ).computeIfAbsent(
+				field,
+				this::generatePerMemberReader
+		);
 	}
 
 	@Override
-	public ValueReader<?> valueReader(Method method) {
-		MemberValidation.validateReaderMethod( method );
-		try {
-			return perMemberReaders.get( method.getDeclaringClass() ).computeIfAbsent( method, this::generatePerMemberReader );
-		}
-		catch (RuntimeException e) {
-			getLogger().debugf( e, "Failed to create ASM value reader for %s, falling back to reflection", method );
-			return reflectionFallback.valueReader( method );
-		}
+	public ValueReader<?> doValueReader(Method method) {
+		return perMemberReaders.get( method.getDeclaringClass() ).computeIfAbsent(
+				method,
+				this::generatePerMemberReader
+		);
 	}
 
 	@Override
-	public ValueWriter valueWriter(Field field) {
-		MemberValidation.validateInstanceMember( field );
-		if ( Modifier.isFinal( field.getModifiers() ) ) {
-			return reflectionFallback.valueWriter( field );
-		}
-		try {
-			return perMemberWriters.get( field.getDeclaringClass() ).computeIfAbsent( field, this::generatePerMemberWriter );
-		}
-		catch (RuntimeException e) {
-			getLogger().debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", field );
-			return reflectionFallback.valueWriter( field );
-		}
+	public ValueWriter doValueWriter(Field field) {
+		return perMemberWriters.get( field.getDeclaringClass() ).computeIfAbsent(
+				field,
+				this::generatePerMemberWriter
+		);
 	}
 
 	@Override
-	public ValueWriter valueWriter(Method setter) {
-		MemberValidation.validateWriterMethod( setter );
-		try {
-			return perMemberWriters.get( setter.getDeclaringClass() ).computeIfAbsent( setter, this::generatePerMemberWriter );
-		}
-		catch (RuntimeException e) {
-			getLogger().debugf( e, "Failed to create ASM value writer for %s, falling back to reflection", setter );
-			return reflectionFallback.valueWriter( setter );
-		}
-	}
-
-	@Override
-	protected AsmClassAccessorInfo getOrCreateClassAccessorInfo(Class<?> declaringClass) {
-		return bulkAccessorInfoCache.get( declaringClass );
+	public ValueWriter doValueWriter(Method setter) {
+		return perMemberWriters.get( setter.getDeclaringClass() ).computeIfAbsent(
+				setter,
+				this::generatePerMemberWriter
+		);
 	}
 
 	private ValueReader<?> generatePerMemberReader(Member member) {

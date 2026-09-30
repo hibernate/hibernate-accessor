@@ -19,7 +19,7 @@ import org.hibernate.accessor.spi.AccessorConfiguration;
  *
  * <p>Two strategies are available:
  * <ul>
- *   <li>{@link ByteBuddyGenerationStrategy#BULK_SWITCH} - One bulk accessor class per entity with TABLESWITCH dispatch (default)</li>
+ *   <li>{@link ByteBuddyGenerationStrategy#BULK_SWITCH} - One bulk accessor class per entity with {@code TABLESWITCH} dispatch (default)</li>
  *   <li>{@link ByteBuddyGenerationStrategy#PER_MEMBER} - One dedicated class per field/method accessor</li>
  * </ul>
  */
