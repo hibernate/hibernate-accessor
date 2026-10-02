@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Hibernate Authors. See AUTHORS.txt.
- */
 package org.hibernate.accessor.performance.entities.book;
 
 /** A line of an {@link Order}: scalar quantity/total plus a cascade into {@link Book}. */

@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Hibernate Authors. See AUTHORS.txt.
- */
 package org.hibernate.accessor.performance.entities.book;
 
 /** Leaf of the customer branch of the {@link Order} graph: all scalar properties, no cascades. */
