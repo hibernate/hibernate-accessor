@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Hibernate Authors. See AUTHORS.txt.
- */
 package org.hibernate.accessor.tck.tests.beans.shadowed;
 
 // A public same-named class is accessible across runtime packages. It must never

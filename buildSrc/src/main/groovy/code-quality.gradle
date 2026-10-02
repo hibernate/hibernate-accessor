@@ -13,7 +13,6 @@ spotless {
 	//Don't fail during the check: rather than enforcing guidelines, we use this plugin to fix mistakes automatically.
 	enforceCheck = false
 	java {
-		licenseHeaderFile rootProject.file( 'config/spotless/license.java' )
 		removeUnusedImports()
 		leadingSpacesToTabs( 4 )
 		trimTrailingWhitespace()

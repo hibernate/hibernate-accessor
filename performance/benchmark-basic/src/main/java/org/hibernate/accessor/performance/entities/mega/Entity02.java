@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Hibernate Authors. See AUTHORS.txt.
- */
 package org.hibernate.accessor.performance.entities.mega;
 
 /** Distinct entity type #02, used to build a megamorphic accessor call site. */

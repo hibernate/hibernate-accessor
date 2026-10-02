@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Hibernate Authors. See AUTHORS.txt.
- */
 package org.hibernate.accessor.classfile.impl;
 
 import static org.hibernate.accessor.classfile.impl.ClassFileUtils.CD_BYTE_ARRAY;

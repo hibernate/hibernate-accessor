@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Hibernate Authors. See AUTHORS.txt.
- */
 package org.hibernate.accessor.asm.impl;
 
 import static org.hibernate.accessor.asm.impl.AsmUtils.GENERATED_CLASS_MAJOR_VERSION;

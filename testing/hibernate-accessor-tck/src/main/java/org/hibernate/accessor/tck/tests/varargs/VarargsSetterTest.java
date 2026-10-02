@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Hibernate Authors. See AUTHORS.txt.
- */
 package org.hibernate.accessor.tck.tests.varargs;
 
 import static org.junit.jupiter.api.Assertions.assertNotSame;

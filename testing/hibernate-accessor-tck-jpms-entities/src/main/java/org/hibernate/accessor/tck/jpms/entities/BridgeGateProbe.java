@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright: Red Hat Inc. and Hibernate Authors
- */
 package org.hibernate.accessor.tck.jpms.entities;
 
 import java.lang.invoke.MethodHandles;
