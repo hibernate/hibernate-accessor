@@ -172,6 +172,8 @@ public interface AccessorFactory {
 	 * @param field the field to write to
 	 * @return a value writer that sets the field's value on an object instance
 	 * @throws AccessorException if the accessor cannot be created
+	 * @throws UnsupportedFinalFieldWriteException if {@code field} is final and this factory
+	 *         does not support writing to final fields
 	 */
 	ValueWriter valueWriter(Field field);
 
