@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 #
-# SPDX-License-Identifier: Apache-2.0
-# Copyright: Red Hat Inc. and Hibernate Authors
-#
 # Model suite driver: the build-time generated, parameterized entity model.
 #
 # Sourced by ../run-benchmarks.sh after lib-bench-common.sh. Exposes run_suite(); relies on the

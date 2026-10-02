@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 #
-# SPDX-License-Identifier: Apache-2.0
-# Copyright: Red Hat Inc. and Hibernate Authors
-#
 # Basic suite driver: fixed, hand-authored micro-benchmarks (Read/Bulk/Cascade/Megamorphic/...).
 #
 # Sourced by ../run-benchmarks.sh after lib-bench-common.sh. Exposes run_suite(); relies on the

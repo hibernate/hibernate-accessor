@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 #
-# SPDX-License-Identifier: Apache-2.0
-# Copyright: Red Hat Inc. and Hibernate Authors
-#
 # Shared engine for the hibernate-accessor benchmark suites.
 #
 # This file is meant to be *sourced* by ../run-benchmarks.sh (the entrypoint) before it

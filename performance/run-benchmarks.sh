@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 #
-# SPDX-License-Identifier: Apache-2.0
-# Copyright: Red Hat Inc. and Hibernate Authors
-#
 # Entrypoint for the hibernate-accessor JMH benchmark suites.
 #
 # The `performance/` area holds two very different benchmark suites that nonetheless share
