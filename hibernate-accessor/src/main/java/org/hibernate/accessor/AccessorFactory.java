@@ -126,6 +126,9 @@ public interface AccessorFactory {
 	/**
 	 * Returns a ClassFile API-based factory with the given configuration.
 	 *
+	 * <p>Use {@link org.hibernate.accessor.classfile.ClassFileAccessorConfiguration} to select
+	 * dedicated per-member accessors. The default strategy uses a bulk accessor with switch dispatch.
+	 *
 	 * @param configuration the accessor configuration (must contain a lookup or framework access context)
 	 * @return a new ClassFile API-based factory instance
 	 * @throws AccessorException if the ClassFile API is not available

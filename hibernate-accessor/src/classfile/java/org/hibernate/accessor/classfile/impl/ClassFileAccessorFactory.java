@@ -1,298 +1,64 @@
 package org.hibernate.accessor.classfile.impl;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
-import org.hibernate.accessor.MultiValueAccessorGenerationException;
-import org.hibernate.accessor.MultiValueReader;
-import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.classfile.spi.ClassFileBulkAccessor;
 import org.hibernate.accessor.spi.AccessorConfiguration;
-import org.hibernate.accessor.spi.BytecodeDumper;
-import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
-import org.hibernate.accessor.spi.MemberValidation;
 
-import org.jboss.logging.Logger;
+/**
+ * ClassFile API-based accessor factory using the BULK_SWITCH generation strategy.
+ * Generates one bulk accessor class per entity with TABLESWITCH dispatch on member index.
+ * Single-value readers/writers are thin records wrapping the bulk accessor.
+ */
+public class ClassFileAccessorFactory extends AbstractClassFileAccessorFactory {
 
-public class ClassFileAccessorFactory implements AccessorFactory {
-
-	private static final Logger LOG = Logger.getLogger( ClassFileAccessorFactory.class );
-
-	private static final MethodHandles.Lookup ACCESSOR_MODULE_LOOKUP = MethodHandles.lookup();
-	private final ClassValue<AtomicReference<WeakReference<ClassFileBulkAccessor>>> cache;
-	private final MethodHandles.Lookup callerLookup;
-	private final CrossClassLoaderLookupBridge lookupBridge;
-	private final BytecodeDumper bytecodeDumper;
-	private final AccessorFactory reflectionFallback;
-
-	public ClassFileAccessorFactory(MethodHandles.Lookup lookup) {
+	public ClassFileAccessorFactory(java.lang.invoke.MethodHandles.Lookup lookup) {
 		this( new AccessorConfiguration( lookup ) );
 	}
 
 	public ClassFileAccessorFactory(AccessorConfiguration configuration) {
-		this.callerLookup = configuration.lookup();
-		this.reflectionFallback = AccessorFactory.reflection( configuration );
-		this.lookupBridge = new CrossClassLoaderLookupBridge( configuration.accessContext(), ClassFileBridgeClassGenerator::generate,
-				AccessorFactory.class.getModule() );
-		this.bytecodeDumper = new BytecodeDumper( configuration );
-		this.cache = new ClassValue<>() {
-			@Override
-			protected AtomicReference<WeakReference<ClassFileBulkAccessor>> computeValue(Class<?> type) {
-				return new AtomicReference<>();
-			}
-		};
+		super( configuration );
 	}
 
 	@Override
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
 		try {
-			ClassFileBulkAccessor accessor = getOrCreate( constructor.getDeclaringClass() );
+			ClassFileBulkAccessor accessor = getOrCreateBulkAccessor( constructor.getDeclaringClass() );
 			return new ClassFileInstantiator<>( accessor, accessor.constructorIndex( constructor ), constructor.getParameterCount() );
 		}
 		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ClassFile instantiator for %s, falling back to reflection", constructor.getDeclaringClass() );
+			getLogger().debugf( e, "Failed to create ClassFile API instantiator for %s, falling back to reflection", constructor.getDeclaringClass() );
 			return reflectionFallback.instantiator( constructor );
 		}
 	}
 
 	@Override
-	public ValueReader<?> valueReader(Field field) {
-		MemberValidation.validateInstanceMember( field );
-		try {
-			ClassFileBulkAccessor accessor = getOrCreate( field.getDeclaringClass() );
-			return new ClassFileFieldValueReader<>( accessor, accessor.fieldIndex( field ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ClassFile value reader for %s, falling back to reflection", field );
-			return reflectionFallback.valueReader( field );
-		}
+	public ValueReader<?> doValueReader(Field field) {
+		final var accessor = getOrCreateBulkAccessor( field.getDeclaringClass() );
+		return new ClassFileFieldValueReader<>( accessor, accessor.fieldIndex( field ) );
+
 	}
 
 	@Override
-	public ValueReader<?> valueReader(Method method) {
-		MemberValidation.validateReaderMethod( method );
-		try {
-			ClassFileBulkAccessor accessor = getOrCreate( method.getDeclaringClass() );
-			return new ClassFileMethodValueReader<>( accessor, accessor.methodIndex( method ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ClassFile value reader for %s, falling back to reflection", method );
-			return reflectionFallback.valueReader( method );
-		}
+	public ValueReader<?> doValueReader(Method method) {
+		final var accessor = getOrCreateBulkAccessor( method.getDeclaringClass() );
+		return new ClassFileMethodValueReader<>( accessor, accessor.methodIndex( method ) );
 	}
 
 	@Override
-	public ValueWriter valueWriter(Field field) {
-		MemberValidation.validateInstanceMember( field );
-		if ( Modifier.isFinal( field.getModifiers() ) ) {
-			return reflectionFallback.valueWriter( field );
-		}
-		try {
-			ClassFileBulkAccessor accessor = getOrCreate( field.getDeclaringClass() );
-			return new ClassFileFieldValueWriter( accessor, accessor.fieldIndex( field ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ClassFile value writer for %s, falling back to reflection", field );
-			return reflectionFallback.valueWriter( field );
-		}
+	public ValueWriter doValueWriter(Field field) {
+		final var accessor = getOrCreateBulkAccessor( field.getDeclaringClass() );
+		return new ClassFileFieldValueWriter( accessor, accessor.fieldIndex( field ) );
 	}
 
 	@Override
-	public ValueWriter valueWriter(Method setter) {
-		MemberValidation.validateWriterMethod( setter );
-		try {
-			ClassFileBulkAccessor accessor = getOrCreate( setter.getDeclaringClass() );
-			return new ClassFileMethodValueWriter( accessor, accessor.methodIndex( setter ) );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ClassFile value writer for %s, falling back to reflection", setter );
-			return reflectionFallback.valueWriter( setter );
-		}
-	}
-
-	@Override
-	public MultiValueReader multiValueReader(Class<?> declaringClass, Member... members) {
-		if ( members.length == 0 ) {
-			throw new IllegalArgumentException( "At least one member is required" );
-		}
-		for ( Member member : members ) {
-			MemberValidation.validateMemberDeclaringType( declaringClass, member );
-			MemberValidation.validateReaderMember( member );
-		}
-		try {
-			if ( allSameDeclaringClass( declaringClass, members ) ) {
-				return generateDirectReader( members );
-			}
-			return generateBulkBasedReader( members );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ClassFile multi-value reader for %s, falling back to reflection", declaringClass );
-			return reflectionFallback.multiValueReader( declaringClass, members );
-		}
-	}
-
-	@Override
-	public MultiValueWriter multiValueWriter(Class<?> declaringClass, Member... members) {
-		if ( members.length == 0 ) {
-			throw new IllegalArgumentException( "At least one member is required" );
-		}
-		for ( Member member : members ) {
-			MemberValidation.validateMemberDeclaringType( declaringClass, member );
-			MemberValidation.validateWriterMember( member );
-		}
-		// Nestmate access does not permit PUTFIELD on another class's final field.
-		// Reject before the generation/fallback block so the caller can use per-property access.
-		for ( Member member : members ) {
-			if ( member instanceof Field field && Modifier.isFinal( field.getModifiers() ) ) {
-				throw new MultiValueAccessorGenerationException( "Cannot generate a multi-value writer for final field " + field );
-			}
-		}
-		try {
-			if ( allSameDeclaringClass( declaringClass, members ) ) {
-				return generateDirectWriter( members );
-			}
-			return generateBulkBasedWriter( members );
-		}
-		catch (RuntimeException e) {
-			LOG.debugf( e, "Failed to create ClassFile multi-value writer for %s, falling back to reflection", declaringClass );
-			return reflectionFallback.multiValueWriter( declaringClass, members );
-		}
-	}
-
-	private MultiValueReader generateDirectReader(Member[] members) {
-		Class<?> targetClass = members[0].getDeclaringClass();
-		byte[] bytecode = ClassFileMultiValueClassGenerator.generateReader( targetClass, members );
-		bytecodeDumper.dump( targetClass.getName().replace( '.', '/' ) + "$$HibernateAccessorMultiReader_" + java.util.UUID.randomUUID(), bytecode );
-		try {
-			return (MultiValueReader) lookupBridge.defineAccessor( callerLookup, targetClass, bytecode );
-		}
-		catch (Exception e) {
-			throw new MultiValueAccessorGenerationException(
-					"Failed to create direct multi-value reader for " + targetClass.getName(), e );
-		}
-	}
-
-	private MultiValueWriter generateDirectWriter(Member[] members) {
-		Class<?> targetClass = members[0].getDeclaringClass();
-		byte[] bytecode = ClassFileMultiValueClassGenerator.generateWriter( targetClass, members );
-		bytecodeDumper.dump( targetClass.getName().replace( '.', '/' ) + "$$HibernateAccessorMultiWriter_" + java.util.UUID.randomUUID(), bytecode );
-		try {
-			return (MultiValueWriter) lookupBridge.defineAccessor( callerLookup, targetClass, bytecode );
-		}
-		catch (Exception e) {
-			throw new MultiValueAccessorGenerationException(
-					"Failed to create direct multi-value writer for " + targetClass.getName(), e );
-		}
-	}
-
-	private MultiValueReader generateBulkBasedReader(Member[] members) {
-		BulkAccessorLayout layout = buildBulkAccessorLayout( members );
-		byte[] bytecode = ClassFileMultiValueClassGenerator.generateBulkReader(
-				layout.accesses,
-				layout.accessors.length
-		);
-		bytecodeDumper.dump( members[0].getDeclaringClass().getName().replace( '.', '/' ) + "$$HibernateAccessorMultiBulkReader_" + java.util.UUID.randomUUID(), bytecode );
-		try {
-			MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass( bytecode, true );
-			Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
-			Arrays.fill( paramTypes, ClassFileBulkAccessor.class );
-			return (MultiValueReader) hiddenLookup.lookupClass()
-					.getDeclaredConstructor( paramTypes )
-					.newInstance( (Object[]) layout.accessors );
-		}
-		catch (Exception e) {
-			throw new MultiValueAccessorGenerationException( "Failed to create bulk-based multi-value reader", e );
-		}
-	}
-
-	private MultiValueWriter generateBulkBasedWriter(Member[] members) {
-		BulkAccessorLayout layout = buildBulkAccessorLayout( members );
-		byte[] bytecode = ClassFileMultiValueClassGenerator.generateBulkWriter(
-				layout.accesses,
-				layout.accessors.length
-		);
-		bytecodeDumper.dump( "org/hibernate/accessor/classfile/impl/HibernateAccessorMultiBulkWriter", bytecode );
-		try {
-			MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass( bytecode, true );
-			Class<?>[] paramTypes = new Class<?>[layout.accessors.length];
-			Arrays.fill( paramTypes, ClassFileBulkAccessor.class );
-			return (MultiValueWriter) hiddenLookup.lookupClass()
-					.getDeclaredConstructor( paramTypes )
-					.newInstance( (Object[]) layout.accessors );
-		}
-		catch (Exception e) {
-			throw new MultiValueAccessorGenerationException( "Failed to create bulk-based multi-value writer", e );
-		}
-	}
-
-	private BulkAccessorLayout buildBulkAccessorLayout(Member[] members) {
-		Map<Class<?>, Integer> classToFieldIndex = new LinkedHashMap<>();
-		for ( Member member : members ) {
-			classToFieldIndex.computeIfAbsent( member.getDeclaringClass(), cls -> classToFieldIndex.size() );
-		}
-
-		ClassFileBulkAccessor[] accessors = new ClassFileBulkAccessor[classToFieldIndex.size()];
-		for ( var entry : classToFieldIndex.entrySet() ) {
-			ClassFileBulkAccessor accessor = getOrCreate( entry.getKey() );
-			accessors[entry.getValue()] = accessor;
-		}
-
-		BulkMemberAccess[] accesses = new BulkMemberAccess[members.length];
-		for ( int i = 0; i < members.length; i++ ) {
-			int fieldIdx = classToFieldIndex.get( members[i].getDeclaringClass() );
-			ClassFileBulkAccessor accessor = accessors[fieldIdx];
-			boolean isField = members[i] instanceof Field;
-			int memberIdx = isField ? accessor.fieldIndex( (Field) members[i] ) : accessor.methodIndex( (Method) members[i] );
-			accesses[i] = new BulkMemberAccess( fieldIdx, memberIdx, isField );
-		}
-
-		return new BulkAccessorLayout( accesses, accessors );
-	}
-
-	private record BulkAccessorLayout(  BulkMemberAccess[] accesses,
-										ClassFileBulkAccessor[] accessors) {
-	}
-
-	private static boolean allSameDeclaringClass(Class<?> declaringClass, Member[] members) {
-		for ( Member member : members ) {
-			if ( member.getDeclaringClass() != declaringClass ) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	private ClassFileBulkAccessor getOrCreate(Class<?> declaringClass) {
-		// A ClassValue entry can outlive its ClassValue until the key's map is cleaned.
-		// Do not attach a library-defined value strongly to a longer-lived entity class:
-		// it would retain the library's loader even after the factory is discarded.
-		var slot = cache.get( declaringClass );
-		var current = slot.get();
-		ClassFileBulkAccessor cached = current == null ? null : current.get();
-		if ( cached != null ) {
-			return cached;
-		}
-		synchronized (slot) {
-			var reference = slot.get();
-			ClassFileBulkAccessor accessor = reference == null ? null : reference.get();
-			if ( accessor == null ) {
-				accessor = ClassFileBulkAccessorBuilder.create( declaringClass, lookupBridge, callerLookup, bytecodeDumper );
-				slot.set( new WeakReference<>( accessor ) );
-			}
-			return accessor;
-		}
+	public ValueWriter doValueWriter(Method setter) {
+		final var accessor = getOrCreateBulkAccessor( setter.getDeclaringClass() );
+		return new ClassFileMethodValueWriter( accessor, accessor.methodIndex( setter ) );
 	}
 }

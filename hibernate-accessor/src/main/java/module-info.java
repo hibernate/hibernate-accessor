@@ -5,5 +5,6 @@ module org.hibernate.accessor {
 
 	exports org.hibernate.accessor;
 	exports org.hibernate.accessor.spi;
+	exports org.hibernate.accessor.classfile;
 	exports org.hibernate.accessor.classfile.spi;
 }
