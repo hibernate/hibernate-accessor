@@ -6,6 +6,7 @@ import java.lang.invoke.MethodType;
 
 import org.hibernate.accessor.AccessorException;
 import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.classfile.ClassFileAccessorConfiguration;
 import org.hibernate.accessor.spi.AccessorConfiguration;
 
 /**
@@ -15,6 +16,7 @@ import org.hibernate.accessor.spi.AccessorConfiguration;
  */
 public final class ClassFileFactoryBootstrap {
 	static final MethodHandle CONSTRUCTOR;
+	static final MethodHandle PER_MEMBER_CONSTRUCTOR;
 
 	static {
 		try {
@@ -24,6 +26,9 @@ public final class ClassFileFactoryBootstrap {
 					implClass,
 					MethodType.methodType( void.class, AccessorConfiguration.class )
 			);
+			PER_MEMBER_CONSTRUCTOR = lookup.findConstructor(
+					lookup.findClass( "org.hibernate.accessor.classfile.impl.ClassFilePerMemberAccessorFactory" ),
+					MethodType.methodType( void.class, AccessorConfiguration.class ) );
 		}
 		catch (ClassNotFoundException e) {
 			throw new AccessorException(
@@ -40,7 +45,11 @@ public final class ClassFileFactoryBootstrap {
 
 	public static AccessorFactory instance(AccessorConfiguration configuration) {
 		try {
-			return (AccessorFactory) ClassFileFactoryBootstrap.CONSTRUCTOR.invoke( configuration );
+			MethodHandle constructor = switch ( ClassFileAccessorConfiguration.generationStrategy( configuration ) ) {
+				case BULK_SWITCH -> CONSTRUCTOR;
+				case PER_MEMBER -> PER_MEMBER_CONSTRUCTOR;
+			};
+			return (AccessorFactory) constructor.invoke( configuration );
 		}
 		catch (AccessorException e) {
 			throw e;
