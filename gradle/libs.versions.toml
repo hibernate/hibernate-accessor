@@ -1,6 +1,6 @@
 [versions]
 # libs
-byteBuddy = "1.18.14"
+byteBuddy = "1.18.15"
 ow2Asm = "9.10.1"
 smallryeClassfile = "27"
 jbossLogging = "3.6.3.Final"
