@@ -8,6 +8,7 @@ import java.util.Set;
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 public class InvocationShapeTest {
@@ -37,15 +38,23 @@ public class InvocationShapeTest {
 
 	@Test
 	void varargsMembersAcceptTheDeclaredArrayAsOneArgument() throws Exception {
-		var factory = TckHelper.factory();
+		verifyVarargs( Bean.class );
+	}
+
+	@Test
+	@Tag("runtime-class-definition")
+	void isolatedVarargsMembersAcceptTheDeclaredArrayAsOneArgument() throws Exception {
 		var loader = new IsolatingClassLoader( Set.of( Bean.class.getName() ), Bean.class.getClassLoader() );
-		for ( var type : new Class<?>[] { Bean.class, loader.loadClass( Bean.class.getName() ) } ) {
-			String[] values = { "a", "b" };
-			var bean = factory.instantiator( type.getConstructor( String[].class ) ).create( (Object) values );
-			assertArrayEquals( values, (String[]) type.getField( "values" ).get( bean ) );
-			values = new String[] { "c", "d" };
-			factory.valueWriter( type.getMethod( "setValues", String[].class ) ).set( bean, values );
-			assertArrayEquals( values, (String[]) type.getField( "values" ).get( bean ) );
-		}
+		verifyVarargs( loader.loadClass( Bean.class.getName() ) );
+	}
+
+	private void verifyVarargs(Class<?> type) throws Exception {
+		var factory = TckHelper.factory();
+		String[] values = { "a", "b" };
+		var bean = factory.instantiator( type.getConstructor( String[].class ) ).create( (Object) values );
+		assertArrayEquals( values, (String[]) type.getField( "values" ).get( bean ) );
+		values = new String[] { "c", "d" };
+		factory.valueWriter( type.getMethod( "setValues", String[].class ) ).set( bean, values );
+		assertArrayEquals( values, (String[]) type.getField( "values" ).get( bean ) );
 	}
 }

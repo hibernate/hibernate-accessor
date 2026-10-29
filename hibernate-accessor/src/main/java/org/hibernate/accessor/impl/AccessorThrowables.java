@@ -1,4 +1,4 @@
-package org.hibernate.accessor.internal;
+package org.hibernate.accessor.impl;
 
 /**
  * Internal utilities for propagating throwables raised by user-supplied getters and setters.

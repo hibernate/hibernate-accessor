@@ -13,13 +13,22 @@ import org.hibernate.accessor.tck.tests.beans.VarargsBean;
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 public class VarargsSetterTest {
-	@ParameterizedTest
-	@ValueSource(booleans = { false, true })
-	void singleValuePreservesArray(boolean isolated) throws Exception {
+	@Test
+	void singleValuePreservesArray() throws Exception {
+		singleValuePreservesArray( false );
+	}
+
+	@Test
+	@Tag("runtime-class-definition")
+	void singleValuePreservesArrayIsolated() throws Exception {
+		singleValuePreservesArray( true );
+	}
+
+	private void singleValuePreservesArray(boolean isolated) throws Exception {
 		Class<?> beanClass = beanClass( isolated );
 		AccessorFactory factory = TckHelper.factory();
 		Object bean = beanClass.getConstructor().newInstance();
@@ -34,9 +43,20 @@ public class VarargsSetterTest {
 		}
 	}
 
-	@ParameterizedTest
-	@ValueSource(booleans = { false, true })
-	void multiValuePreservesArrays(boolean isolated) throws Exception {
+	@Tag("multi-accessor")
+	@Test
+	void multiValuePreservesArrays() throws Exception {
+		multiValuePreservesArrays( false );
+	}
+
+	@Tag("multi-accessor")
+	@Test
+	@Tag("runtime-class-definition")
+	void multiValuePreservesArraysIsolated() throws Exception {
+		multiValuePreservesArrays( true );
+	}
+
+	private void multiValuePreservesArrays(boolean isolated) throws Exception {
 		Class<?> beanClass = beanClass( isolated );
 		Object bean = beanClass.getConstructor().newInstance();
 		MultiValueWriter writer = TckHelper.factory().multiValueWriter( beanClass, setters( beanClass ) );

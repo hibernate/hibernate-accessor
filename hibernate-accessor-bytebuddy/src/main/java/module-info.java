@@ -5,4 +5,5 @@ module org.hibernate.accessor.bytebuddy {
 
 	exports org.hibernate.accessor.bytebuddy;
 	exports org.hibernate.accessor.bytebuddy.spi;
+	exports org.hibernate.accessor.bytebuddy.aot;
 }

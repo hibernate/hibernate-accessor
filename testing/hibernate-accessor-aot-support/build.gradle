@@ -1,0 +1,28 @@
+plugins {
+    id 'java-module'
+}
+
+description = 'Internal AOT test support (not published)'
+
+dependencies {
+    implementation project(':hibernate-accessor-asm')
+    implementation project(':hibernate-accessor-bytebuddy')
+}
+
+// Exercise the same processor against Byte Buddy's shaded ASM without publishing either helper.
+def transformProcessorSources = tasks.register('transformProcessorSources', Sync) {
+    from 'src/main/java'
+    into layout.buildDirectory.dir('generated-sources/bytebuddy')
+    filter { line ->
+        line.replace('org.objectweb.asm', 'net.bytebuddy.jar.asm')
+            .replace('org.hibernate.accessor.asm', 'org.hibernate.accessor.bytebuddy')
+            .replace('org.hibernate.accessor.testing.aot.asm', 'org.hibernate.accessor.testing.aot.bytebuddy')
+            .replaceAll(/Asm([A-Z])/, 'ByteBuddy$1')
+    }
+    eachFile { details ->
+        details.path = details.path.replace('/asm/', '/bytebuddy/')
+            .replaceAll(/Asm([A-Z])/, 'ByteBuddy$1')
+    }
+    includeEmptyDirs = false
+}
+sourceSets.main.java.srcDir(transformProcessorSources)

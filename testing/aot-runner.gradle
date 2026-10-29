@@ -1,0 +1,42 @@
+// The original TCK artifact is only an input to preparation, never a runtime dependency.
+configurations {
+    tckArchive { transitive = false }
+}
+
+dependencies {
+    implementation project(":hibernate-accessor-${aotBackend}")
+    implementation project(':hibernate-accessor-aot-support')
+    tckArchive project(':hibernate-accessor-tck')
+}
+
+def unpackTck = tasks.register('unpackTck', Sync) {
+    dependsOn configurations.tckArchive
+    from { configurations.tckArchive.collect { zipTree(it) } }
+    into layout.buildDirectory.dir('aot/input')
+}
+
+def preparedTck = layout.buildDirectory.dir('aot/prepared')
+def prepareTck = tasks.register('prepareTck', JavaExec) {
+    description = 'Transforms the unpacked TCK models and generates the AOT factory'
+    dependsOn unpackTck
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "org.hibernate.accessor.${aotBackend}.aot.PrepareTck"
+    inputs.dir(unpackTck.map { it.destinationDir })
+    outputs.dir(preparedTck)
+    doFirst {
+        delete preparedTck
+        args = [unpackTck.get().destinationDir.absolutePath, preparedTck.get().asFile.absolutePath]
+    }
+}
+
+def preparedClasses = files(preparedTck).builtBy(prepareTck)
+dependencies {
+    testImplementation preparedClasses
+}
+
+tasks.named('test', Test) {
+    testClassesDirs += preparedClasses
+    useJUnitPlatform {
+        excludeTags 'multi-accessor', 'runtime-class-definition'
+    }
+}

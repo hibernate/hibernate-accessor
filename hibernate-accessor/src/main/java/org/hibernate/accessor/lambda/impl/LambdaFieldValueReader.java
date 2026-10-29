@@ -3,7 +3,7 @@ package org.hibernate.accessor.lambda.impl;
 import java.lang.invoke.MethodHandle;
 
 import org.hibernate.accessor.ValueReader;
-import org.hibernate.accessor.internal.AccessorThrowables;
+import org.hibernate.accessor.impl.AccessorThrowables;
 
 public class LambdaFieldValueReader<T> implements ValueReader<T> {
 	private final MethodHandle getter;

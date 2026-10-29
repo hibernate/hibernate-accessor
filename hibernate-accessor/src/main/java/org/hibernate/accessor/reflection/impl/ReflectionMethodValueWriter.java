@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 import org.hibernate.accessor.ValueWriter;
-import org.hibernate.accessor.internal.AccessorThrowables;
+import org.hibernate.accessor.impl.AccessorThrowables;
 import org.hibernate.accessor.logging.impl.CoreLog;
 import org.hibernate.accessor.spi.AccessContext;
 

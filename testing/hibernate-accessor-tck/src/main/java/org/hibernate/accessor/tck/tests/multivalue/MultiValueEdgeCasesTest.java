@@ -9,8 +9,10 @@ import org.hibernate.accessor.tck.tests.interfacemethod.GreetingService;
 import org.hibernate.accessor.tck.tests.interfacemethod.GreetingServiceImpl;
 import org.hibernate.accessor.tck.util.TckHelper;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("multi-accessor")
 public class MultiValueEdgeCasesTest {
 
 	public static class Bean {

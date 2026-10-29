@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.hibernate.accessor.tck.util.TckHelper;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 public class MemberDispatchTest {
@@ -35,7 +36,7 @@ public class MemberDispatchTest {
 	}
 
 	@Test
-	void shadowedFieldsRemainDistinctForSingleAndMultiValueAccess() throws Exception {
+	void shadowedFieldsRemainDistinctForSingleValueAccess() throws Exception {
 		var factory = TckHelper.factory();
 		var parentField = Parent.class.getField( "value" );
 		var childField = Child.class.getDeclaredField( "value" );
@@ -45,7 +46,15 @@ public class MemberDispatchTest {
 		factory.valueWriter( childField ).set( child, "child" );
 		assertEquals( "parent", factory.valueReader( parentField ).get( child ) );
 		assertEquals( "child", factory.valueReader( childField ).get( child ) );
+	}
 
+	@Tag("multi-accessor")
+	@Test
+	void shadowedFieldsRemainDistinctForMultiValueAccess() throws Exception {
+		var factory = TckHelper.factory();
+		var parentField = Parent.class.getField( "value" );
+		var childField = Child.class.getDeclaredField( "value" );
+		var child = new Child();
 		factory.multiValueWriter( Child.class, childField, parentField )
 				.set( child, new Object[] { "second child", "second parent" } );
 		assertArrayEquals( new Object[] { "second parent", "second child" },
@@ -62,7 +71,15 @@ public class MemberDispatchTest {
 		factory.valueWriter( setter ).set( child, "single" );
 		assertEquals( "overridden:single", ( (Parent) child ).value );
 		assertEquals( "overridden:overridden:single", factory.valueReader( getter ).get( child ) );
+	}
 
+	@Tag("multi-accessor")
+	@Test
+	void parentMultiValueAccessorsDispatchToChildOverrides() throws Exception {
+		var factory = TckHelper.factory();
+		var setter = Parent.class.getMethod( "setValue", String.class );
+		var getter = Parent.class.getMethod( "getValue" );
+		var child = new Child();
 		factory.multiValueWriter( Child.class, setter ).set( child, new Object[] { "multi" } );
 		assertArrayEquals( new Object[] { "overridden:overridden:multi" },
 				factory.multiValueReader( Child.class, getter ).get( child ) );

@@ -1,0 +1,6 @@
+plugins {
+    id 'testing'
+}
+
+ext.aotBackend = 'asm'
+apply from: rootProject.file('testing/aot-runner.gradle')

@@ -3,7 +3,7 @@ package org.hibernate.accessor.methodhandle.impl;
 import java.lang.invoke.MethodHandle;
 
 import org.hibernate.accessor.ValueWriter;
-import org.hibernate.accessor.internal.AccessorThrowables;
+import org.hibernate.accessor.impl.AccessorThrowables;
 
 public class MethodHandleMethodValueWriter implements ValueWriter {
 	private final MethodHandle target;
