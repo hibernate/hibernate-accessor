@@ -1,7 +1,5 @@
 package org.hibernate.accessor.asm.aot;
 
-import static org.hibernate.accessor.asm.aot.GenerationUtil.STRING_SWITCH_CHUNK_SIZE;
-import static org.hibernate.accessor.asm.aot.GenerationUtil.SWITCH_CHUNK_SIZE;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.emitStringSwitch;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.fqcnToName;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.pushIntConst;
@@ -35,6 +33,7 @@ import org.objectweb.asm.Type;
 /** Emits methods from a resolved host plan; discovery belongs to the caller. */
 final class HostEmitter implements Opcodes {
 	private final ClassVisitor cv;
+	private final AotChunkSizes chunks;
 	private final String className;
 	private final boolean isInterface;
 	private final Set<AotMemberMetadata> readers;
@@ -44,8 +43,9 @@ final class HostEmitter implements Opcodes {
 	private final String ACCESSOR_IMPL_FACTORY_INTERNAL;
 
 	HostEmitter(ClassVisitor cv, AotTypeMetadata host, Set<AotMemberMetadata> readers,
-			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors, int classIndex, String runtimeHooks) {
+			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors, int classIndex, String runtimeHooks, AotChunkSizes chunks) {
 		this.cv = cv;
+		this.chunks = chunks;
 		this.className = fqcnToName( host.host() );
 		this.isInterface = host.isInterface();
 		this.readers = new TreeSet<>( readers );
@@ -124,12 +124,12 @@ final class HostEmitter implements Opcodes {
 
 		List<String> names = entries.stream().map( NameAndIndex::name ).toList();
 
-		if ( names.size() <= STRING_SWITCH_CHUNK_SIZE ) {
+		if ( names.size() <= chunks.memberLookup() ) {
 			generateAccessorSwitch( methodName, descriptor, names, entries, classIndex,
 					returnTypeInternal, factoryMethodName );
 		}
 		else {
-			int numChunks = ( names.size() + STRING_SWITCH_CHUNK_SIZE - 1 ) / STRING_SWITCH_CHUNK_SIZE;
+			int numChunks = ( names.size() - 1 ) / chunks.memberLookup() + 1;
 
 			List<List<String>> chunkNames = new ArrayList<>();
 			List<List<NameAndIndex>> chunkEntries = new ArrayList<>();
@@ -177,8 +177,8 @@ final class HostEmitter implements Opcodes {
 			String returnTypeInternal, String factoryMethodName) {
 		// Hashes are not a size bound: even thousands of distinct keys can have the same hash.
 		// Split an oversized bucket by entry count, preserving the original dispatch indexes.
-		for ( int start = 0, part = 0; start < names.size(); start += STRING_SWITCH_CHUNK_SIZE, part++ ) {
-			int end = Math.min( start + STRING_SWITCH_CHUNK_SIZE, names.size() );
+		for ( int start = 0, part = 0; start < names.size(); start += chunks.memberLookup(), part++ ) {
+			int end = Math.min( start + chunks.memberLookup(), names.size() );
 			String current = part == 0 ? methodName : methodName + "$part" + part;
 			String next = end == names.size() ? null : methodName + "$part" + ( part + 1 );
 			generateAccessorSwitchPart( current, descriptor, names.subList( start, end ), entries.subList( start, end ),
@@ -285,18 +285,18 @@ final class HostEmitter implements Opcodes {
 			return;
 		}
 
-		if ( count <= SWITCH_CHUNK_SIZE ) {
+		if ( count <= chunks.memberRead() ) {
 			generateReadSwitch( PREFIX_READ_METHOD, descriptor, readers, 0 );
 		}
 		else {
 			ArrayList<AotMemberMetadata> memberList = new ArrayList<>( readers );
-			for ( int chunk = 0; chunk * SWITCH_CHUNK_SIZE < count; chunk++ ) {
-				int start = chunk * SWITCH_CHUNK_SIZE;
-				int end = Math.min( start + SWITCH_CHUNK_SIZE, count );
+			for ( int chunk = 0; chunk * chunks.memberRead() < count; chunk++ ) {
+				int start = chunk * chunks.memberRead();
+				int end = Math.min( start + chunks.memberRead(), count );
 				generateReadSwitch( PREFIX_READ_METHOD + "$" + chunk, descriptor,
 						memberList.subList( start, end ), start );
 			}
-			generateChunkDispatcher( PREFIX_READ_METHOD, descriptor, count, false, SWITCH_CHUNK_SIZE );
+			generateChunkDispatcher( PREFIX_READ_METHOD, descriptor, count, false, chunks.memberRead() );
 		}
 	}
 
@@ -376,18 +376,18 @@ final class HostEmitter implements Opcodes {
 			return;
 		}
 
-		if ( count <= SWITCH_CHUNK_SIZE ) {
+		if ( count <= chunks.memberWrite() ) {
 			generateWriteSwitch( PREFIX_WRITE_METHOD, descriptor, writers, 0 );
 		}
 		else {
 			ArrayList<AotMemberMetadata> memberList = new ArrayList<>( writers );
-			for ( int chunk = 0; chunk * SWITCH_CHUNK_SIZE < count; chunk++ ) {
-				int start = chunk * SWITCH_CHUNK_SIZE;
-				int end = Math.min( start + SWITCH_CHUNK_SIZE, count );
+			for ( int chunk = 0; chunk * chunks.memberWrite() < count; chunk++ ) {
+				int start = chunk * chunks.memberWrite();
+				int end = Math.min( start + chunks.memberWrite(), count );
 				generateWriteSwitch( PREFIX_WRITE_METHOD + "$" + chunk, descriptor,
 						memberList.subList( start, end ), start );
 			}
-			generateChunkDispatcher( PREFIX_WRITE_METHOD, descriptor, count, true, SWITCH_CHUNK_SIZE );
+			generateChunkDispatcher( PREFIX_WRITE_METHOD, descriptor, count, true, chunks.memberWrite() );
 		}
 	}
 
@@ -487,7 +487,7 @@ final class HostEmitter implements Opcodes {
 
 		// A constructor case may unbox many arguments. Bound conversions per helper, not just cases.
 		int maxParameters = constructors.stream().mapToInt( ctor -> ctor.parameters().size() ).max().orElse( 1 );
-		int chunkSize = Math.max( 1, SWITCH_CHUNK_SIZE / Math.max( 1, maxParameters ) );
+		int chunkSize = Math.max( 1, chunks.memberConstructor() / Math.max( 1, maxParameters ) );
 		if ( count <= chunkSize ) {
 			generateCreateSwitch( PREFIX_CREATE_METHOD, descriptor, constructors, 0 );
 		}
@@ -592,7 +592,7 @@ final class HostEmitter implements Opcodes {
 		MethodVisitor mv = cv.visitMethod( accessFlags, methodName, descriptor, null, null );
 		mv.visitCode();
 
-		int chunkCount = ( totalCount + chunkSize - 1 ) / chunkSize;
+		int chunkCount = ( totalCount - 1 ) / chunkSize + 1;
 		Label[] labels = new Label[chunkCount];
 		for ( int i = 0; i < chunkCount; i++ ) {
 			labels[i] = new Label();

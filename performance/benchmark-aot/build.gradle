@@ -1,0 +1,35 @@
+plugins {
+    id 'java-module'
+    id 'com.gradleup.shadow'
+}
+
+description = 'AOT dispatch chunk-size and JIT inlining benchmarks'
+
+dependencies {
+    implementation project(':hibernate-accessor-aot-support')
+    implementation project(':hibernate-accessor-asm')
+    implementation project(':hibernate-accessor-bytebuddy')
+    implementation libs.jmh.core
+    annotationProcessor libs.jmh.generatorAnnprocess
+}
+
+def transformBenchmarkSources = tasks.register('transformBenchmarkSources', Sync) {
+    from 'src/main/java'
+    include '**/AsmDispatchBenchmark.java'
+    into layout.buildDirectory.dir('generated-sources/bytebuddy')
+    filter { line ->
+        line.replace('org.hibernate.accessor.asm', 'org.hibernate.accessor.bytebuddy')
+            .replace('org.hibernate.accessor.testing.aot.asm', 'org.hibernate.accessor.testing.aot.bytebuddy')
+            .replaceAll(/Asm([A-Z])/, 'ByteBuddy$1')
+    }
+    eachFile { details -> details.path = details.path.replaceAll(/Asm([A-Z])/, 'ByteBuddy$1') }
+    includeEmptyDirs = false
+}
+sourceSets.main.java.srcDir(transformBenchmarkSources)
+
+tasks.named('shadowJar') {
+    archiveFileName = 'aot-dispatch.jar'
+    manifest { attributes 'Main-Class': 'org.openjdk.jmh.Main' }
+    mergeServiceFiles()
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class'
+}

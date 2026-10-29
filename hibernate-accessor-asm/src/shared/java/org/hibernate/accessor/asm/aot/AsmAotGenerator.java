@@ -18,9 +18,16 @@ import org.objectweb.asm.Type;
  */
 public final class AsmAotGenerator {
 	private final GenerationNames names;
+	private final AotChunkSizes chunks;
 
 	public AsmAotGenerator(GenerationNames names) {
+		this( names, AotChunkSizes.DEFAULT );
+	}
+
+	/** Uses the supplied sizes for host emission, shared implementations and factory lookup. */
+	public AsmAotGenerator(GenerationNames names, AotChunkSizes chunks) {
 		this.names = Objects.requireNonNull( names );
+		this.chunks = Objects.requireNonNull( chunks );
 	}
 
 	/**
@@ -50,7 +57,7 @@ public final class AsmAotGenerator {
 			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors, int hostIndex) {
 		validateReaders( host, readers );
 		validateWriters( host, writers );
-		new HostEmitter( visitor, host, readers, writers, constructors, hostIndex, names.runtimeHooks() ).emit();
+		new HostEmitter( visitor, host, readers, writers, constructors, hostIndex, names.runtimeHooks(), chunks ).emit();
 	}
 
 	/**
@@ -162,17 +169,17 @@ public final class AsmAotGenerator {
 
 	/** Emits the shared reader implementation using the configured binary name. */
 	public byte[] generateReader(List<AotTypeMetadata> hosts) {
-		return new SingleImplGenerator( names ).generateReaderImpl( List.copyOf( hosts ) );
+		return new SingleImplGenerator( names, chunks ).generateReaderImpl( List.copyOf( hosts ) );
 	}
 
 	/** Emits the shared writer implementation using the configured binary name. */
 	public byte[] generateWriter(List<AotTypeMetadata> hosts) {
-		return new SingleImplGenerator( names ).generateWriterImpl( List.copyOf( hosts ) );
+		return new SingleImplGenerator( names, chunks ).generateWriterImpl( List.copyOf( hosts ) );
 	}
 
 	/** Emits the shared instantiator implementation using the configured binary name. */
 	public byte[] generateInstantiator(List<AotTypeMetadata> hosts) {
-		return new SingleImplGenerator( names ).generateInstantiatorImpl( List.copyOf( hosts ) );
+		return new SingleImplGenerator( names, chunks ).generateInstantiatorImpl( List.copyOf( hosts ) );
 	}
 
 	/** Emits the factory alone; callers must also install its host methods, bridges and implementations.
@@ -181,7 +188,7 @@ public final class AsmAotGenerator {
 	 * return the existing instance and discard theirs.
 	 */
 	public byte[] generateFactory(List<AotTypeMetadata> hosts, boolean withFallback) {
-		FactoryGenerator factory = new FactoryGenerator( names );
+		FactoryGenerator factory = new FactoryGenerator( names, chunks.typeLookup() );
 		for ( AotTypeMetadata host : List.copyOf( hosts ) ) {
 			factory.registerDispatchTarget( host.host(), host.dispatchTarget().replace( '.', '/' ), host.dispatchTargetIsInterface() );
 			factory.registerFieldReader( host.host() );

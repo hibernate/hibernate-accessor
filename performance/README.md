@@ -5,8 +5,12 @@ ByteBuddy, and their per-member variants) against each other **and against hand-
 baselines**, so results show the *overhead* of a strategy over plain code, not just how the
 strategies rank.
 
-`performance/` is a plain umbrella directory (not a Gradle module). It holds two independent
-benchmark **suites** plus one shared runner:
+The [AOT dispatch suite](benchmark-aot/README.md) separately measures cached reads, writes,
+and constructors while varying dispatch chunk sizes, with configurable model sizes and
+HotSpot inlining diagnostics. Its runner is `benchmark-aot/run-benchmarks.sh`.
+
+`performance/` is a plain umbrella directory (not a Gradle module). The basic and model suites
+share a runner; the AOT suite has its own diagnostic runner:
 
 ```
 performance/
@@ -15,6 +19,7 @@ performance/
     lib-bench-common.sh      # shared engine: P-core pinning, async-profiler, perf panic, JMH-JSON table
     suite-basic.sh           # basic-suite driver
     suite-model.sh           # model-suite driver
+  benchmark-aot/             # configurable AOT dispatch and inlining benchmarks
   benchmark-basic/           # :hibernate-accessor-benchmark-basic  -- fixed, hand-authored models
   benchmark-model/
     generator/               # :hibernate-accessor-benchmark-model-generator  -- emits the model at build time

@@ -1,5 +1,7 @@
 package org.hibernate.accessor.performance.generator;
 
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -31,7 +33,7 @@ final class SwitchReaderEmitter {
 		String className = packageInternal + "/" + simpleName;
 		ClassWriter cw = new ModelClassWriter();
 		cw.visit(
-				Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className,
+				GENERATED_CLASS_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className,
 				"Ljava/lang/Object;L" + GeneratedNames.READER_INTERFACE_INTERNAL + "<Ljava/lang/Object;>;",
 				"java/lang/Object", new String[] { GeneratedNames.READER_INTERFACE_INTERNAL } );
 

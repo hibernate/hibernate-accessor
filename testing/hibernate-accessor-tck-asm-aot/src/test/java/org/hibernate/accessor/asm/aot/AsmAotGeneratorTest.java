@@ -15,8 +15,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.hibernate.accessor.AccessorFactory;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -27,13 +28,15 @@ class AsmAotGeneratorTest {
 	@TempDir
 	Path temporary;
 
-	@Test
-	void generatedCodeRunsWithoutGeneratorDependencies() throws Exception {
+	@ParameterizedTest
+	@ValueSource(ints = { 256, 64 })
+	void generatedCodeRunsWithoutGeneratorDependencies(int chunkSize) throws Exception {
 		Path hosts = temporary.resolve( "hosts" );
 		Path application = temporary.resolve( "application" );
 		GenerationNames names = new GenerationNames( "generated.Factory", "generated.Reader", "generated.Writer",
 				"generated.Instantiator", RuntimeHooks.class.getName() );
-		AsmAotGenerator generator = new AsmAotGenerator( names );
+		AsmAotGenerator generator = new AsmAotGenerator( names,
+				new AotChunkSizes( chunkSize, chunkSize, chunkSize, chunkSize, chunkSize, chunkSize, 500, 500 ) );
 		List<AotTypeMetadata> types = new ArrayList<>();
 		for ( Class<?> bean : List.of( AotBean.class, PackageBean.class ) ) {
 			AotTypeMetadata type = new AotTypeMetadata( bean.getPackageName(), bean.getName(), bean.getName(),

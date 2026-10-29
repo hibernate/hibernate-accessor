@@ -110,3 +110,6 @@ project(':hibernate-accessor-tck-bytebuddy-aot').projectDir = file('testing/hibe
 
 include 'hibernate-accessor-aot-support'
 project(':hibernate-accessor-aot-support').projectDir = file('testing/hibernate-accessor-aot-support')
+
+include 'hibernate-accessor-benchmark-aot'
+project(':hibernate-accessor-benchmark-aot').projectDir = file('performance/benchmark-aot')

@@ -22,11 +22,6 @@ import org.objectweb.asm.Type;
 /** Name and descriptor helpers for integrations collecting AOT accessor metadata. */
 public final class GenerationUtil {
 
-	// Split large dispatch methods to stay below the JVM's 64 KiB method bytecode limit.
-	// String cases also perform equality checks and need a separate bound.
-	static final int SWITCH_CHUNK_SIZE = 256;
-	static final int STRING_SWITCH_CHUNK_SIZE = 500;
-
 	private GenerationUtil() {
 	}
 

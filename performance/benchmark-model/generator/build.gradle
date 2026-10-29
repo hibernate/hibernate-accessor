@@ -6,8 +6,8 @@ plugins {
 description = "Build-time generator for the parameterized benchmark model (entity classes + descriptors)"
 
 dependencies {
-    // Only ASM is needed to emit entity classes. The vendored Quarkus double-switch
-    // generator (which needs the core module) is added here in phase 2.
+    // Use the same class-file version policy as the accessor generators.
+    implementation project( ":hibernate-accessor-asm" )
     implementation libs.asm
 }
 
