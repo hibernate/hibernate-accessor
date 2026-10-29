@@ -1,10 +1,11 @@
 package org.hibernate.accessor.tck.tests.instantiation;
 
-import org.hibernate.accessor.tck.util.TckHelper;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.hibernate.accessor.tck.util.TckHelper;
+
+import org.junit.jupiter.api.Test;
 
 public class ConstructorFailureTest {
 	public static class FailingBean {

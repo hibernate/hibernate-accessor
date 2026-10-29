@@ -8,6 +8,6 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite
 @SuiteDisplayName("ClassFile API TCK tests Runner")
 @SelectPackages("org.hibernate.accessor.tck")
-@IncludeClassNamePatterns({".*Test"})
+@IncludeClassNamePatterns({ ".*Test" })
 public class ClassFileTckRunner {
 }

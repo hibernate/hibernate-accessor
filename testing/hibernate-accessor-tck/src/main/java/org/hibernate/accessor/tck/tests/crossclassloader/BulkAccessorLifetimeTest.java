@@ -1,5 +1,11 @@
 package org.hibernate.accessor.tck.tests.crossclassloader;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -19,12 +25,6 @@ import org.hibernate.accessor.tck.tests.beans.inheritance.ParentBean;
 import org.hibernate.accessor.tck.util.TckHelper;
 
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class BulkAccessorLifetimeTest {
 
@@ -61,7 +61,8 @@ public class BulkAccessorLifetimeTest {
 			case 6 -> factory.multiValueWriter( ChildBean.class, parentField, childField );
 			default -> throw new AssertionError( kind );
 		};
-		Class<?>[] types = kind < 5 ? new Class<?>[] { LifecycleBean.class }
+		Class<?>[] types = kind < 5
+				? new Class<?>[] { LifecycleBean.class }
 				: new Class<?>[] { ParentBean.class, ChildBean.class };
 		var references = new ArrayList<WeakReference<?>>();
 		for ( Class<?> type : types ) {

@@ -1,20 +1,27 @@
 package org.hibernate.accessor.lambda.tests;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.hibernate.accessor.AccessorFactory;
-import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class LambdaLifetimeTest {
 	public static class Bean {
 		private String value;
-		public String getValue() { return value; }
-		public void setValue(String value) { this.value = value; }
+
+		public String getValue() {
+			return value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
 	}
 
 	@Test

@@ -2,7 +2,7 @@ package org.hibernate.accessor.tck.tests.interfacemethod;
 
 public interface GreetingService {
 
-    String getGreeting();
+	String getGreeting();
 
-    void setGreeting(String greeting);
+	void setGreeting(String greeting);
 }

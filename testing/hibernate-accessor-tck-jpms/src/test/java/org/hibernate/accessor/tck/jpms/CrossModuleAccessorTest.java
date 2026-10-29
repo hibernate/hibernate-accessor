@@ -1,5 +1,12 @@
 package org.hibernate.accessor.tck.jpms;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.stream.Stream;
+
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.MultiValueReader;
@@ -12,13 +19,6 @@ import org.hibernate.accessor.tck.jpms.entities.SimpleEntity;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class CrossModuleAccessorTest {
 
@@ -102,7 +102,7 @@ class CrossModuleAccessorTest {
 		Object[] values = reader.get( entity );
 		assertThat( values ).containsExactly( 1, "original" );
 
-		writer.set( entity, new Object[]{ 2, "updated" } );
+		writer.set( entity, new Object[] { 2, "updated" } );
 		values = reader.get( entity );
 		assertThat( values ).containsExactly( 2, "updated" );
 	}

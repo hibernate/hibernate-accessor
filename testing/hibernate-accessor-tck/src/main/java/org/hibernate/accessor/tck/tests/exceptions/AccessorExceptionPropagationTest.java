@@ -1,20 +1,21 @@
 package org.hibernate.accessor.tck.tests.exceptions;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.lang.reflect.Method;
+
 import org.hibernate.accessor.AccessorException;
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.ThrowingBean;
 import org.hibernate.accessor.tck.util.TckHelper;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import java.lang.reflect.Method;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Verifies that an exception thrown by a getter or setter body propagates unchanged -- the exact

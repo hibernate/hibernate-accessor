@@ -1,10 +1,10 @@
 package org.hibernate.accessor.tck.tests.beans.visibility;
 
 public final class Util {
-    private Util() {
-    }
+	private Util() {
+	}
 
-    public static Object packagePrivateBeanInstance() {
-        return new PackagePrivateBean();
-    }
+	public static Object packagePrivateBeanInstance() {
+		return new PackagePrivateBean();
+	}
 }

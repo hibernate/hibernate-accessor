@@ -1,22 +1,23 @@
 package org.hibernate.accessor.tck.tests.multivalue;
 
-import org.hibernate.accessor.AccessorFactory;
-import org.hibernate.accessor.MultiValueReader;
-import org.hibernate.accessor.MultiValueWriter;
-import org.hibernate.accessor.tck.tests.beans.PrimitiveFieldBean;
-import org.hibernate.accessor.tck.util.TckHelper;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.hibernate.accessor.AccessorFactory;
+import org.hibernate.accessor.MultiValueReader;
+import org.hibernate.accessor.MultiValueWriter;
+import org.hibernate.accessor.tck.tests.beans.PrimitiveFieldBean;
+import org.hibernate.accessor.tck.util.TckHelper;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Multi-value accessor access with mixed fields and methods")
@@ -64,7 +65,7 @@ public class MultiValueAccessTest {
 		longField.setAccessible( true );
 
 		MultiValueWriter writer = factory.multiValueWriter( PrimitiveFieldBean.class, intField, longField );
-		writer.set( bean, new Object[]{ 99, 200L } );
+		writer.set( bean, new Object[] { 99, 200L } );
 
 		assertEquals( 99, bean.getIntField() );
 		assertEquals( 200L, bean.getLongField() );
@@ -105,7 +106,7 @@ public class MultiValueAccessTest {
 		booleanField.setAccessible( true );
 
 		MultiValueWriter writer = factory.multiValueWriter( PrimitiveFieldBean.class, intField, setLong, booleanField );
-		writer.set( bean, new Object[]{ 55, 77L, true } );
+		writer.set( bean, new Object[] { 55, 77L, true } );
 
 		assertEquals( 55, bean.getIntField() );
 		assertEquals( 77L, bean.getLongField() );

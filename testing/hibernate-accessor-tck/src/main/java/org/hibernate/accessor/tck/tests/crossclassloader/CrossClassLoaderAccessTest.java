@@ -1,5 +1,14 @@
 package org.hibernate.accessor.tck.tests.crossclassloader;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Set;
+
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.MultiValueReader;
@@ -9,19 +18,11 @@ import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.visibility.PropertyVisibilityBean;
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 /**
  * Tests accessor access to classes loaded by a different classloader.
@@ -134,7 +135,7 @@ public class CrossClassLoaderAccessTest {
 		MultiValueWriter writer = factory.multiValueWriter( isolatedClass, publicField, privateField );
 		MultiValueReader reader = factory.multiValueReader( isolatedClass, publicField, privateField );
 
-		writer.set( isolatedInstance, new Object[]{ "mv-pub", "mv-priv" } );
+		writer.set( isolatedInstance, new Object[] { "mv-pub", "mv-priv" } );
 		Object[] values = reader.get( isolatedInstance );
 
 		assertEquals( 2, values.length );
@@ -152,7 +153,7 @@ public class CrossClassLoaderAccessTest {
 		MultiValueWriter writer = factory.multiValueWriter( isolatedClass, publicField, getSetter );
 		MultiValueReader reader = factory.multiValueReader( isolatedClass, publicField, getGetter );
 
-		writer.set( isolatedInstance, new Object[]{ "mv-field", "mv-method" } );
+		writer.set( isolatedInstance, new Object[] { "mv-field", "mv-method" } );
 		Object[] values = reader.get( isolatedInstance );
 
 		assertEquals( 2, values.length );

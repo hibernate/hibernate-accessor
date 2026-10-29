@@ -1,10 +1,11 @@
 package org.hibernate.accessor.tck.tests.inheritance;
 
-import org.hibernate.accessor.tck.util.TckHelper;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.hibernate.accessor.tck.util.TckHelper;
+
+import org.junit.jupiter.api.Test;
 
 public class MemberDispatchTest {
 	public static class Parent {

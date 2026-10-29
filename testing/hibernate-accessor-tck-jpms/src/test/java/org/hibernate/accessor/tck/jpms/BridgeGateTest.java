@@ -1,5 +1,8 @@
 package org.hibernate.accessor.tck.jpms;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.lang.invoke.MethodHandles;
 
 import org.hibernate.accessor.asm.AsmAccessorFactory;
@@ -9,9 +12,6 @@ import org.hibernate.accessor.tck.jpms.entities.BridgeGateProbe;
 import org.hibernate.accessor.tck.jpms.entities.SimpleEntity;
 
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Regression tests for the entry-point authorisation checks on
