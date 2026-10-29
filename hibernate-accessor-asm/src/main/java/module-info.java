@@ -5,4 +5,5 @@ module org.hibernate.accessor.asm {
 
 	exports org.hibernate.accessor.asm;
 	exports org.hibernate.accessor.asm.spi;
+	exports org.hibernate.accessor.asm.aot;
 }

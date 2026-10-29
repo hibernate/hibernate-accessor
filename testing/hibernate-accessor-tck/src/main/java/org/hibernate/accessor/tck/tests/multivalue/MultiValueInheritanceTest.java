@@ -16,11 +16,13 @@ import org.hibernate.accessor.tck.util.TckHelper;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Multi-value accessor access across class hierarchy")
+@Tag("multi-accessor")
 public class MultiValueInheritanceTest {
 
 	private AccessorFactory factory;

@@ -101,3 +101,12 @@ include 'hibernate-accessor-tck-jpms'
 project(':hibernate-accessor-tck-jpms').projectDir = file( 'testing/hibernate-accessor-tck-jpms' )
 include 'hibernate-accessor-tck-integration'
 project(':hibernate-accessor-tck-integration').projectDir = file( 'testing/hibernate-accessor-tck-integration' )
+
+include 'hibernate-accessor-tck-asm-aot'
+project(':hibernate-accessor-tck-asm-aot').projectDir = file('testing/hibernate-accessor-tck-asm-aot')
+
+include 'hibernate-accessor-tck-bytebuddy-aot'
+project(':hibernate-accessor-tck-bytebuddy-aot').projectDir = file('testing/hibernate-accessor-tck-bytebuddy-aot')
+
+include 'hibernate-accessor-aot-support'
+project(':hibernate-accessor-aot-support').projectDir = file('testing/hibernate-accessor-aot-support')

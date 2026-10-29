@@ -21,6 +21,7 @@ import org.hibernate.accessor.tck.util.TckHelper;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.TestInstance;
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Cross-classloader accessor access")
+@Tag("runtime-class-definition")
 public class CrossClassLoaderAccessTest {
 
 	private static final String BEAN_CLASS_NAME = PropertyVisibilityBean.class.getName();

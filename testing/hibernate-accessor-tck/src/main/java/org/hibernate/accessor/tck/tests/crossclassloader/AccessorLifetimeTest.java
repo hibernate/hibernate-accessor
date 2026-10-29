@@ -17,8 +17,10 @@ import org.hibernate.accessor.tck.tests.beans.LifecycleBean;
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("runtime-class-definition")
 public class AccessorLifetimeTest {
 	@Test
 	void retainedFactoryDoesNotRetainDisposableEntityLoaders() throws Exception {

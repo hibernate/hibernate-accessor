@@ -24,8 +24,10 @@ import org.hibernate.accessor.tck.tests.beans.inheritance.ChildBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ParentBean;
 import org.hibernate.accessor.tck.util.TckHelper;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("runtime-class-definition")
 public class BulkAccessorLifetimeTest {
 
 	@Test

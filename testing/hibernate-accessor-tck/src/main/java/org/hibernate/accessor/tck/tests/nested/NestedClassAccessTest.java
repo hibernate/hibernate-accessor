@@ -19,6 +19,7 @@ import org.hibernate.accessor.tck.util.TckHelper;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -109,6 +110,7 @@ public class NestedClassAccessTest {
 		assertEquals( "via-private-method", reader.get( instance ) );
 	}
 
+	@Tag("multi-accessor")
 	@ParameterizedTest(name = "{0} static nested class — multi-value field access")
 	@MethodSource("nestedClasses")
 	@DisplayName("Multi-value read/write on nested class fields")
@@ -127,6 +129,7 @@ public class NestedClassAccessTest {
 		assertEquals( "priv-val", values[1] );
 	}
 
+	@Tag("multi-accessor")
 	@ParameterizedTest(name = "{0} static nested class — multi-value mixed access")
 	@MethodSource("nestedClasses")
 	@DisplayName("Multi-value read/write with mixed fields and methods on nested class")

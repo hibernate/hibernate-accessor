@@ -1,0 +1,25 @@
+plugins {
+    id 'testing'
+}
+
+def transformAotSources = tasks.register('transformAotSources', Sync) {
+    from project(':hibernate-accessor-tck-asm-aot').file('src')
+    into layout.buildDirectory.dir('generated-sources/aot')
+    filter { line ->
+        line.replace('org.objectweb.asm', 'net.bytebuddy.jar.asm')
+            .replace('org.hibernate.accessor.asm', 'org.hibernate.accessor.bytebuddy')
+            .replace('org.hibernate.accessor.testing.aot.asm', 'org.hibernate.accessor.testing.aot.bytebuddy')
+            .replaceAll(/Asm([A-Z])/, 'ByteBuddy$1')
+    }
+    eachFile { details ->
+        details.path = details.path.replace('org/hibernate/accessor/asm/', 'org/hibernate/accessor/bytebuddy/')
+            .replaceAll(/Asm([A-Z])/, 'ByteBuddy$1')
+    }
+    includeEmptyDirs = false
+}
+sourceSets.main.java.srcDir(transformAotSources.map { it.destinationDir.toPath().resolve('main/java') })
+sourceSets.test.java.srcDir(transformAotSources.map { it.destinationDir.toPath().resolve('test/java') })
+sourceSets.test.resources.srcDir(transformAotSources.map { it.destinationDir.toPath().resolve('test/resources') })
+
+ext.aotBackend = 'bytebuddy'
+apply from: rootProject.file('testing/aot-runner.gradle')

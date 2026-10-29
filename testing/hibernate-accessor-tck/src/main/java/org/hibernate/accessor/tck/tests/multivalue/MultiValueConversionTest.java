@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hibernate.accessor.MultiValueAccessorGenerationException;
 import org.hibernate.accessor.tck.util.TckHelper;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("multi-accessor")
 public class MultiValueConversionTest {
 	public static class Bean {
 		public long value;

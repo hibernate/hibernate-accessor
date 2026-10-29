@@ -1,6 +1,6 @@
 package org.hibernate.accessor.asm.impl;
 
-import static org.hibernate.accessor.asm.impl.AsmUtils.GENERATED_CLASS_MAJOR_VERSION;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
 
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
 
@@ -79,7 +79,7 @@ final class AsmBridgeClassGenerator {
 		// COMPUTE_FRAMES so we don't have to hand-compute stack map frames for the branches.
 		final ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
 		// package-private final class extending Object
-		cw.visit( GENERATED_CLASS_MAJOR_VERSION, Opcodes.ACC_FINAL | Opcodes.ACC_SUPER | Opcodes.ACC_SYNTHETIC, internalName,
+		cw.visit( GENERATED_CLASS_VERSION, Opcodes.ACC_FINAL | Opcodes.ACC_SUPER | Opcodes.ACC_SYNTHETIC, internalName,
 				null, "java/lang/Object", null );
 
 		// static final MethodHandle DEFINE_ACCESSOR_MH; (package-private)

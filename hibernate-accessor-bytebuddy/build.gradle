@@ -4,7 +4,7 @@ plugins {
 
 description = "hibernate-accessor based on ByteBuddy (shaded ASM) generated implementation"
 
-def transformSharedSources = tasks.register( 'transformSharedSources', Copy ) {
+def transformSharedSources = tasks.register( 'transformSharedSources', Sync ) {
     from project( ':hibernate-accessor-asm' ).file( 'src/shared/java' )
     into layout.buildDirectory.dir( 'generated-sources/shared' )
 

@@ -8,7 +8,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-final class AsmUtils {
+public final class BytecodeSupport {
 	private static final String EXCEPTION_INTERNAL = "org/hibernate/accessor/AccessorException";
 
 	private static final Map<Class<?>, BoxingInfo> BOXING = Map.of(
@@ -33,19 +33,17 @@ final class AsmUtils {
 			double.class, List.of( byte.class, short.class, char.class, int.class, long.class, float.class )
 	);
 
-	static int GENERATED_CLASS_MAJOR_VERSION = Opcodes.V17;
-
-	private AsmUtils() {
+	private BytecodeSupport() {
 	}
 
-	static void emitBox(MethodVisitor mv, Class<?> type) {
+	public static void emitBox(MethodVisitor mv, Class<?> type) {
 		BoxingInfo info = BOXING.get( type );
 		if ( info != null ) {
 			mv.visitMethodInsn( Opcodes.INVOKESTATIC, info.wrapperInternal, "valueOf", info.valueOfDesc(), false );
 		}
 	}
 
-	static void emitUnboxOrCast(MethodVisitor mv, Class<?> type) {
+	public static void emitUnboxOrCast(MethodVisitor mv, Class<?> type) {
 		BoxingInfo info = BOXING.get( type );
 		if ( info != null ) {
 			mv.visitTypeInsn( Opcodes.CHECKCAST, info.wrapperInternal );
@@ -64,7 +62,7 @@ final class AsmUtils {
 	 * {@link #emitUnboxOrCast}. A value whose type does not match and cannot be widened
 	 * results in a {@code AccessorException} being thrown.
 	 */
-	static void emitWideningUnbox(MethodVisitor mv, Class<?> type) {
+	public static void emitWideningUnbox(MethodVisitor mv, Class<?> type) {
 		List<Class<?>> sources = WIDENING_SOURCES.get( type );
 		if ( sources == null ) {
 			// boolean, byte, char, or a reference type: nothing widens to it
@@ -141,7 +139,7 @@ final class AsmUtils {
 		}
 	}
 
-	static void emitIntConstant(MethodVisitor mv, int value) {
+	public static void emitIntConstant(MethodVisitor mv, int value) {
 		if ( value >= -1 && value <= 5 ) {
 			mv.visitInsn( Opcodes.ICONST_0 + value );
 		}
@@ -156,6 +154,28 @@ final class AsmUtils {
 		}
 	}
 
+
+	public static Class<?> primitiveClass(Type type) {
+		return switch ( type.getSort() ) {
+			case Type.BOOLEAN -> boolean.class;
+			case Type.BYTE -> byte.class;
+			case Type.CHAR -> char.class;
+			case Type.SHORT -> short.class;
+			case Type.INT -> int.class;
+			case Type.LONG -> long.class;
+			case Type.FLOAT -> float.class;
+			case Type.DOUBLE -> double.class;
+			default -> throw new IllegalArgumentException( "Not a primitive: " + type );
+		};
+	}
+
+	public static void emitWideningUnbox(MethodVisitor visitor, Type type) {
+		emitWideningUnbox( visitor, primitiveClass( type ) );
+	}
+
+	public static Type boxedType(Type type) {
+		return Type.getObjectType( BOXING.get( primitiveClass( type ) ).wrapperInternal() );
+	}
 
 	private record BoxingInfo(String wrapperInternal, String primitiveDesc, String unboxMethod, String unboxDesc) {
 		String valueOfDesc() {

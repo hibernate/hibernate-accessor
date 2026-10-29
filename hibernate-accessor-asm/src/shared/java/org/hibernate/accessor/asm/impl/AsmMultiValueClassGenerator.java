@@ -1,9 +1,9 @@
 package org.hibernate.accessor.asm.impl;
 
-import static org.hibernate.accessor.asm.impl.AsmUtils.GENERATED_CLASS_MAJOR_VERSION;
-import static org.hibernate.accessor.asm.impl.AsmUtils.emitBox;
-import static org.hibernate.accessor.asm.impl.AsmUtils.emitIntConstant;
-import static org.hibernate.accessor.asm.impl.AsmUtils.emitWideningUnbox;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
+import static org.hibernate.accessor.asm.impl.BytecodeSupport.emitBox;
+import static org.hibernate.accessor.asm.impl.BytecodeSupport.emitIntConstant;
+import static org.hibernate.accessor.asm.impl.BytecodeSupport.emitWideningUnbox;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -46,7 +46,7 @@ final class AsmMultiValueClassGenerator implements Opcodes {
 		String generatedName = targetInternal + "$$HibernateAccessorMultiReader";
 
 		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		cw.visit( GENERATED_CLASS_MAJOR_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
+		cw.visit( GENERATED_CLASS_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
 
 		generateConstructor( cw );
 
@@ -97,7 +97,7 @@ final class AsmMultiValueClassGenerator implements Opcodes {
 		String generatedName = targetInternal + "$$HibernateAccessorMultiWriter";
 
 		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		cw.visit( GENERATED_CLASS_MAJOR_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
+		cw.visit( GENERATED_CLASS_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
 
 		generateConstructor( cw );
 
@@ -145,7 +145,7 @@ final class AsmMultiValueClassGenerator implements Opcodes {
 		String generatedName = "org/hibernate/accessor/asm/impl/HibernateAccessorMultiBulkReader";
 
 		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		cw.visit( GENERATED_CLASS_MAJOR_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
+		cw.visit( GENERATED_CLASS_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { READER_INTERNAL } );
 
 		generateBulkAccessorFields( cw, accessorFieldCount );
 		generateBulkAccessorConstructor( cw, generatedName, accessorFieldCount );
@@ -184,7 +184,7 @@ final class AsmMultiValueClassGenerator implements Opcodes {
 		String generatedName = "org/hibernate/accessor/asm/impl/HibernateAccessorMultiBulkWriter";
 
 		ClassWriter cw = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		cw.visit( GENERATED_CLASS_MAJOR_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
+		cw.visit( GENERATED_CLASS_VERSION, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, generatedName, null, "java/lang/Object", new String[] { WRITER_INTERNAL } );
 
 		generateBulkAccessorFields( cw, accessorFieldCount );
 		generateBulkAccessorConstructor( cw, generatedName, accessorFieldCount );

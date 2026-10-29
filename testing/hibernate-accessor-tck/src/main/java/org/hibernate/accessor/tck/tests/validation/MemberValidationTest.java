@@ -15,6 +15,7 @@ import org.hibernate.accessor.tck.util.TckHelper;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -53,6 +54,7 @@ public class MemberValidationTest {
 		assertThrows( AccessorException.class, () -> factory.valueWriter( getter ) );
 	}
 
+	@Tag("multi-accessor")
 	@Test
 	@DisplayName("multiValueReader rejects a setter method in mixed members")
 	void testMultiReaderRejectsSetter() throws Exception {
@@ -60,6 +62,7 @@ public class MemberValidationTest {
 		assertThrows( AccessorException.class, () -> factory.multiValueReader( PrimitiveFieldBean.class, setter ) );
 	}
 
+	@Tag("multi-accessor")
 	@Test
 	@DisplayName("multiValueWriter rejects a getter method in mixed members")
 	void testMultiWriterRejectsGetter() throws Exception {
@@ -67,6 +70,7 @@ public class MemberValidationTest {
 		assertThrows( AccessorException.class, () -> factory.multiValueWriter( PrimitiveFieldBean.class, getter ) );
 	}
 
+	@Tag("multi-accessor")
 	@Test
 	@DisplayName("multiValueReader rejects member from unrelated class")
 	void testMultiReaderRejectsUnrelatedMember() throws Exception {
@@ -78,6 +82,7 @@ public class MemberValidationTest {
 				() -> factory.multiValueReader( ChildBean.class, childField, intField ) );
 	}
 
+	@Tag("multi-accessor")
 	@Test
 	@DisplayName("multiValueReader rejects child member when declaring class is parent")
 	void testMultiReaderRejectsChildMemberForParentClass() throws Exception {
@@ -108,6 +113,7 @@ public class MemberValidationTest {
 		assertThrows( AccessorException.class, () -> factory.valueReader( staticMethod ) );
 	}
 
+	@Tag("multi-accessor")
 	@Test
 	void multiValueAccessRejectsAnInvalidLaterMember() throws Exception {
 		Field valid = PrimitiveFieldBean.class.getDeclaredField( "intField" );
@@ -129,10 +135,17 @@ public class MemberValidationTest {
 		assertThrows( AccessorException.class, () -> factory.valueWriter( twoArguments ) );
 		assertThrows( AccessorException.class, () -> factory.valueReader( noArgumentVoid ) );
 		assertThrows( AccessorException.class, () -> factory.valueWriter( staticSetter ) );
+	}
+
+	@Tag("multi-accessor")
+	@Test
+	void multiValueWriterRejectsStaticMethod() throws Exception {
+		Method staticSetter = InvalidMethods.class.getMethod( "staticSetter", String.class );
 		assertThrows( AccessorException.class,
 				() -> factory.multiValueWriter( InvalidMethods.class, staticSetter ) );
 	}
 
+	@Tag("multi-accessor")
 	@Test
 	void multiValueAccessRejectsConstructorsAsMembers() throws Exception {
 		Member constructor = PrimitiveFieldBean.class.getConstructor();

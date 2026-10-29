@@ -194,3 +194,71 @@ retain the existing `LookupAccess` implementation for JVM use.
 | Method handle | `AccessorFactory.methodHandle(lookup)` | `java.lang.invoke.MethodHandle` | Better throughput than reflection. Requires a `MethodHandles.Lookup` with appropriate access. |
 | ASM | `AsmAccessorFactory.factory(lookup)` | ASM bytecode generation | Generates one class per entity with `TABLESWITCH` dispatch on field/method index. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-asm` (which brings `org.ow2.asm:asm`). |
 | ByteBuddy | `ByteBuddyAccessorFactory.factory(lookup)` | ByteBuddy bytecode generation | Same generated-class approach as ASM, using ByteBuddy's shaded ASM. Requires a `MethodHandles.Lookup` and a dependency on `hibernate-accessor-bytebuddy`. |
+
+## Ahead-of-time (AOT) generation
+
+`hibernate-accessor-asm` exposes `org.hibernate.accessor.asm.aot.AsmAotGenerator`.
+`hibernate-accessor-bytebuddy` exposes the equivalent `ByteBuddyAotGenerator` in
+`org.hibernate.accessor.bytebuddy.aot`, generated from the same sources using shaded ASM.
+These are build-time APIs, distinct from factories that generate accessors for already-loaded classes.
+Class-File API AOT generation is not implemented yet.
+
+The caller supplies descriptor-based host/member metadata and `GenerationNames` (binary names of
+four output classes and a runtime hooks class). `generateClasses(hosts, withFallback)` returns a
+map of binary class names to bytes: public bridges for non-public hosts, shared reader/writer/
+instantiator implementations, and an `AccessorFactory` implementation. Individual `generateBridge`, `generateReader`, `generateWriter`, `generateInstantiator` and
+`generateFactory` methods are also available for integrations that publish these pieces separately.
+The host's position in
+`hosts` is its class index. `emitHostMethods(visitor, host, readers, writers, constructors, index)`
+adds lookup and dispatch methods before the downstream visitor's `visitEnd`; use a writer that
+computes stack frames and maxima. Member indexes use a consistent sorted order. Accessors dispatch
+first by host index, then by member index inside the transformed host, allowing private member access.
+
+When using the low-level generator, the caller owns member discovery, final-field filtering, enhancement ordering, class definition,
+module permissions and lifecycle. Resolve registrations against the final transformed bytecode before
+emitting host methods. Do not supply writers for fields that remain final. Keep bridges in their host's
+runtime package and classloader. Injected public methods expose registered private members; this API
+is for trusted framework integration and does not establish module reads or exports.
+
+The runtime hooks class must expose public static `Object createReader(int, int)`,
+`Object createWriter(int, int)` and `Object createInstantiator(int, int)` methods. Each creates the
+corresponding generated implementation through its `(int, int)` constructor. Initialize these hooks
+before requesting accessors. This indirection permits parent-loaded hosts to use implementations in
+an application classloader. Initialize the generated factory with `create()`, or
+`create(AccessorFactory fallback)` when fallback generation is enabled. Both are first-call-wins:
+the factory is a singleton initialized under double-checked locking, so only the first call builds
+it and honours the `fallback` it was given. Later calls return that same instance and silently
+discard their own `fallback` argument, and there is no way to replace it afterwards. Install the
+intended fallback on the first call, before anything else can request the factory.
+
+Generated code depends on the JDK, the core `hibernate-accessor` artifact (including its validation
+SPI), registered application classes and the supplied runtime hooks. It has no dependency on ASM,
+Byte Buddy, or either generator artifact: those dependencies can be removed after augmentation.
+Generation does not define classes or resolve application classes through reflection.
+
+Single-member writers and constructors support the library's primitive widening rules; narrowing
+is rejected and constructor argument counts are checked. Both multi-value methods deliberately throw
+`MultiValueAccessorGenerationException`, even when a fallback factory is supplied. Bulk AOT access
+is deferred to a separate design.
+
+The directory processors (`AsmAotProcessor` and `ByteBuddyAotProcessor`) live in the
+non-published `testing/hibernate-accessor-aot-support` module. They are internal build/test
+infrastructure, not part of the published accessor APIs. They copy an unpacked class directory,
+discover members, transform selected hosts, and emit factories. Both AOT runners use this support
+module; a future build-tool plugin can inform a separately designed tooling API.
+
+AOT tests live in `testing/hibernate-accessor-tck-asm-aot` and
+`testing/hibernate-accessor-tck-bytebuddy-aot`. Each runner's `unpackTck` task extracts the shared
+TCK JAR, and `prepareTck` invokes the processor before test compilation. Only the prepared output
+is on the test classpath: the original TCK JAR is a build input, never a runtime dependency.
+JUnit discovers tests directly from the prepared directory, using a normal service provider for
+the generated factory. Tests requiring bulk access carry `@Tag("multi-accessor")`; tests requiring
+runtime class definition or classloader lifecycles carry `@Tag("runtime-class-definition")`.
+The AOT runners exclude both tags. New untagged TCK tests run automatically.
+
+The dedicated modules also test string-hash collisions, large dispatch tables and a standalone
+JVM with generator dependencies absent. Run both backends with:
+
+```shell
+./gradlew :hibernate-accessor-tck-asm-aot:check :hibernate-accessor-tck-bytebuddy-aot:check
+```

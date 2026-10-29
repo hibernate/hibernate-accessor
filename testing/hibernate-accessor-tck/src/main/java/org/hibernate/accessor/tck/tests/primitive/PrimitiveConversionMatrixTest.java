@@ -6,11 +6,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hibernate.accessor.tck.tests.beans.PrimitiveFieldBean;
 import org.hibernate.accessor.tck.util.TckHelper;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 public class PrimitiveConversionMatrixTest {
 	@Test
-	void singleAndMultiWritersMatchReflectionForEveryPrimitivePair() throws Exception {
+	void singleWritersMatchReflectionForEveryPrimitivePair() throws Exception {
+		verifyConversions( false );
+	}
+
+	@Tag("multi-accessor")
+	@Test
+	void multiWritersMatchReflectionForEveryPrimitivePair() throws Exception {
+		verifyConversions( true );
+	}
+
+	private void verifyConversions(boolean bulk) throws Exception {
 		var factory = TckHelper.factory();
 		Object[] sources = { true, (byte) 7, (short) 7, 'A', 7, 7L, 7.5f, 7.5, null };
 		for ( var field : PrimitiveFieldBean.class.getDeclaredFields() ) {
@@ -19,10 +30,10 @@ public class PrimitiveConversionMatrixTest {
 			var setter = PrimitiveFieldBean.class.getMethod( "set" + suffix, field.getType() );
 			var fieldWriter = factory.valueWriter( field );
 			var methodWriter = factory.valueWriter( setter );
-			var multiFieldWriter = factory.multiValueWriter( PrimitiveFieldBean.class, field );
-			var multiMethodWriter = factory.multiValueWriter( PrimitiveFieldBean.class, setter );
+			var multiFieldWriter = bulk ? factory.multiValueWriter( PrimitiveFieldBean.class, field ) : null;
+			var multiMethodWriter = bulk ? factory.multiValueWriter( PrimitiveFieldBean.class, setter ) : null;
 			String strategy = factory.getClass().getPackageName();
-			if ( strategy.contains( ".asm." ) || strategy.contains( ".bytebuddy." ) || strategy.contains( ".classfile." ) ) {
+			if ( bulk && ( strategy.contains( ".asm." ) || strategy.contains( ".bytebuddy." ) || strategy.contains( ".classfile." ) ) ) {
 				org.junit.jupiter.api.Assertions.assertTrue( multiFieldWriter.getClass().isHidden(), "must exercise generated field conversion" );
 				org.junit.jupiter.api.Assertions.assertTrue( multiMethodWriter.getClass().isHidden(), "must exercise generated method conversion" );
 			}
@@ -42,16 +53,20 @@ public class PrimitiveConversionMatrixTest {
 					assertEquals( field.get( expected ), field.get( bean ) );
 					methodWriter.set( bean, source );
 					assertEquals( field.get( expected ), field.get( bean ) );
-					multiFieldWriter.set( bean, new Object[] { source } );
-					assertEquals( field.get( expected ), field.get( bean ) );
-					multiMethodWriter.set( bean, new Object[] { source } );
-					assertEquals( field.get( expected ), field.get( bean ) );
+					if ( bulk ) {
+						multiFieldWriter.set( bean, new Object[] { source } );
+						assertEquals( field.get( expected ), field.get( bean ) );
+						multiMethodWriter.set( bean, new Object[] { source } );
+						assertEquals( field.get( expected ), field.get( bean ) );
+					}
 				}
 				else {
 					assertThrows( RuntimeException.class, () -> fieldWriter.set( bean, source ) );
 					assertThrows( RuntimeException.class, () -> methodWriter.set( bean, source ) );
-					assertThrows( RuntimeException.class, () -> multiFieldWriter.set( bean, new Object[] { source } ) );
-					assertThrows( RuntimeException.class, () -> multiMethodWriter.set( bean, new Object[] { source } ) );
+					if ( bulk ) {
+						assertThrows( RuntimeException.class, () -> multiFieldWriter.set( bean, new Object[] { source } ) );
+						assertThrows( RuntimeException.class, () -> multiMethodWriter.set( bean, new Object[] { source } ) );
+					}
 				}
 			}
 		}
