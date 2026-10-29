@@ -1,6 +1,5 @@
 package org.hibernate.accessor.asm.aot;
 
-import static org.hibernate.accessor.asm.aot.GenerationUtil.SWITCH_CHUNK_SIZE;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.fqcnToName;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.pushIntConst;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
@@ -30,9 +29,11 @@ import org.objectweb.asm.Type;
 class SingleImplGenerator implements Opcodes {
 
 	private final GenerationNames names;
+	private final AotChunkSizes chunks;
 
-	SingleImplGenerator(GenerationNames names) {
+	SingleImplGenerator(GenerationNames names, AotChunkSizes chunks) {
 		this.names = names;
+		this.chunks = chunks;
 	}
 
 	byte[] generateReaderImpl(List<AotTypeMetadata> hostClasses) {
@@ -47,7 +48,7 @@ class SingleImplGenerator implements Opcodes {
 		generateIndexConstructor( cw, className );
 
 		String methodDesc = "(Ljava/lang/Object;)Ljava/lang/Object;";
-		if ( hostClasses.size() <= SWITCH_CHUNK_SIZE ) {
+		if ( hostClasses.size() <= chunks.typeRead() ) {
 			MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "get", methodDesc, null, null );
 			mv.visitCode();
 			generateDispatchSwitch( mv, className, hostClasses, PREFIX_READ_METHOD, "(ILjava/lang/Object;)Ljava/lang/Object;",
@@ -57,7 +58,7 @@ class SingleImplGenerator implements Opcodes {
 		}
 		else {
 			generateChunkedDispatch( cw, className, "get", methodDesc, hostClasses, PREFIX_READ_METHOD,
-					"(ILjava/lang/Object;)Ljava/lang/Object;", 1, false );
+					"(ILjava/lang/Object;)Ljava/lang/Object;", 1, false, chunks.typeRead() );
 		}
 
 		cw.visitEnd();
@@ -75,7 +76,7 @@ class SingleImplGenerator implements Opcodes {
 		generateIndexFields( cw );
 		generateIndexConstructor( cw, className );
 
-		if ( hostClasses.size() <= SWITCH_CHUNK_SIZE ) {
+		if ( hostClasses.size() <= chunks.typeWrite() ) {
 			MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "set",
 					"(Ljava/lang/Object;Ljava/lang/Object;)V", null, null );
 			mv.visitCode();
@@ -103,7 +104,7 @@ class SingleImplGenerator implements Opcodes {
 		generateIndexConstructor( cw, className );
 
 		String methodDesc = "([Ljava/lang/Object;)Ljava/lang/Object;";
-		if ( hostClasses.size() <= SWITCH_CHUNK_SIZE ) {
+		if ( hostClasses.size() <= chunks.typeConstructor() ) {
 			MethodVisitor mv = cw.visitMethod( ACC_PUBLIC | ACC_VARARGS, "create", methodDesc, null, null );
 			mv.visitCode();
 			generateDispatchSwitch( mv, className, hostClasses, PREFIX_CREATE_METHOD, "(I[Ljava/lang/Object;)Ljava/lang/Object;",
@@ -113,7 +114,7 @@ class SingleImplGenerator implements Opcodes {
 		}
 		else {
 			generateChunkedDispatch( cw, className, "create", methodDesc, hostClasses, PREFIX_CREATE_METHOD,
-					"(I[Ljava/lang/Object;)Ljava/lang/Object;", 1, false );
+					"(I[Ljava/lang/Object;)Ljava/lang/Object;", 1, false, chunks.typeConstructor() );
 		}
 
 		cw.visitEnd();
@@ -249,13 +250,13 @@ class SingleImplGenerator implements Opcodes {
 
 	private void generateChunkedDispatch(ClassWriter cw, String className, String publicMethodName, String publicMethodDesc,
 			List<AotTypeMetadata> hostClasses, String staticMethodName, String staticMethodDesc, int targetArgSlot,
-			boolean returnsVoid) {
+			boolean returnsVoid, int chunkSize) {
 		int total = hostClasses.size();
-		int chunkCount = ( total + SWITCH_CHUNK_SIZE - 1 ) / SWITCH_CHUNK_SIZE;
+		int chunkCount = ( total - 1 ) / chunkSize + 1;
 
 		for ( int chunk = 0; chunk < chunkCount; chunk++ ) {
-			int start = chunk * SWITCH_CHUNK_SIZE;
-			int end = Math.min( start + SWITCH_CHUNK_SIZE, total );
+			int start = chunk * chunkSize;
+			int end = Math.min( start + chunkSize, total );
 			List<AotTypeMetadata> chunkHosts = hostClasses.subList( start, end );
 
 			String chunkMethodName = publicMethodName + "$" + chunk;
@@ -268,17 +269,18 @@ class SingleImplGenerator implements Opcodes {
 		}
 
 		generateImplChunkDispatcher( cw, className, publicMethodName, publicMethodDesc,
-				chunkCount, returnsVoid );
+				chunkCount, returnsVoid, chunkSize );
 	}
 
 	private void generateChunkedWriteDispatch(ClassWriter cw, String className, List<AotTypeMetadata> hostClasses) {
+		int chunkSize = chunks.typeWrite();
 		int total = hostClasses.size();
-		int chunkCount = ( total + SWITCH_CHUNK_SIZE - 1 ) / SWITCH_CHUNK_SIZE;
+		int chunkCount = ( total - 1 ) / chunkSize + 1;
 		String publicMethodDesc = "(Ljava/lang/Object;Ljava/lang/Object;)V";
 
 		for ( int chunk = 0; chunk < chunkCount; chunk++ ) {
-			int start = chunk * SWITCH_CHUNK_SIZE;
-			int end = Math.min( start + SWITCH_CHUNK_SIZE, total );
+			int start = chunk * chunkSize;
+			int end = Math.min( start + chunkSize, total );
 			List<AotTypeMetadata> chunkHosts = hostClasses.subList( start, end );
 
 			String chunkMethodName = "set$" + chunk;
@@ -289,7 +291,7 @@ class SingleImplGenerator implements Opcodes {
 			mv.visitEnd();
 		}
 
-		generateImplChunkDispatcher( cw, className, "set", publicMethodDesc, chunkCount, true );
+		generateImplChunkDispatcher( cw, className, "set", publicMethodDesc, chunkCount, true, chunkSize );
 	}
 
 	// Example generated chunk helper with indexOffset = 1000:
@@ -379,9 +381,9 @@ class SingleImplGenerator implements Opcodes {
 		throwIllegalArgumentWithClassIndex( mv, className );
 	}
 
-	// Generated implementation dispatcher; SWITCH_CHUNK_SIZE is embedded as an integer constant:
+	// Generated implementation dispatcher; chunkSize is embedded as an integer constant:
 	// public Object get(Object target) {
-	//     switch (this.classIndex / SWITCH_CHUNK_SIZE) {
+	//     switch (this.classIndex / chunkSize) {
 	//         case 0: return this.get$0(target);
 	//         case 1: return this.get$1(target);
 	//         default: throw new IllegalArgumentException("Unknown class index " + this.classIndex);
@@ -390,7 +392,7 @@ class SingleImplGenerator implements Opcodes {
 	// create forwards its argument array; set forwards target and value, then returns void.
 	// Helpers check the original class index, including negative or out-of-range indexes.
 	private static void generateImplChunkDispatcher(ClassWriter cw, String className, String publicMethodName,
-			String publicMethodDesc, int chunkCount, boolean returnsVoid) {
+			String publicMethodDesc, int chunkCount, boolean returnsVoid, int chunkSize) {
 		int accessFlags = ACC_PUBLIC;
 		if ( publicMethodDesc.startsWith( "([" ) ) {
 			accessFlags |= ACC_VARARGS;
@@ -406,7 +408,7 @@ class SingleImplGenerator implements Opcodes {
 
 		mv.visitVarInsn( ALOAD, 0 );
 		mv.visitFieldInsn( GETFIELD, className, "classIndex", "I" );
-		pushIntConst( mv, SWITCH_CHUNK_SIZE );
+		pushIntConst( mv, chunkSize );
 		mv.visitInsn( IDIV );
 		mv.visitTableSwitchInsn( 0, chunkCount - 1, defaultLabel, labels );
 

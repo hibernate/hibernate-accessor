@@ -203,6 +203,18 @@ retain the existing `LookupAccess` implementation for JVM use.
 These are build-time APIs, distinct from factories that generate accessors for already-loaded classes.
 Class-File API AOT generation is not implemented yet.
 
+Chunk sizes can be configured at generation time with `new AsmAotGenerator(names, chunks)`
+(or the equivalent Byte Buddy constructor). `AotChunkSizes` has independent `typeRead`,
+`typeWrite`, `typeConstructor`, `memberRead`, `memberWrite`, `memberConstructor`, `typeLookup`,
+and `memberLookup` components. The existing constructor uses `AotChunkSizes.DEFAULT`: 256
+for integer dispatch and 500 for string lookups. All sizes must be positive. Member constructor
+size is a conversion budget divided by the largest constructor arity (minimum 1), preserving
+argument-aware splitting. Large sizes may exceed JVM bytecode limits for a given model.
+Use the same generator configuration for host emission and generated implementations.
+
+See [AOT dispatch benchmarks](performance/benchmark-aot/README.md) for fixed-workload chunk
+sweeps, configurable entity/field counts, and HotSpot inlining diagnostics.
+
 The caller supplies descriptor-based host/member metadata and `GenerationNames` (binary names of
 four output classes and a runtime hooks class). `generateClasses(hosts, withFallback)` returns a
 map of binary class names to bytes: public bridges for non-public hosts, shared reader/writer/

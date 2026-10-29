@@ -1,5 +1,7 @@
 package org.hibernate.accessor.performance.generator;
 
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -27,8 +29,6 @@ import org.objectweb.asm.Opcodes;
  */
 public final class EntityClassEmitter {
 
-	private static final int CLASS_VERSION = Opcodes.V17;
-
 	private EntityClassEmitter() {
 	}
 
@@ -44,7 +44,7 @@ public final class EntityClassEmitter {
 		String internalName = packageInternal + "/E" + typeIndex;
 
 		ClassWriter cw = new ModelClassWriter();
-		cw.visit( CLASS_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, internalName, null, "java/lang/Object", null );
+		cw.visit( GENERATED_CLASS_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, internalName, null, "java/lang/Object", null );
 
 		emitConstructor( cw, internalName );
 

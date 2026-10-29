@@ -1,5 +1,7 @@
 package org.hibernate.accessor.performance.generator;
 
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -28,7 +30,7 @@ final class SwitchMultiWriterEmitter {
 		String className = packageInternal + "/" + simpleName;
 		ClassWriter cw = new ModelClassWriter();
 		cw.visit(
-				Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, null,
+				GENERATED_CLASS_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, null,
 				"java/lang/Object", new String[] { GeneratedNames.MULTI_WRITER_INTERFACE_INTERNAL } );
 
 		cw.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL, "classIndex", "I", null, null ).visitEnd();

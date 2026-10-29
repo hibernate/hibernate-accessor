@@ -17,16 +17,18 @@ import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
 class AsmAotClassLoaderTest implements Opcodes {
-	@Test
-	void checksIdentityForLookups() throws Exception {
+	@ParameterizedTest
+	@ValueSource(ints = { 1, 256 })
+	void checksIdentityForEveryLookupPath(int chunkSize) throws Exception {
 		for ( boolean withFallback : new boolean[] { false, true } ) {
-			Map<String, byte[]> classes = generate( withFallback );
+			Map<String, byte[]> classes = generate( chunkSize, withFallback );
 			ClassLoader foreign = loader( classes );
 			Map<String, byte[]> hosts = new LinkedHashMap<>( classes );
 			byte[] factoryBytes = hosts.remove( "generated.Factory" );
@@ -107,13 +109,14 @@ class AsmAotClassLoaderTest implements Opcodes {
 		};
 	}
 
-	private static Map<String, byte[]> generate(boolean withFallback) {
+	private static Map<String, byte[]> generate(int chunkSize, boolean withFallback) {
 		var names = new GenerationNames( "generated.Factory", "generated.Reader", "generated.Writer",
 				"generated.Instantiator", RuntimeHooks.class.getName() );
-		var generator = new AsmAotGenerator( names );
+		var generator = new AsmAotGenerator( names,
+				new AotChunkSizes( 256, 256, 256, 256, 256, 256, chunkSize, 256 ) );
 		Map<String, byte[]> classes = new LinkedHashMap<>();
 		List<AotTypeMetadata> hosts = new ArrayList<>();
-		// Equal hashes exercise lookup collisions, including for public/non-public interfaces.
+		// Equal hashes force chained chunk parts, including for public/non-public interfaces.
 		for ( String simple : List.of( "AaAa", "AaBB", "BBAa", "BBBB" ) ) {
 			boolean isInterface = hosts.size() >= 2;
 			boolean isPublic = hosts.size() % 2 == 0;

@@ -2,7 +2,7 @@ plugins {
     id 'java-module'
 }
 
-description = 'Internal AOT test support (not published)'
+description = 'Internal AOT support for tests and benchmarks (not published)'
 
 dependencies {
     implementation project(':hibernate-accessor-asm')

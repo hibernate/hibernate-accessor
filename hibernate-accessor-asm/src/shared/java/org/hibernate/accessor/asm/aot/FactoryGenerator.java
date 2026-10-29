@@ -1,6 +1,5 @@
 package org.hibernate.accessor.asm.aot;
 
-import static org.hibernate.accessor.asm.aot.GenerationUtil.STRING_SWITCH_CHUNK_SIZE;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.emitStringSwitch;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.pushIntConst;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.FACTORY_INTERFACE_INTERNAL;
@@ -40,8 +39,10 @@ import org.objectweb.asm.Type;
 class FactoryGenerator implements Opcodes {
 
 	private final String FACTORY_IMPLEMENTATION_INTERNAL;
+	private final int stringChunkSize;
 
-	FactoryGenerator(GenerationNames names) {
+	FactoryGenerator(GenerationNames names, int stringChunkSize) {
+		this.stringChunkSize = stringChunkSize;
 		FACTORY_IMPLEMENTATION_INTERNAL = names.factory().replace( '.', '/' );
 	}
 
@@ -391,7 +392,7 @@ class FactoryGenerator implements Opcodes {
 		List<String> classNames = new ArrayList<>( classes );
 		Label throwLabel = new Label();
 
-		if ( classNames.size() <= STRING_SWITCH_CHUNK_SIZE ) {
+		if ( classNames.size() <= stringChunkSize ) {
 			generateValueAccessorSwitch( mv, classNames, hostMethodName, hostMethodDesc,
 					returnInterface, throwLabel );
 		}
@@ -469,7 +470,7 @@ class FactoryGenerator implements Opcodes {
 			String chunkBaseName,
 			List<String> classNames, String hostMethodName, String hostMethodDesc,
 			String implInternal, Label throwLabel) {
-		int numChunks = ( classNames.size() + STRING_SWITCH_CHUNK_SIZE - 1 ) / STRING_SWITCH_CHUNK_SIZE;
+		int numChunks = ( classNames.size() - 1 ) / stringChunkSize + 1;
 
 		List<List<String>> chunks = new ArrayList<>();
 		for ( int i = 0; i < numChunks; i++ ) {
@@ -544,8 +545,8 @@ class FactoryGenerator implements Opcodes {
 			String methodDesc, List<String> classNames,
 			String hostMethodName, String hostMethodDesc, String implInternal) {
 		// A hash bucket may contain every registered class. Bound each generated method by count.
-		for ( int start = 0, part = 0; start < classNames.size(); start += STRING_SWITCH_CHUNK_SIZE, part++ ) {
-			int end = Math.min( start + STRING_SWITCH_CHUNK_SIZE, classNames.size() );
+		for ( int start = 0, part = 0; start < classNames.size(); start += stringChunkSize, part++ ) {
+			int end = Math.min( start + stringChunkSize, classNames.size() );
 			String current = part == 0 ? methodName : methodName + "$part" + part;
 			String next = end == classNames.size() ? null : methodName + "$part" + ( part + 1 );
 			generateValueAccessorChunkPart( cw, current, methodDesc, classNames.subList( start, end ),
@@ -645,7 +646,7 @@ class FactoryGenerator implements Opcodes {
 		List<String> classNames = new ArrayList<>( instantiatorClasses );
 		Label throwLabel = new Label();
 
-		if ( classNames.size() <= STRING_SWITCH_CHUNK_SIZE ) {
+		if ( classNames.size() <= stringChunkSize ) {
 			Label defaultLabel = new Label();
 
 			emitStringSwitch( mv, 2, 4, classNames, defaultLabel, (caseMv, classIdx) -> {
