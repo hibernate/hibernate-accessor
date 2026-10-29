@@ -1,22 +1,23 @@
 package org.hibernate.accessor.tck.tests.crossclassloader;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.spi.AccessorConfiguration;
-import java.util.Map;
 import org.hibernate.accessor.tck.tests.beans.LifecycleBean;
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
-import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import org.junit.jupiter.api.Test;
 
 public class AccessorLifetimeTest {
 	@Test
@@ -61,17 +62,23 @@ public class AccessorLifetimeTest {
 				if ( !name.startsWith( prefix ) ) {
 					return super.loadClass( name, resolve );
 				}
-				synchronized ( getClassLoadingLock( name ) ) {
+				synchronized (getClassLoadingLock( name )) {
 					Class<?> loaded = findLoadedClass( name );
 					if ( loaded == null ) {
 						try ( var stream = getParent().getResourceAsStream( name.replace( '.', '/' ) + ".class" ) ) {
-							if ( stream == null ) { throw new ClassNotFoundException( name ); }
+							if ( stream == null ) {
+								throw new ClassNotFoundException( name );
+							}
 							byte[] bytes = stream.readAllBytes();
 							loaded = defineClass( name, bytes, 0, bytes.length );
 						}
-						catch (java.io.IOException e) { throw new ClassNotFoundException( name, e ); }
+						catch (java.io.IOException e) {
+							throw new ClassNotFoundException( name, e );
+						}
 					}
-					if ( resolve ) { resolveClass( loaded ); }
+					if ( resolve ) {
+						resolveClass( loaded );
+					}
 					return loaded;
 				}
 			}
@@ -128,7 +135,8 @@ public class AccessorLifetimeTest {
 	void publicAncestorBridgeIsNotReused() throws Exception {
 		var factory = TckHelper.factory();
 		String implementation = factory.getClass().getName();
-		if ( !implementation.contains( ".asm." ) && !implementation.contains( ".bytebuddy." )
+		if ( !implementation.contains( ".asm." )
+				&& !implementation.contains( ".bytebuddy." )
 				&& !implementation.contains( ".classfile." ) ) {
 			return;
 		}

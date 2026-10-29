@@ -1,5 +1,8 @@
 package org.hibernate.accessor.tck.jpms;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -8,11 +11,9 @@ import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.asm.AsmAccessorFactory;
 import org.hibernate.accessor.bytebuddy.ByteBuddyAccessorFactory;
 import org.hibernate.accessor.spi.CrossClassLoaderLookupBridge;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class InjectedBridgeTest {
 	@ParameterizedTest

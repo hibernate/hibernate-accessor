@@ -1,11 +1,12 @@
 package org.hibernate.accessor.tck.tests.primitive;
 
-import org.hibernate.accessor.tck.tests.beans.PrimitiveFieldBean;
-import org.hibernate.accessor.tck.util.TckHelper;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.hibernate.accessor.tck.tests.beans.PrimitiveFieldBean;
+import org.hibernate.accessor.tck.util.TckHelper;
+
+import org.junit.jupiter.api.Test;
 
 public class PrimitiveConversionMatrixTest {
 	@Test
@@ -28,8 +29,13 @@ public class PrimitiveConversionMatrixTest {
 			for ( Object source : sources ) {
 				var expected = new PrimitiveFieldBean();
 				boolean accepted;
-				try { field.set( expected, source ); accepted = true; }
-				catch (IllegalArgumentException e) { accepted = false; }
+				try {
+					field.set( expected, source );
+					accepted = true;
+				}
+				catch (IllegalArgumentException e) {
+					accepted = false;
+				}
 				var bean = new PrimitiveFieldBean();
 				if ( accepted ) {
 					fieldWriter.set( bean, source );

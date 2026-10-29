@@ -1,22 +1,23 @@
 package org.hibernate.accessor.tck.tests.multivalue;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.MultiValueReader;
 import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ChildBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ParentBean;
 import org.hibernate.accessor.tck.util.TckHelper;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Multi-value accessor access across class hierarchy")
@@ -60,7 +61,7 @@ public class MultiValueInheritanceTest {
 		childField.setAccessible( true );
 
 		MultiValueWriter writer = factory.multiValueWriter( ChildBean.class, parentField, childField );
-		writer.set( bean, new Object[]{ "written-parent", "written-child" } );
+		writer.set( bean, new Object[] { "written-parent", "written-child" } );
 
 		assertEquals( "written-parent", bean.getParentField() );
 		assertEquals( "written-child", bean.getChildField() );
@@ -95,7 +96,7 @@ public class MultiValueInheritanceTest {
 		childField.setAccessible( true );
 
 		MultiValueWriter writer = factory.multiValueWriter( ChildBean.class, setParent, childField );
-		writer.set( bean, new Object[]{ "via-method", "via-field" } );
+		writer.set( bean, new Object[] { "via-method", "via-field" } );
 
 		assertEquals( "via-method", bean.getParentField() );
 		assertEquals( "via-field", bean.getChildField() );

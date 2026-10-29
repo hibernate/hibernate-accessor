@@ -1,21 +1,22 @@
 package org.hibernate.accessor.tck.tests.validation;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+
 import org.hibernate.accessor.AccessorException;
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.tck.tests.beans.PrimitiveFieldBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ChildBean;
 import org.hibernate.accessor.tck.tests.beans.inheritance.ParentBean;
 import org.hibernate.accessor.tck.util.TckHelper;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Member validation in factory methods")

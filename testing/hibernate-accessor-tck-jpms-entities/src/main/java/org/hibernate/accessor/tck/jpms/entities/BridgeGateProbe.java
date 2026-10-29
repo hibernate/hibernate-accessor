@@ -38,7 +38,7 @@ public final class BridgeGateProbe {
 	 */
 	public static boolean bridgeInjected() {
 		try {
-			for (String name : POSSIBLE_BRIDGE_CLASSES) {
+			for ( String name : POSSIBLE_BRIDGE_CLASSES ) {
 				Class.forName( name, false, BridgeGateProbe.class.getClassLoader() );
 				return true;
 			}

@@ -1,14 +1,17 @@
 package org.hibernate.accessor.tck.classfile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
 
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.classfile.ClassFileAccessorConfiguration;
 import org.hibernate.accessor.classfile.ClassFileGenerationStrategy;
-import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class ClassFilePerMemberFactoryTest {
 	@Test
@@ -41,7 +44,14 @@ class ClassFilePerMemberFactoryTest {
 
 	private static class Entity {
 		private long value;
-		private long getValue() { return value; }
-		private long setValue(long value) { this.value = value; return value; }
+
+		private long getValue() {
+			return value;
+		}
+
+		private long setValue(long value) {
+			this.value = value;
+			return value;
+		}
 	}
 }

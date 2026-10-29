@@ -1,20 +1,29 @@
 package org.hibernate.accessor.tck.tests.instantiation;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Set;
 
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
-import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 public class InvocationShapeTest {
 	public static class Bean {
 		public String[] values;
-		public Bean() { }
-		public Bean(String... values) { this.values = values; }
-		public void setValues(String... values) { this.values = values; }
+
+		public Bean() {
+		}
+
+		public Bean(String... values) {
+			this.values = values;
+		}
+
+		public void setValues(String... values) {
+			this.values = values;
+		}
 	}
 
 	@Test

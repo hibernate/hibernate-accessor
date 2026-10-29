@@ -1,5 +1,7 @@
 package org.hibernate.accessor.tck.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,8 +17,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class FrameworkIntegrationTest {
 	@TempDir
@@ -46,7 +46,7 @@ class FrameworkIntegrationTest {
 		if ( namedEntity ) {
 			Path descriptor = entitySource.resolveSibling( "module-info.java" );
 			Files.writeString( descriptor, "module integration.entities { "
-					+ (closed ? "" : "opens entities to integration.framework;") + " }" );
+					+ ( closed ? "" : "opens entities to integration.framework;" ) + " }" );
 			entityCompile.add( descriptor.toString() );
 		}
 		compile( entityCompile );
@@ -58,9 +58,9 @@ class FrameworkIntegrationTest {
 			Path descriptor = frameworkSource.resolveSibling( "module-info.java" );
 			Files.writeString( descriptor, """
 					module integration.framework {
-					    requires org.hibernate.accessor;
-					    requires org.hibernate.accessor.asm;
-					    requires org.hibernate.accessor.bytebuddy;
+						requires org.hibernate.accessor;
+						requires org.hibernate.accessor.asm;
+						requires org.hibernate.accessor.bytebuddy;
 					}
 					""" );
 			frameworkCompile.add( descriptor.toString() );
@@ -71,7 +71,7 @@ class FrameworkIntegrationTest {
 		) );
 		if ( modular ) {
 			command.addAll( List.of( "--module-path", dependencies + File.pathSeparator + framework
-					+ (namedEntity ? File.pathSeparator + entities : ""), "--add-modules", "ALL-MODULE-PATH" ) );
+					+ ( namedEntity ? File.pathSeparator + entities : "" ), "--add-modules", "ALL-MODULE-PATH" ) );
 			if ( !namedEntity ) {
 				command.addAll( List.of( "--class-path", entities.toString() ) );
 			}

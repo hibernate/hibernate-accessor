@@ -1,5 +1,13 @@
 package org.hibernate.accessor.tck.tests.nested;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.stream.Stream;
+
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.Instantiator;
 import org.hibernate.accessor.MultiValueReader;
@@ -8,20 +16,13 @@ import org.hibernate.accessor.ValueReader;
 import org.hibernate.accessor.ValueWriter;
 import org.hibernate.accessor.tck.tests.beans.nested.NestedClassBean;
 import org.hibernate.accessor.tck.util.TckHelper;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Access nested classes with different visibility levels")
@@ -118,7 +119,7 @@ public class NestedClassAccessTest {
 		MultiValueWriter writer = factory.multiValueWriter( nestedClass, publicField, privateField );
 		MultiValueReader reader = factory.multiValueReader( nestedClass, publicField, privateField );
 
-		writer.set( instance, new Object[]{ "pub-val", "priv-val" } );
+		writer.set( instance, new Object[] { "pub-val", "priv-val" } );
 		Object[] values = reader.get( instance );
 
 		assertEquals( 2, values.length );
@@ -137,7 +138,7 @@ public class NestedClassAccessTest {
 		MultiValueWriter writer = factory.multiValueWriter( nestedClass, publicField, setPrivate );
 		MultiValueReader reader = factory.multiValueReader( nestedClass, publicField, getPrivate );
 
-		writer.set( instance, new Object[]{ "field-val", "method-val" } );
+		writer.set( instance, new Object[] { "field-val", "method-val" } );
 		Object[] values = reader.get( instance );
 
 		assertEquals( 2, values.length );

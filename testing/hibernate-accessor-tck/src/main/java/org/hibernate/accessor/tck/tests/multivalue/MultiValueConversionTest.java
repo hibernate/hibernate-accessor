@@ -1,21 +1,31 @@
 package org.hibernate.accessor.tck.tests.multivalue;
 
-import org.hibernate.accessor.MultiValueAccessorGenerationException;
-import org.hibernate.accessor.tck.util.TckHelper;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.hibernate.accessor.MultiValueAccessorGenerationException;
+import org.hibernate.accessor.tck.util.TckHelper;
+
+import org.junit.jupiter.api.Test;
 
 public class MultiValueConversionTest {
 	public static class Bean {
 		public long value;
 		public double other;
 		public final String fixed = new String( "before" );
-		public long setValue(long value) { this.value = value; return value; }
-		public double setOther(double value) { this.other = value; return value; }
+
+		public long setValue(long value) {
+			this.value = value;
+			return value;
+		}
+
+		public double setOther(double value) {
+			this.other = value;
+			return value;
+		}
 	}
-	public static class Child extends Bean { }
+
+	public static class Child extends Bean {}
 
 	@Test
 	void directFieldsAcceptWidening() throws Exception {

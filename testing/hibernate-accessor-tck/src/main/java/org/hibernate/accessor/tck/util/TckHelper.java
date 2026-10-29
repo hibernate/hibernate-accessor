@@ -1,27 +1,27 @@
 package org.hibernate.accessor.tck.util;
 
-import org.hibernate.accessor.AccessorFactory;
-
 import java.util.ServiceLoader;
+
+import org.hibernate.accessor.AccessorFactory;
 
 public class TckHelper {
 
-    private static final TckAccessorConfiguration CONFIGURATION;
+	private static final TckAccessorConfiguration CONFIGURATION;
 
-    static {
-        ServiceLoader<TckAccessorConfiguration> loader =
-                ServiceLoader.load(TckAccessorConfiguration.class);
+	static {
+		ServiceLoader<TckAccessorConfiguration> loader =
+				ServiceLoader.load( TckAccessorConfiguration.class );
 
-        // Find the configuration and extract the factory
+		// Find the configuration and extract the factory
 
-        CONFIGURATION = loader.findFirst()
-                .orElseThrow(() -> new RuntimeException(
-                        "No TckAccessorConfiguration implementation found! " +
-                                "Check META-INF/services/util.tck.org.hibernate.accessor.TckAccessorConfiguration"
-                ));
-    }
+		CONFIGURATION = loader.findFirst()
+				.orElseThrow( () -> new RuntimeException(
+						"No TckAccessorConfiguration implementation found! " +
+								"Check META-INF/services/util.tck.org.hibernate.accessor.TckAccessorConfiguration"
+				) );
+	}
 
-    public static AccessorFactory factory() {
-        return CONFIGURATION.factory();
-    }
+	public static AccessorFactory factory() {
+		return CONFIGURATION.factory();
+	}
 }

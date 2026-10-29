@@ -1,21 +1,22 @@
 package org.hibernate.accessor.tck.tests.crossclassloader;
 
-import org.hibernate.accessor.tck.tests.beans.visibility.PropertyVisibilityBean;
-import org.hibernate.accessor.tck.util.IsolatingClassLoader;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.hibernate.accessor.tck.tests.beans.visibility.PropertyVisibilityBean;
+import org.hibernate.accessor.tck.util.IsolatingClassLoader;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * Diagnostic test that directly exercises JDK MethodHandles.Lookup APIs
@@ -44,11 +45,11 @@ public class CrossClassLoaderLookupDiagnosticTest {
 	/**
 	 * Access mode bit constants from {@link MethodHandles.Lookup}.
 	 */
-	private static final int PUBLIC    = MethodHandles.Lookup.PUBLIC;
-	private static final int PRIVATE   = MethodHandles.Lookup.PRIVATE;
+	private static final int PUBLIC = MethodHandles.Lookup.PUBLIC;
+	private static final int PRIVATE = MethodHandles.Lookup.PRIVATE;
 	private static final int PROTECTED = MethodHandles.Lookup.PROTECTED;
-	private static final int PACKAGE   = MethodHandles.Lookup.PACKAGE;
-	private static final int MODULE    = MethodHandles.Lookup.MODULE;
+	private static final int PACKAGE = MethodHandles.Lookup.PACKAGE;
+	private static final int MODULE = MethodHandles.Lookup.MODULE;
 	private static final int UNCONDITIONAL = MethodHandles.Lookup.UNCONDITIONAL;
 
 	private Class<?> isolatedClass;
@@ -107,14 +108,14 @@ public class CrossClassLoaderLookupDiagnosticTest {
 		System.out.println();
 
 		// Both should have PRIVATE access
-		assertTrue( (crossModes & PRIVATE) != 0,
+		assertTrue( ( crossModes & PRIVATE ) != 0,
 				"Cross-CL lookup should have PRIVATE access, modes=" + describeModes( crossModes ) );
-		assertTrue( (sameModes & PRIVATE) != 0,
+		assertTrue( ( sameModes & PRIVATE ) != 0,
 				"Same-CL lookup should have PRIVATE access, modes=" + describeModes( sameModes ) );
 
 		// Check MODULE bit — cross-CL typically loses MODULE since it crosses module boundaries
-		boolean crossHasModule = (crossModes & MODULE) != 0;
-		boolean sameHasModule = (sameModes & MODULE) != 0;
+		boolean crossHasModule = ( crossModes & MODULE ) != 0;
+		boolean sameHasModule = ( sameModes & MODULE ) != 0;
 		System.out.println( "Cross-CL has MODULE bit: " + crossHasModule );
 		System.out.println( "Same-CL has MODULE bit:  " + sameHasModule );
 		System.out.println();
@@ -148,7 +149,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 			System.out.println( "  Hidden class nest host: " + result.lookupClass().getNestHost().getName() );
 			// If this succeeds, we note it — it may or may not depending on JDK version
 		}
-		catch ( Exception e ) {
+		catch (Exception e) {
 			System.out.println( "FAILED with: " + e.getClass().getName() );
 			System.out.println( "  Message: " + e.getMessage() );
 			// This is the expected outcome for cross-CL: defineHiddenClass with NESTMATE
@@ -169,13 +170,13 @@ public class CrossClassLoaderLookupDiagnosticTest {
 		try {
 			MethodHandles.Lookup result = crossClLookup.defineHiddenClass(
 					classBytes, true
-					// no ClassOption — no NESTMATE
+			// no ClassOption — no NESTMATE
 			);
 			System.out.println( "SUCCESS: hidden class defined (no nestmate): " + result.lookupClass().getName() );
 			System.out.println( "  Hidden class loader:  " + result.lookupClass().getClassLoader() );
 			System.out.println( "  Hidden class module:  " + result.lookupClass().getModule() );
 		}
-		catch ( Exception e ) {
+		catch (Exception e) {
 			// KEY FINDING: defineHiddenClass requires "full privilege access" which
 			// means the MODULE bit (0x10) must be present. Cross-CL lookups lose
 			// the MODULE bit, so ALL defineHiddenClass calls fail — not just NESTMATE ones.
@@ -196,7 +197,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 		byte[] classBytes = generateMinimalClass( className );
 
 		System.out.println( "=== Lookup.defineClass (non-hidden, cross-CL) ===" );
-		System.out.println( "Cross-CL lookup has PACKAGE: " + ((crossClLookup.lookupModes() & PACKAGE) != 0) );
+		System.out.println( "Cross-CL lookup has PACKAGE: " + ( ( crossClLookup.lookupModes() & PACKAGE ) != 0 ) );
 		try {
 			Class<?> defined = crossClLookup.defineClass( classBytes );
 			System.out.println( "SUCCESS: class defined: " + defined.getName() );
@@ -205,7 +206,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 			assertEquals( isolatedClass.getClassLoader(), defined.getClassLoader(),
 					"defineClass should use the lookup class's classloader" );
 		}
-		catch ( Exception e ) {
+		catch (Exception e) {
 			System.out.println( "FAILED with: " + e.getClass().getName() );
 			System.out.println( "  Message: " + e.getMessage() );
 			fail( "Cross-CL defineClass should succeed (only needs PACKAGE access), but got: " + e );
@@ -230,7 +231,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 			System.out.println( "  Hidden class module:  " + result.lookupClass().getModule() );
 			System.out.println( "  Hidden class nest host: " + result.lookupClass().getNestHost().getName() );
 		}
-		catch ( Exception e ) {
+		catch (Exception e) {
 			System.out.println( "FAILED with: " + e.getClass().getName() );
 			System.out.println( "  Message: " + e.getMessage() );
 			fail( "Same-CL defineHiddenClass with NESTMATE should succeed, but got: " + e );
@@ -257,7 +258,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 			Object value = getter.invoke( isolatedInstance );
 			System.out.println( "  getter.invoke() returned: " + value + " (expected null for uninitialized String)" );
 		}
-		catch ( Exception e ) {
+		catch (Exception e) {
 			System.out.println( "unreflectGetter FAILED: " + e.getClass().getName() + ": " + e.getMessage() );
 		}
 
@@ -273,7 +274,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 			assertEquals( "cross-cl-value", readBack,
 					"Should be able to write and read back via unreflected setter" );
 		}
-		catch ( Throwable e ) {
+		catch (Throwable e) {
 			System.out.println( "unreflectSetter FAILED: " + e.getClass().getName() + ": " + e.getMessage() );
 		}
 	}
@@ -300,7 +301,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 			System.out.println( "  Round-trip: wrote 'same-cl-value', read back: " + value );
 			assertEquals( "same-cl-value", value );
 		}
-		catch ( Throwable e ) {
+		catch (Throwable e) {
 			System.out.println( "FAILED: " + e.getClass().getName() + ": " + e.getMessage() );
 			fail( "Same-CL unreflect should always work, but got: " + e );
 		}
@@ -339,7 +340,7 @@ public class CrossClassLoaderLookupDiagnosticTest {
 		// Magic number
 		writeU4( buf, 0xCAFEBABE );
 		// Version: Java 17 (61.0)
-		writeU2( buf, 0 );  // minor
+		writeU2( buf, 0 ); // minor
 		writeU2( buf, 61 ); // major (Java 17)
 
 		// Constant pool count = 10 (entries 1..9)
@@ -398,25 +399,25 @@ public class CrossClassLoaderLookupDiagnosticTest {
 
 		// Method: <init>()V
 		writeU2( buf, 0x0001 ); // ACC_PUBLIC
-		writeU2( buf, 5 );     // name: #5 "<init>"
-		writeU2( buf, 6 );     // descriptor: #6 "()V"
-		writeU2( buf, 1 );     // attributes_count: 1 (Code)
+		writeU2( buf, 5 ); // name: #5 "<init>"
+		writeU2( buf, 6 ); // descriptor: #6 "()V"
+		writeU2( buf, 1 ); // attributes_count: 1 (Code)
 
 		// Code attribute
-		writeU2( buf, 7 );     // attribute_name_index: #7 "Code"
+		writeU2( buf, 7 ); // attribute_name_index: #7 "Code"
 		// Code attribute length: 17 bytes
 		//   max_stack(2) + max_locals(2) + code_length(4) + code(5) + exception_table_length(2) + attributes_count(2) = 17
 		writeU4( buf, 17 );
-		writeU2( buf, 1 );     // max_stack
-		writeU2( buf, 1 );     // max_locals
-		writeU4( buf, 5 );     // code_length
+		writeU2( buf, 1 ); // max_stack
+		writeU2( buf, 1 ); // max_locals
+		writeU4( buf, 5 ); // code_length
 		// Bytecode: aload_0, invokespecial #1, return
-		buf.write( 0x2A );    // aload_0
-		buf.write( 0xB7 );    // invokespecial
-		writeU2( buf, 1 );    // -> #1 (Object.<init>)
-		buf.write( 0xB1 );    // return
-		writeU2( buf, 0 );     // exception_table_length
-		writeU2( buf, 0 );     // attributes_count (of Code)
+		buf.write( 0x2A ); // aload_0
+		buf.write( 0xB7 ); // invokespecial
+		writeU2( buf, 1 ); // -> #1 (Object.<init>)
+		buf.write( 0xB1 ); // return
+		writeU2( buf, 0 ); // exception_table_length
+		writeU2( buf, 0 ); // attributes_count (of Code)
 
 		// Class attributes count: 0
 		writeU2( buf, 0 );
@@ -425,14 +426,14 @@ public class CrossClassLoaderLookupDiagnosticTest {
 	}
 
 	private static void writeU2(java.io.ByteArrayOutputStream buf, int value) {
-		buf.write( (value >> 8) & 0xFF );
+		buf.write( ( value >> 8 ) & 0xFF );
 		buf.write( value & 0xFF );
 	}
 
 	private static void writeU4(java.io.ByteArrayOutputStream buf, int value) {
-		buf.write( (value >> 24) & 0xFF );
-		buf.write( (value >> 16) & 0xFF );
-		buf.write( (value >> 8) & 0xFF );
+		buf.write( ( value >> 24 ) & 0xFF );
+		buf.write( ( value >> 16 ) & 0xFF );
+		buf.write( ( value >> 8 ) & 0xFF );
 		buf.write( value & 0xFF );
 	}
 
@@ -450,39 +451,39 @@ public class CrossClassLoaderLookupDiagnosticTest {
 		var sb = new StringBuilder();
 		sb.append( "0x" ).append( Integer.toHexString( modes ) ).append( " [" );
 		boolean first = true;
-		if ( (modes & PUBLIC) != 0 ) {
+		if ( ( modes & PUBLIC ) != 0 ) {
 			sb.append( "PUBLIC" );
 			first = false;
 		}
-		if ( (modes & PRIVATE) != 0 ) {
+		if ( ( modes & PRIVATE ) != 0 ) {
 			if ( !first ) {
 				sb.append( ", " );
 			}
 			sb.append( "PRIVATE" );
 			first = false;
 		}
-		if ( (modes & PROTECTED) != 0 ) {
+		if ( ( modes & PROTECTED ) != 0 ) {
 			if ( !first ) {
 				sb.append( ", " );
 			}
 			sb.append( "PROTECTED" );
 			first = false;
 		}
-		if ( (modes & PACKAGE) != 0 ) {
+		if ( ( modes & PACKAGE ) != 0 ) {
 			if ( !first ) {
 				sb.append( ", " );
 			}
 			sb.append( "PACKAGE" );
 			first = false;
 		}
-		if ( (modes & MODULE) != 0 ) {
+		if ( ( modes & MODULE ) != 0 ) {
 			if ( !first ) {
 				sb.append( ", " );
 			}
 			sb.append( "MODULE" );
 			first = false;
 		}
-		if ( (modes & UNCONDITIONAL) != 0 ) {
+		if ( ( modes & UNCONDITIONAL ) != 0 ) {
 			if ( !first ) {
 				sb.append( ", " );
 			}

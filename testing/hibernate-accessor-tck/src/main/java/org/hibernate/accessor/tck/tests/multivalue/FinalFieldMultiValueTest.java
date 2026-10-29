@@ -1,18 +1,19 @@
 package org.hibernate.accessor.tck.tests.multivalue;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.lang.reflect.Field;
+
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.MultiValueReader;
 import org.hibernate.accessor.MultiValueWriter;
 import org.hibernate.accessor.tck.tests.beans.FinalFieldBean;
 import org.hibernate.accessor.tck.util.TckHelper;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import java.lang.reflect.Field;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Multi-value access on a class with a final field (index stability)")
