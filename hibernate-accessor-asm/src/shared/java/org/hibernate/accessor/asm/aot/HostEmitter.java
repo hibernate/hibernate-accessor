@@ -3,17 +3,15 @@ package org.hibernate.accessor.asm.aot;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.emitStringSwitch;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.fqcnToName;
 import static org.hibernate.accessor.asm.aot.GenerationUtil.pushIntConst;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.INSTANTIATOR_INTERFACE_INTERNAL;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_READER_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_WRITER_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_INSTANTIATOR_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_READER_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_WRITER_ACCESSOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.MEMBER_LOOKUP_DESCRIPTOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_READER_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_WRITER_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_INSTANTIATOR_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_READER_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_WRITER_INDEX;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.PREFIX_CREATE_METHOD;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.PREFIX_READ_METHOD;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.PREFIX_WRITE_METHOD;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.READER_INTERFACE_INTERNAL;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.WRITER_INTERFACE_INTERNAL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,11 +37,9 @@ final class HostEmitter implements Opcodes {
 	private final Set<AotMemberMetadata> readers;
 	private final Set<AotMemberMetadata> writers;
 	private final Set<AotConstructorMetadata> constructors;
-	private final int classIndex;
-	private final String ACCESSOR_IMPL_FACTORY_INTERNAL;
 
 	HostEmitter(ClassVisitor cv, AotTypeMetadata host, Set<AotMemberMetadata> readers,
-			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors, int classIndex, String runtimeHooks, AotChunkSizes chunks) {
+			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors, AotChunkSizes chunks) {
 		this.cv = cv;
 		this.chunks = chunks;
 		this.className = fqcnToName( host.host() );
@@ -51,8 +47,6 @@ final class HostEmitter implements Opcodes {
 		this.readers = new TreeSet<>( readers );
 		this.writers = new TreeSet<>( writers );
 		this.constructors = new TreeSet<>( constructors );
-		this.classIndex = classIndex;
-		this.ACCESSOR_IMPL_FACTORY_INTERNAL = fqcnToName( runtimeHooks );
 	}
 
 	void emit() {
@@ -81,16 +75,11 @@ final class HostEmitter implements Opcodes {
 			}
 		}
 
-		generateAccessorMethod( METHOD_NAME_FIELD_READER_ACCESSOR, fieldReaderEntries,
-				classIndex, READER_INTERFACE_INTERNAL, "createReader" );
-		generateAccessorMethod( METHOD_NAME_METHOD_READER_ACCESSOR, methodReaderEntries,
-				classIndex, READER_INTERFACE_INTERNAL, "createReader" );
-		generateAccessorMethod( METHOD_NAME_FIELD_WRITER_ACCESSOR, fieldWriterEntries,
-				classIndex, WRITER_INTERFACE_INTERNAL, "createWriter" );
-		generateAccessorMethod( METHOD_NAME_METHOD_WRITER_ACCESSOR, methodWriterEntries,
-				classIndex, WRITER_INTERFACE_INTERNAL, "createWriter" );
-		generateAccessorMethod( METHOD_NAME_INSTANTIATOR_ACCESSOR, instantiatorEntries,
-				classIndex, INSTANTIATOR_INTERFACE_INTERNAL, "createInstantiator" );
+		generateAccessorMethod( METHOD_NAME_FIELD_READER_INDEX, fieldReaderEntries );
+		generateAccessorMethod( METHOD_NAME_METHOD_READER_INDEX, methodReaderEntries );
+		generateAccessorMethod( METHOD_NAME_FIELD_WRITER_INDEX, fieldWriterEntries );
+		generateAccessorMethod( METHOD_NAME_METHOD_WRITER_INDEX, methodWriterEntries );
+		generateAccessorMethod( METHOD_NAME_INSTANTIATOR_INDEX, instantiatorEntries );
 	}
 
 	private static void addAccessorEntries(Collection<AotMemberMetadata> members,
@@ -112,21 +101,18 @@ final class HostEmitter implements Opcodes {
 		}
 	}
 
-	private void generateAccessorMethod(String methodName, List<NameAndIndex> entries,
-			int classIndex, String returnTypeInternal, String factoryMethodName) {
-		String returnDesc = "L" + returnTypeInternal + ";";
-		String descriptor = "(Ljava/lang/String;)" + returnDesc;
+	private void generateAccessorMethod(String methodName, List<NameAndIndex> entries) {
+		String descriptor = MEMBER_LOOKUP_DESCRIPTOR;
 
 		if ( entries.isEmpty() ) {
-			generateNullReturnMethod( methodName, descriptor );
+			generateMissingIndexMethod( methodName, descriptor );
 			return;
 		}
 
 		List<String> names = entries.stream().map( NameAndIndex::name ).toList();
 
 		if ( names.size() <= chunks.memberLookup() ) {
-			generateAccessorSwitch( methodName, descriptor, names, entries, classIndex,
-					returnTypeInternal, factoryMethodName );
+			generateAccessorSwitch( methodName, descriptor, names, entries );
 		}
 		else {
 			int numChunks = ( names.size() - 1 ) / chunks.memberLookup() + 1;
@@ -148,9 +134,7 @@ final class HostEmitter implements Opcodes {
 
 			for ( int i = 0; i < numChunks; i++ ) {
 				if ( !chunkNames.get( i ).isEmpty() ) {
-					generateAccessorSwitch( methodName + "$" + i, descriptor,
-							chunkNames.get( i ), chunkEntries.get( i ), classIndex,
-							returnTypeInternal, factoryMethodName );
+					generateAccessorSwitch( methodName + "$" + i, descriptor, chunkNames.get( i ), chunkEntries.get( i ) );
 				}
 			}
 
@@ -163,32 +147,29 @@ final class HostEmitter implements Opcodes {
 	// At runtime, we are using a double-index dispatch (class index, member index).
 	//
 	// Example generated code (names, types and indexes depend on the registered members):
-	// public static ValueReader $$__hibernateAccessor_fieldReader(String key) {
+	// public static int $$__hibernateAccessor_fieldReaderIndex(String key) {
 	//     switch (key) {
-	//         case "name": return (ValueReader) AccessorImplFactory.createReader(0, 0);
-	//         case "age":  return (ValueReader) AccessorImplFactory.createReader(0, 1);
-	//         default:     return null;
+	//         case "name": return 0;
+	//         case "age":  return 1;
+	//         default:     return -1;
 	//     }
 	// }
 	// Method keys include the descriptor, e.g. "getAge()I"; constructor keys are e.g. "(I)V".
-	// Writers and instantiators use createWriter/createInstantiator and their own member indexes.
+	// Writers and instantiators return their own dispatch member indexes.
 	private void generateAccessorSwitch(String methodName, String descriptor,
-			List<String> names, List<NameAndIndex> entries, int classIndex,
-			String returnTypeInternal, String factoryMethodName) {
+			List<String> names, List<NameAndIndex> entries) {
 		// Hashes are not a size bound: even thousands of distinct keys can have the same hash.
 		// Split an oversized bucket by entry count, preserving the original dispatch indexes.
 		for ( int start = 0, part = 0; start < names.size(); start += chunks.memberLookup(), part++ ) {
 			int end = Math.min( start + chunks.memberLookup(), names.size() );
 			String current = part == 0 ? methodName : methodName + "$part" + part;
 			String next = end == names.size() ? null : methodName + "$part" + ( part + 1 );
-			generateAccessorSwitchPart( current, descriptor, names.subList( start, end ), entries.subList( start, end ),
-					classIndex, returnTypeInternal, factoryMethodName, next );
+			generateAccessorSwitchPart( current, descriptor, names.subList( start, end ), entries.subList( start, end ), next );
 		}
 	}
 
 	private void generateAccessorSwitchPart(String methodName, String descriptor,
-			List<String> names, List<NameAndIndex> entries, int classIndex,
-			String returnTypeInternal, String factoryMethodName, String next) {
+			List<String> names, List<NameAndIndex> entries, String next) {
 		MethodVisitor mv = cv.visitMethod( ACC_PUBLIC | ACC_STATIC, methodName,
 				descriptor, null, null );
 		mv.visitCode();
@@ -197,12 +178,8 @@ final class HostEmitter implements Opcodes {
 
 		emitStringSwitch( mv, 0, 1, names, defaultLabel, (caseMv, caseIdx) -> {
 			int memberIndex = entries.get( caseIdx ).index();
-			pushIntConst( caseMv, classIndex );
 			pushIntConst( caseMv, memberIndex );
-			caseMv.visitMethodInsn( INVOKESTATIC, ACCESSOR_IMPL_FACTORY_INTERNAL,
-					factoryMethodName, "(II)Ljava/lang/Object;", false );
-			caseMv.visitTypeInsn( CHECKCAST, returnTypeInternal );
-			caseMv.visitInsn( ARETURN );
+			caseMv.visitInsn( IRETURN );
 		} );
 
 		mv.visitLabel( defaultLabel );
@@ -213,11 +190,11 @@ final class HostEmitter implements Opcodes {
 			mv.visitMethodInsn( INVOKESTATIC, className, next, descriptor, isInterface );
 		}
 		else {
-			// Null means this host has no accessor for the requested key. The factory decides whether
+			// -1 means this host has no accessor for the requested key. The factory decides whether
 			// to reject the request or delegate to its reflection fallback.
-			mv.visitInsn( ACONST_NULL );
+			mv.visitInsn( ICONST_M1 );
 		}
-		mv.visitInsn( ARETURN );
+		mv.visitInsn( IRETURN );
 
 		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
@@ -228,12 +205,12 @@ final class HostEmitter implements Opcodes {
 	// At runtime, we are using a double-index dispatch (class index, member index).
 	//
 	// Generated lookup dispatcher; numChunks is a constant computed at build time:
-	// public static ValueReader $$__hibernateAccessor_fieldReader(String key) {
+	// public static int $$__hibernateAccessor_fieldReaderIndex(String key) {
 	//     switch ((key.hashCode() & 0x7FFFFFFF) % numChunks) {
-	//         case 0: return $$__hibernateAccessor_fieldReader$0(key);
-	//         case 1: return $$__hibernateAccessor_fieldReader$1(key);
-	//         // Empty buckets and unmatched keys return null.
-	//         default: return null;
+	//         case 0: return $$__hibernateAccessor_fieldReaderIndex$0(key);
+	//         case 1: return $$__hibernateAccessor_fieldReaderIndex$1(key);
+	//         // Empty buckets and unmatched keys return -1.
+	//         default: return -1;
 	//     }
 	// }
 	private void generateAccessorDispatcher(String methodName, String descriptor,
@@ -263,14 +240,14 @@ final class HostEmitter implements Opcodes {
 				mv.visitVarInsn( ALOAD, 0 );
 				mv.visitMethodInsn( INVOKESTATIC, className, methodName + "$" + i,
 						descriptor, isInterface );
-				mv.visitInsn( ARETURN );
+				mv.visitInsn( IRETURN );
 			}
 		}
 
 		mv.visitLabel( defaultLabel );
 		mv.visitFrame( F_SAME, 0, null, 0, null );
-		mv.visitInsn( ACONST_NULL );
-		mv.visitInsn( ARETURN );
+		mv.visitInsn( ICONST_M1 );
+		mv.visitInsn( IRETURN );
 
 		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
@@ -648,14 +625,14 @@ final class HostEmitter implements Opcodes {
 	}
 
 	// Example generated lookup for an empty member set (also used for writers and instantiators):
-	// public static ValueReader $$__hibernateAccessor_fieldReader(String key) {
-	//     return null;
+	// public static int $$__hibernateAccessor_fieldReaderIndex(String key) {
+	//     return -1;
 	// }
-	private void generateNullReturnMethod(String methodName, String descriptor) {
+	private void generateMissingIndexMethod(String methodName, String descriptor) {
 		MethodVisitor mv = cv.visitMethod( ACC_PUBLIC | ACC_STATIC, methodName, descriptor, null, null );
 		mv.visitCode();
-		mv.visitInsn( ACONST_NULL );
-		mv.visitInsn( ARETURN );
+		mv.visitInsn( ICONST_M1 );
+		mv.visitInsn( IRETURN );
 		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
 	}

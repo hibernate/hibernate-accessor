@@ -5,12 +5,13 @@ import static org.hibernate.accessor.asm.aot.GenerationUtil.pushIntConst;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.FACTORY_INTERFACE_INTERNAL;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.INSTANTIATOR_INTERFACE_INTERNAL;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_READER_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_WRITER_ACCESSOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.MEMBER_LOOKUP_DESCRIPTOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_READER_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_WRITER_INDEX;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_HOST_CLASS;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_INSTANTIATOR_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_READER_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_WRITER_ACCESSOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_INSTANTIATOR_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_READER_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_WRITER_INDEX;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.MULTI_VALUE_GENERATION_EXCEPTION_INTERNAL;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.MULTI_VALUE_READER_INTERFACE_INTERNAL;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.MULTI_VALUE_WRITER_INTERFACE_INTERNAL;
@@ -40,13 +41,16 @@ class FactoryGenerator implements Opcodes {
 
 	private final String FACTORY_IMPLEMENTATION_INTERNAL;
 	private final int stringChunkSize;
+	private final GenerationNames names;
 
 	FactoryGenerator(GenerationNames names, int stringChunkSize) {
+		this.names = names;
 		this.stringChunkSize = stringChunkSize;
 		FACTORY_IMPLEMENTATION_INTERNAL = names.factory().replace( '.', '/' );
 	}
 
 	private final Map<String, String> dispatchTargets = new LinkedHashMap<>();
+	private final Map<String, Integer> classIndexes = new LinkedHashMap<>();
 	private final Set<String> interfaceTargets = new HashSet<>();
 
 	private final Set<String> fieldReaderClasses = new LinkedHashSet<>();
@@ -56,6 +60,7 @@ class FactoryGenerator implements Opcodes {
 	private final Set<String> instantiatorClasses = new LinkedHashSet<>();
 
 	void registerDispatchTarget(String declaringClassFqcn, String dispatchTargetInternal, boolean isInterface) {
+		classIndexes.computeIfAbsent( declaringClassFqcn, ignored -> classIndexes.size() );
 		dispatchTargets.put( declaringClassFqcn, dispatchTargetInternal );
 		if ( isInterface ) {
 			interfaceTargets.add( dispatchTargetInternal );
@@ -101,13 +106,13 @@ class FactoryGenerator implements Opcodes {
 		generateCreateMethod( cw, withFallback );
 
 		generateValueAccessor( cw, withFallback, "valueReader", "java/lang/reflect/Field",
-				METHOD_NAME_FIELD_READER_ACCESSOR, READER_INTERFACE_INTERNAL, fieldReaderClasses );
+				METHOD_NAME_FIELD_READER_INDEX, READER_INTERFACE_INTERNAL, fieldReaderClasses );
 		generateValueAccessor( cw, withFallback, "valueReader", "java/lang/reflect/Method",
-				METHOD_NAME_METHOD_READER_ACCESSOR, READER_INTERFACE_INTERNAL, methodReaderClasses );
+				METHOD_NAME_METHOD_READER_INDEX, READER_INTERFACE_INTERNAL, methodReaderClasses );
 		generateValueAccessor( cw, withFallback, "valueWriter", "java/lang/reflect/Field",
-				METHOD_NAME_FIELD_WRITER_ACCESSOR, WRITER_INTERFACE_INTERNAL, fieldWriterClasses );
+				METHOD_NAME_FIELD_WRITER_INDEX, WRITER_INTERFACE_INTERNAL, fieldWriterClasses );
 		generateValueAccessor( cw, withFallback, "valueWriter", "java/lang/reflect/Method",
-				METHOD_NAME_METHOD_WRITER_ACCESSOR, WRITER_INTERFACE_INTERNAL, methodWriterClasses );
+				METHOD_NAME_METHOD_WRITER_INDEX, WRITER_INTERFACE_INTERNAL, methodWriterClasses );
 		generateInstantiatorMethod( cw, withFallback );
 		generateMultiValueAccessor( cw, "multiValueReader", MULTI_VALUE_READER_INTERFACE_INTERNAL );
 		generateMultiValueAccessor( cw, "multiValueWriter", MULTI_VALUE_WRITER_INTERFACE_INTERNAL );
@@ -339,8 +344,8 @@ class FactoryGenerator implements Opcodes {
 	//     switch (className) {
 	//         case "example.Model": {
 	//             if (member.getDeclaringClass() != Model.class) break;
-	//             ValueReader result = Model.$$__hibernateAccessor_fieldReader(key);
-	//             if (result != null) return result;
+	//             int memberIndex = Model.$$__hibernateAccessor_fieldReaderIndex(key);
+	//             if (memberIndex >= 0) return new GeneratedReader(0, memberIndex);
 	//             break;
 	//         }
 	//         // More registered hosts...
@@ -350,11 +355,8 @@ class FactoryGenerator implements Opcodes {
 	// }
 	// Method readers and field/method writers use the corresponding host lookup and factory overload.
 	private void generateValueAccessor(ClassWriter cw, boolean withFallback, String factoryMethodName,
-			String reflectType,
-			String hostMethodName, String returnInterface,
-			Set<String> classes) {
-		String returnDesc = "L" + returnInterface + ";";
-		String hostMethodDesc = "(Ljava/lang/String;)" + returnDesc;
+			String reflectType, String hostMethodName, String returnInterface, Set<String> classes) {
+		String hostMethodDesc = MEMBER_LOOKUP_DESCRIPTOR;
 
 		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, factoryMethodName,
 				"(L" + reflectType + ";)L" + returnInterface + ";", null, null );
@@ -393,8 +395,7 @@ class FactoryGenerator implements Opcodes {
 		Label throwLabel = new Label();
 
 		if ( classNames.size() <= stringChunkSize ) {
-			generateValueAccessorSwitch( mv, classNames, hostMethodName, hostMethodDesc,
-					returnInterface, throwLabel );
+			generateValueAccessorSwitch( mv, classNames, hostMethodName, hostMethodDesc, throwLabel );
 		}
 		else {
 			generateValueAccessorChunked( cw, mv, factoryMethodName + "_" + hostMethodName,
@@ -416,20 +417,47 @@ class FactoryGenerator implements Opcodes {
 		mv.visitEnd();
 	}
 
+	/** Consumes a member index and leaves an accessor or null for fallback handling. */
+	private void emitAccessorConstruction(MethodVisitor mv, String host, String method) {
+		String implementation = switch ( method ) {
+			case METHOD_NAME_INSTANTIATOR_INDEX -> names.instantiator();
+			case METHOD_NAME_FIELD_READER_INDEX, METHOD_NAME_METHOD_READER_INDEX -> names.reader();
+			default -> names.writer();
+		};
+		implementation = implementation.replace( '.', '/' );
+		Label missing = new Label();
+		Label done = new Label();
+		mv.visitInsn( DUP );
+		mv.visitJumpInsn( IFLT, missing );
+		mv.visitTypeInsn( NEW, implementation );
+		mv.visitInsn( DUP );
+		// Move both uninitialized references below the member index.
+		mv.visitInsn( DUP2_X1 );
+		mv.visitInsn( POP2 );
+		pushIntConst( mv, classIndexes.get( host ) );
+		mv.visitInsn( SWAP );
+		mv.visitMethodInsn( INVOKESPECIAL, implementation, "<init>", "(II)V", false );
+		mv.visitJumpInsn( GOTO, done );
+		mv.visitLabel( missing );
+		mv.visitInsn( POP );
+		mv.visitInsn( ACONST_NULL );
+		mv.visitLabel( done );
+	}
+
+
 	// Example generated class lookup block, using locals className (slot 2) and key (slot 3):
 	// switch (className) {
 	//     case "example.Model": {
 	//         if (member.getDeclaringClass() != Model.class) break;
-	//         ValueReader result = Model.$$__hibernateAccessor_fieldReader(key);
-	//         if (result != null) return result;
+	//         int memberIndex = Model.$$__hibernateAccessor_fieldReaderIndex(key);
+	//         if (memberIndex >= 0) return new GeneratedReader(0, memberIndex);
 	//         // Jump to the caller's throw/fallback block.
 	//         break;
 	//     }
 	//     // Unmatched class names also jump to that block.
 	// }
 	private void generateValueAccessorSwitch(MethodVisitor mv, List<String> classNames,
-			String hostMethodName, String hostMethodDesc,
-			String implInternal, Label throwLabel) {
+			String hostMethodName, String hostMethodDesc, Label throwLabel) {
 		Label defaultLabel = new Label();
 
 		emitStringSwitch( mv, 2, 4, classNames, defaultLabel, (caseMv, classIdx) -> {
@@ -442,6 +470,7 @@ class FactoryGenerator implements Opcodes {
 			caseMv.visitVarInsn( ALOAD, 3 );
 			caseMv.visitMethodInsn( INVOKESTATIC, target, hostMethodName,
 					hostMethodDesc, isIface );
+			emitAccessorConstruction( caseMv, className, hostMethodName );
 			caseMv.visitInsn( DUP );
 			Label notNull = new Label();
 			caseMv.visitJumpInsn( IFNONNULL, notNull );
@@ -488,7 +517,8 @@ class FactoryGenerator implements Opcodes {
 		for ( int i = 0; i < numChunks; i++ ) {
 			if ( !chunks.get( i ).isEmpty() ) {
 				generateValueAccessorChunkMethod( cw, chunkBaseName + "$" + i,
-						chunkMethodDesc, chunks.get( i ), hostMethodName, hostMethodDesc, implInternal );
+						chunkMethodDesc, chunks.get( i ), hostMethodName, hostMethodDesc
+				);
 			}
 		}
 
@@ -536,14 +566,14 @@ class FactoryGenerator implements Opcodes {
 	// private static ValueReader lookup$0(String className, String key, Member member) {
 	//     switch (className) {
 	//         case "example.Model":
-	//             return member.getDeclaringClass() == Model.class
-	//                     ? Model.$$__hibernateAccessor_fieldReader(key) : null;
+	//             if (member.getDeclaringClass() != Model.class) return null;
+	//             int memberIndex = Model.$$__hibernateAccessor_fieldReaderIndex(key);
+	//             return memberIndex >= 0 ? new GeneratedReader(0, memberIndex) : null;
 	//         default: return null;
 	//     }
 	// }
 	private void generateValueAccessorChunkMethod(ClassWriter cw, String methodName,
-			String methodDesc, List<String> classNames,
-			String hostMethodName, String hostMethodDesc, String implInternal) {
+			String methodDesc, List<String> classNames, String hostMethodName, String hostMethodDesc) {
 		// A hash bucket may contain every registered class. Bound each generated method by count.
 		for ( int start = 0, part = 0; start < classNames.size(); start += stringChunkSize, part++ ) {
 			int end = Math.min( start + stringChunkSize, classNames.size() );
@@ -575,6 +605,7 @@ class FactoryGenerator implements Opcodes {
 			caseMv.visitVarInsn( ALOAD, 1 );
 			caseMv.visitMethodInsn( INVOKESTATIC, target, hostMethodName,
 					hostMethodDesc, isIface );
+			emitAccessorConstruction( caseMv, className, hostMethodName );
 			caseMv.visitInsn( ARETURN );
 		} );
 
@@ -605,8 +636,8 @@ class FactoryGenerator implements Opcodes {
 	//     switch (className) {
 	//         case "example.Model": {
 	//             if (constructor.getDeclaringClass() != Model.class) break;
-	//             Instantiator result = Model.$$__hibernateAccessor_instantiator(key);
-	//             if (result != null) return result;
+	//             int memberIndex = Model.$$__hibernateAccessor_instantiatorIndex(key);
+	//             if (memberIndex >= 0) return new GeneratedInstantiator(0, memberIndex);
 	//             break;
 	//         }
 	//     }
@@ -614,7 +645,7 @@ class FactoryGenerator implements Opcodes {
 	//     // Without fallback: throw new UnsupportedOperationException(className + "." + key);
 	// }
 	private void generateInstantiatorMethod(ClassWriter cw, boolean withFallback) {
-		String hostMethodDesc = "(Ljava/lang/String;)L" + INSTANTIATOR_INTERFACE_INTERNAL + ";";
+		String hostMethodDesc = MEMBER_LOOKUP_DESCRIPTOR;
 
 		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "instantiator",
 				"(Ljava/lang/reflect/Constructor;)L" + INSTANTIATOR_INTERFACE_INTERNAL + ";",
@@ -657,8 +688,9 @@ class FactoryGenerator implements Opcodes {
 				emitDeclaringClassCheck( caseMv, className, 1, throwLabel );
 
 				caseMv.visitVarInsn( ALOAD, 3 );
-				caseMv.visitMethodInsn( INVOKESTATIC, target, METHOD_NAME_INSTANTIATOR_ACCESSOR,
+				caseMv.visitMethodInsn( INVOKESTATIC, target, METHOD_NAME_INSTANTIATOR_INDEX,
 						hostMethodDesc, isIface );
+				emitAccessorConstruction( caseMv, className, METHOD_NAME_INSTANTIATOR_INDEX );
 				caseMv.visitInsn( DUP );
 				Label notNull = new Label();
 				caseMv.visitJumpInsn( IFNONNULL, notNull );
@@ -674,8 +706,8 @@ class FactoryGenerator implements Opcodes {
 		}
 		else {
 			// Chunked dispatch for instantiator (same pattern as value accessor)
-			generateValueAccessorChunked( cw, mv, "instantiator_" + METHOD_NAME_INSTANTIATOR_ACCESSOR,
-					classNames, METHOD_NAME_INSTANTIATOR_ACCESSOR, hostMethodDesc,
+			generateValueAccessorChunked( cw, mv, "instantiator_" + METHOD_NAME_INSTANTIATOR_INDEX,
+					classNames, METHOD_NAME_INSTANTIATOR_INDEX, hostMethodDesc,
 					INSTANTIATOR_INTERFACE_INTERNAL, throwLabel );
 		}
 

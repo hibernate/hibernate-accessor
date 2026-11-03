@@ -86,7 +86,6 @@ public final class AsmAotProcessor {
 					( reader.getAccess() & Opcodes.ACC_PUBLIC ) != 0, ( reader.getAccess() & Opcodes.ACC_INTERFACE ) != 0 );
 			Set<AotMemberMetadata> readers = new HashSet<>(), writers = new HashSet<>();
 			Set<AotConstructorMetadata> constructors = new HashSet<>();
-			int hostIndex = hosts.size();
 			// Collect access requests before transforming field declarations.
 			reader.accept( new ClassVisitor( Opcodes.ASM9 ) {
 				@Override
@@ -125,7 +124,7 @@ public final class AsmAotProcessor {
 			// Passing the reader lets ASM copy unchanged methods and their frames directly. Only injected
 			// methods need frame computation, without loading application classes during transformation.
 			ClassWriter transformed = new ClassWriter( reader, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-			reader.accept( generator.hostVisitor( transformed, host, readers, writers, constructors, hostIndex ), 0 );
+			reader.accept( generator.hostVisitor( transformed, host, readers, writers, constructors ), 0 );
 			entry.setValue( transformed.toByteArray() );
 			hosts.add( host );
 		}

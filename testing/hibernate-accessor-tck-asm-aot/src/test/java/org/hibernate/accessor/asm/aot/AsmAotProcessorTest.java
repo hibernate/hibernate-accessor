@@ -28,7 +28,7 @@ class AsmAotProcessorTest {
 		}
 		Files.writeString( input.resolve( "fixture.txt" ), "preserved" );
 		var processor = new AsmAotProcessor( new GenerationNames( "example.Factory", "example.Reader",
-				"example.Writer", "example.Instantiator", RuntimeHooks.class.getName() ) );
+				"example.Writer", "example.Instantiator" ) );
 		Path unchanged = temporary.resolve( "unchanged" );
 		processor.process( input, unchanged, name -> false, false );
 		assertThat( Files.readAllBytes( unchanged.resolve( resource ) ) ).isEqualTo( Files.readAllBytes( bean ) );

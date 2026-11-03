@@ -38,11 +38,15 @@ class AsmAotChunkTest {
 			assertHelpers( model.readers[0].getClass(), "get", 7, sizes.typeRead() );
 			assertHelpers( model.writers[0].getClass(), "set", 7, sizes.typeWrite() );
 			assertHelpers( model.constructors[0].getClass(), "create", 7, sizes.typeConstructor() );
-			assertThat( Arrays.stream( host.getDeclaredMethods() ).anyMatch( m -> m.getName().startsWith( "$$__hibernateAccessor_fieldReader$" ) ) )
+			assertThat( Arrays.stream( host.getDeclaredMethods() ).anyMatch( m -> m.getName().startsWith( "$$__hibernateAccessor_fieldReaderIndex$" ) ) )
 					.isEqualTo( 7 > sizes.memberLookup() );
-			assertThat( Arrays.stream( model.factory.getClass().getDeclaredMethods() ).anyMatch( m -> m.getName().startsWith( "valueReader_$$__hibernateAccessor_fieldReader$" ) ) )
+			assertThat( Arrays.stream( model.factory.getClass().getDeclaredMethods() ).anyMatch( m -> m.getName().startsWith( "valueReader_$$__hibernateAccessor_fieldReaderIndex$" ) ) )
 					.isEqualTo( 7 > sizes.typeLookup() );
-			assertThat( host.getMethod( "$$__hibernateAccessor_fieldReader", String.class ).invoke( null, "missing" ) ).isNull();
+			for ( String role : new String[] { "fieldReader", "methodReader", "fieldWriter", "methodWriter", "instantiator" } ) {
+				var lookup = host.getMethod( "$$__hibernateAccessor_" + role + "Index", String.class );
+				assertThat( lookup.getReturnType() ).isSameAs( int.class );
+				assertThat( lookup.invoke( null, "missing" ) ).isEqualTo( -1 );
+			}
 			for ( int invalid : new int[] { -1, 7, Integer.MAX_VALUE } ) {
 				ValueReader<?> reader = (ValueReader<?>) model.readers[0].getClass().getConstructor( int.class, int.class )
 						.newInstance( invalid, 0 );

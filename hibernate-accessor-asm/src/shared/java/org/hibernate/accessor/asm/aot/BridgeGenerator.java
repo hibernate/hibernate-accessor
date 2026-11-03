@@ -2,18 +2,16 @@ package org.hibernate.accessor.asm.aot;
 
 import static org.hibernate.accessor.asm.aot.GenerationUtil.fqcnToName;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.GENERATED_CLASS_VERSION;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.INSTANTIATOR_INTERFACE_INTERNAL;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_READER_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_WRITER_ACCESSOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.MEMBER_LOOKUP_DESCRIPTOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_READER_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_FIELD_WRITER_INDEX;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_HOST_CLASS;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_INSTANTIATOR_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_READER_ACCESSOR;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_WRITER_ACCESSOR;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_INSTANTIATOR_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_READER_INDEX;
+import static org.hibernate.accessor.asm.aot.GeneratorConstants.METHOD_NAME_METHOD_WRITER_INDEX;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.PREFIX_CREATE_METHOD;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.PREFIX_READ_METHOD;
 import static org.hibernate.accessor.asm.aot.GeneratorConstants.PREFIX_WRITE_METHOD;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.READER_INTERFACE_INTERNAL;
-import static org.hibernate.accessor.asm.aot.GeneratorConstants.WRITER_INTERFACE_INTERNAL;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -57,24 +55,16 @@ class BridgeGenerator implements Opcodes {
 		identity.visitEnd();
 
 		// Always include all accessor method forwards for bridge
-		generateForward( cw, METHOD_NAME_FIELD_READER_ACCESSOR, accessorMethodDescriptor( READER_INTERFACE_INTERNAL ), hostName,
-				hostIsInterface );
-		generateForward( cw, METHOD_NAME_METHOD_READER_ACCESSOR, accessorMethodDescriptor( READER_INTERFACE_INTERNAL ), hostName,
-				hostIsInterface );
-		generateForward( cw, METHOD_NAME_FIELD_WRITER_ACCESSOR, accessorMethodDescriptor( WRITER_INTERFACE_INTERNAL ), hostName,
-				hostIsInterface );
-		generateForward( cw, METHOD_NAME_METHOD_WRITER_ACCESSOR, accessorMethodDescriptor( WRITER_INTERFACE_INTERNAL ), hostName,
-				hostIsInterface );
-		generateForward( cw, METHOD_NAME_INSTANTIATOR_ACCESSOR, accessorMethodDescriptor( INSTANTIATOR_INTERFACE_INTERNAL ),
-				hostName, hostIsInterface );
+		generateForward( cw, METHOD_NAME_FIELD_READER_INDEX, MEMBER_LOOKUP_DESCRIPTOR, hostName, hostIsInterface );
+		generateForward( cw, METHOD_NAME_METHOD_READER_INDEX, MEMBER_LOOKUP_DESCRIPTOR, hostName, hostIsInterface );
+		generateForward( cw, METHOD_NAME_FIELD_WRITER_INDEX, MEMBER_LOOKUP_DESCRIPTOR, hostName, hostIsInterface );
+		generateForward( cw, METHOD_NAME_METHOD_WRITER_INDEX, MEMBER_LOOKUP_DESCRIPTOR, hostName, hostIsInterface );
+		generateForward( cw, METHOD_NAME_INSTANTIATOR_INDEX, MEMBER_LOOKUP_DESCRIPTOR, hostName, hostIsInterface );
 
 		cw.visitEnd();
 		return cw.toByteArray();
 	}
 
-	private static String accessorMethodDescriptor(String name) {
-		return "(Ljava/lang/String;)L" + name + ";";
-	}
 
 	// Assuming "Model" is a class from the application model (e.g. an entity), here are
 	// example methods generated in Model$$HibernateAccessorBridge, in the same package as Model:

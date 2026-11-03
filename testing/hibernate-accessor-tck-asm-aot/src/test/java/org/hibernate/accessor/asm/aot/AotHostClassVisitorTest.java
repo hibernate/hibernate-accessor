@@ -26,8 +26,7 @@ import org.objectweb.asm.Opcodes;
 class AotHostClassVisitorTest {
 	private static final String MODEL = "generated.Model";
 	private static final AotTypeMetadata HOST = new AotTypeMetadata( "generated", MODEL, MODEL, true, false );
-	private static final GenerationNames NAMES = new GenerationNames( "generated.Factory", "generated.Reader", "generated.Writer",
-			"generated.Instantiator", RuntimeHooks.class.getName() );
+	private static final GenerationNames NAMES = new GenerationNames( "generated.Factory", "generated.Reader", "generated.Writer", "generated.Instantiator" );
 	private static final AotFieldMetadata VALUE = new AotFieldMetadata( "value", "I", true, MODEL );
 	private static final AotFieldMetadata READ_ONLY = new AotFieldMetadata( "readOnly", "I", true, MODEL );
 	private static final AotMethodMetadata ENHANCED_READER = new AotMethodMetadata( "$$_hibernate_read_value", "()I", true,
@@ -56,23 +55,56 @@ class AotHostClassVisitorTest {
 				return defineClass( name, bytes, 0, bytes.length );
 			}
 		};
-		RuntimeHooks.loader = loader;
-		try {
-			AccessorFactory factory = (AccessorFactory) loader.loadClass( "generated.Factory" ).getMethod( "create" ).invoke( null );
-			Class<?> type = loader.loadClass( MODEL );
-			Object target = factory.instantiator( type.getConstructor() ).create();
-			var field = type.getDeclaredField( "value" );
-			factory.valueWriter( field ).set( target, 42 );
-			assertThat( factory.valueReader( field ).get( target ) ).isEqualTo( 42 );
-			assertThat( factory.valueReader( type.getDeclaredMethod( "$$_hibernate_read_value" ) ).get( target ) ).isEqualTo( 42 );
-			assertThat( Modifier.isFinal( field.getModifiers() ) ).isFalse();
-			var readOnly = type.getDeclaredField( "readOnly" );
-			assertThat( Modifier.isFinal( readOnly.getModifiers() ) ).isTrue();
-			assertThat( factory.valueReader( readOnly ).get( target ) ).isEqualTo( 7 );
-			assertThatThrownBy( () -> factory.valueWriter( readOnly ) ).isInstanceOf( UnsupportedOperationException.class );
-		}
-		finally {
-			RuntimeHooks.loader = null;
+		AccessorFactory factory = (AccessorFactory) loader.loadClass( "generated.Factory" ).getMethod( "create" ).invoke( null );
+		Class<?> type = loader.loadClass( MODEL );
+		Object target = factory.instantiator( type.getConstructor() ).create();
+		var field = type.getDeclaredField( "value" );
+		factory.valueWriter( field ).set( target, 42 );
+		assertThat( factory.valueReader( field ).get( target ) ).isEqualTo( 42 );
+		assertThat( factory.valueReader( type.getDeclaredMethod( "$$_hibernate_read_value" ) ).get( target ) ).isEqualTo( 42 );
+		assertThat( Modifier.isFinal( field.getModifiers() ) ).isFalse();
+		var readOnly = type.getDeclaredField( "readOnly" );
+		assertThat( Modifier.isFinal( readOnly.getModifiers() ) ).isTrue();
+		assertThat( factory.valueReader( readOnly ).get( target ) ).isEqualTo( 7 );
+		assertThatThrownBy( () -> factory.valueWriter( readOnly ) ).isInstanceOf( UnsupportedOperationException.class );
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = { 1, 256 })
+	void transformedBytecodeIsIndependentOfUnrelatedHostsAndTheirOrdering(int chunkSize) {
+		byte[] input = model( true );
+		Set<AotMemberMetadata> readers = Set.of( VALUE, READ_ONLY );
+		Set<AotMemberMetadata> writers = Set.of( VALUE );
+		var chunks = new AotChunkSizes( chunkSize, chunkSize, chunkSize, chunkSize,
+				chunkSize, chunkSize, chunkSize, chunkSize );
+		byte[] expected = transform( new AsmAotGenerator( NAMES, chunks ), input, readers, writers );
+		var earlier = new AotTypeMetadata( "generated", "generated.Earlier", "generated.Earlier", true, false );
+		var later = new AotTypeMetadata( "generated", "generated.ZLater", "generated.ZLater", false, false );
+		for ( List<AotTypeMetadata> hosts : List.of(
+				List.of( earlier, HOST, later ), // Add unrelated hosts on either side.
+				List.of( HOST, later ), // Remove the earlier host and renumber the target.
+				List.of( later, HOST, earlier ), // Reorder the same hosts.
+				List.of( later, earlier, HOST ),
+				List.of( HOST ) ) ) { // Remove all unrelated hosts.
+			var generator = new AsmAotGenerator( NAMES, chunks );
+			generator.generateClasses( hosts, false );
+			for ( AotTypeMetadata host : hosts ) {
+				if ( host.equals( HOST ) ) {
+					// Includes field transformation and the method reader discovered during enhancement.
+					assertThat( transform( generator, input, readers, writers ) ).as( "hosts %s", hosts ).isEqualTo( expected );
+				}
+				else {
+					ClassWriter source = new ClassWriter( 0 );
+					source.visit( GENERATED_CLASS_VERSION, host.isPublic() ? Opcodes.ACC_PUBLIC : 0,
+							host.host().replace( '.', '/' ), null, "java/lang/Object", null );
+					source.visitEnd();
+					ClassWriter output = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
+					new ClassReader( source.toByteArray() ).accept(
+							generator.hostVisitor( output, host, Set.of(), Set.of(), Set.of() ), 0 );
+				}
+			}
+			generator.generateClasses( hosts, true );
+			assertThat( transform( generator, input, readers, writers ) ).isEqualTo( expected );
 		}
 	}
 
@@ -85,7 +117,7 @@ class AotHostClassVisitorTest {
 		input.visitEnd();
 		ClassWriter transformed = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
 		new ClassReader( input.toByteArray() ).accept(
-				generator.hostVisitor( transformed, packagePrivateHost, Set.of(), Set.of(), Set.of(), 0 ), 0 );
+				generator.hostVisitor( transformed, packagePrivateHost, Set.of(), Set.of(), Set.of() ), 0 );
 		assertThat( new ClassReader( transformed.toByteArray() ).readUnsignedShort( 6 ) ).isEqualTo( Opcodes.V21 );
 		Map<String, byte[]> helpers = generator.generateClasses( List.of( packagePrivateHost ), false );
 		assertThat( helpers ).hasSize( 5 ); // bridge, factory, reader, writer, instantiator
@@ -98,11 +130,11 @@ class AotHostClassVisitorTest {
 	void rejectsFieldAccessInAnotherHost() {
 		AsmAotGenerator generator = new AsmAotGenerator( NAMES );
 		AotFieldMetadata inherited = new AotFieldMetadata( "value", "I", true, "generated.Parent" );
-		assertThatThrownBy( () -> generator.hostVisitor( new ClassWriter( 0 ), HOST, Set.of( inherited ), Set.of(), Set.of(), 0 ) )
+		assertThatThrownBy( () -> generator.hostVisitor( new ClassWriter( 0 ), HOST, Set.of( inherited ), Set.of(), Set.of() ) )
 				.isInstanceOf( IllegalArgumentException.class ).hasMessageContaining( "generated.Parent#value" ).hasMessageContaining( MODEL );
-		assertThatThrownBy( () -> generator.hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( inherited ), Set.of(), 0 ) )
+		assertThatThrownBy( () -> generator.hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( inherited ), Set.of() ) )
 				.isInstanceOf( IllegalArgumentException.class ).hasMessageContaining( "declaring class" );
-		assertThatThrownBy( () -> generator.emitHostMethods( new ClassWriter( 0 ), HOST, Set.of( inherited ), Set.of(), Set.of(), 0 ) )
+		assertThatThrownBy( () -> generator.emitHostMethods( new ClassWriter( 0 ), HOST, Set.of( inherited ), Set.of(), Set.of() ) )
 				.isInstanceOf( IllegalArgumentException.class ).hasMessageContaining( "declaring class" );
 	}
 
@@ -190,31 +222,31 @@ class AotHostClassVisitorTest {
 
 	private static void visitDeclaringOnlyValue(Set<AotMemberMetadata> readers, Set<AotMemberMetadata> writers) {
 		ClassWriter output = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( output, HOST, readers, writers, Set.of(), 0 );
+		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( output, HOST, readers, writers, Set.of() );
 		visitor.visit( GENERATED_CLASS_VERSION, Opcodes.ACC_PUBLIC, "generated/Model", null, "java/lang/Object", null );
 		visitor.visitField( Opcodes.ACC_PRIVATE, "value", "I", null, null ).visitEnd();
 		visitor.visitEnd();
 	}
 
 	private static void readerVisitor(AotMemberMetadata reader) {
-		new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of( reader ), Set.of(), Set.of(), 0 );
+		new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of( reader ), Set.of(), Set.of() );
 	}
 
 	private static void readerEmission(AotMemberMetadata reader) {
-		new AsmAotGenerator( NAMES ).emitHostMethods( new ClassWriter( 0 ), HOST, Set.of( reader ), Set.of(), Set.of(), 0 );
+		new AsmAotGenerator( NAMES ).emitHostMethods( new ClassWriter( 0 ), HOST, Set.of( reader ), Set.of(), Set.of() );
 	}
 
 	private static void writerVisitor(AotMemberMetadata writer) {
-		new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( writer ), Set.of(), 0 );
+		new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( writer ), Set.of() );
 	}
 
 	private static void writerEmission(AotMemberMetadata writer) {
-		new AsmAotGenerator( NAMES ).emitHostMethods( new ClassWriter( 0 ), HOST, Set.of(), Set.of( writer ), Set.of(), 0 );
+		new AsmAotGenerator( NAMES ).emitHostMethods( new ClassWriter( 0 ), HOST, Set.of(), Set.of( writer ), Set.of() );
 	}
 
 	@Test
 	void rejectsRecordFieldWrites() {
-		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( VALUE ), Set.of(), 0 );
+		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( VALUE ), Set.of() );
 		assertThatThrownBy( () -> visitor.visit( GENERATED_CLASS_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_RECORD,
 				"generated/Model", null, "java/lang/Record", null ) )
 				.isInstanceOf( IllegalArgumentException.class ).hasMessageContaining( "record " + MODEL );
@@ -222,7 +254,7 @@ class AotHostClassVisitorTest {
 
 	@Test
 	void rejectsStaticFieldWrites() {
-		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( VALUE ), Set.of(), 0 );
+		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( new ClassWriter( 0 ), HOST, Set.of(), Set.of( VALUE ), Set.of() );
 		visitor.visit( GENERATED_CLASS_VERSION, Opcodes.ACC_PUBLIC, "generated/Model", null, "java/lang/Object", null );
 		assertThatThrownBy( () -> visitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "value", "I", null, 1 ) )
 				.isInstanceOf( IllegalArgumentException.class ).hasMessageContaining( "static field " + MODEL + "#value" );
@@ -231,7 +263,7 @@ class AotHostClassVisitorTest {
 	@Test
 	void matchesFieldDescriptorAndPreservesUnrequestedStaticFields() {
 		ClassWriter output = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( output, HOST, Set.of(), Set.of( VALUE ), Set.of(), 0 );
+		var visitor = new AsmAotGenerator( NAMES ).hostVisitor( output, HOST, Set.of(), Set.of( VALUE ), Set.of() );
 		visitor.visit( GENERATED_CLASS_VERSION, Opcodes.ACC_PUBLIC, "generated/Model", null, "java/lang/Object", null );
 		visitor.visitField( Opcodes.ACC_FINAL, "value", "I", null, null ).visitEnd();
 		visitor.visitField( Opcodes.ACC_FINAL, "value", "J", null, null ).visitEnd();
@@ -254,7 +286,7 @@ class AotHostClassVisitorTest {
 		ClassReader reader = new ClassReader( input );
 		ClassWriter output = new ClassWriter( reader, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
 		var visitor = generator.hostVisitor( output, HOST, readers, writers,
-				Set.of( new AotConstructorMetadata( MODEL, MODEL, "()V", List.of() ) ), 0 );
+				Set.of( new AotConstructorMetadata( MODEL, MODEL, "()V", List.of() ) ) );
 		reader.accept( new ClassVisitor( Opcodes.ASM9, visitor ) {
 			@Override
 			public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {

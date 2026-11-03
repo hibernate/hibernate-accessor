@@ -34,7 +34,7 @@ class AsmAotGeneratorTest {
 		Path hosts = temporary.resolve( "hosts" );
 		Path application = temporary.resolve( "application" );
 		GenerationNames names = new GenerationNames( "generated.Factory", "generated.Reader", "generated.Writer",
-				"generated.Instantiator", RuntimeHooks.class.getName() );
+				"generated.Instantiator" );
 		AsmAotGenerator generator = new AsmAotGenerator( names,
 				new AotChunkSizes( chunkSize, chunkSize, chunkSize, chunkSize, chunkSize, chunkSize, 500, 500 ) );
 		List<AotTypeMetadata> types = new ArrayList<>();
@@ -70,8 +70,7 @@ class AsmAotGeneratorTest {
 				constructors.add( new AotConstructorMetadata( bean.getName(), bean.getName(), Type.getConstructorDescriptor( ctor ), parameters ) );
 			}
 			ClassWriter writer = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-			int index = types.size();
-			new ClassReader( bytes( bean ) ).accept( generator.hostVisitor( writer, type, readers, writers, constructors, index ), 0 );
+			new ClassReader( bytes( bean ) ).accept( generator.hostVisitor( writer, type, readers, writers, constructors ), 0 );
 			write( hosts, bean.getName(), writer.toByteArray() );
 			types.add( type );
 		}
@@ -94,7 +93,7 @@ class AsmAotGeneratorTest {
 				writer.visitField( Opcodes.ACC_PUBLIC, "f" + member, "J", null, null ).visitEnd();
 				fields.add( new AotFieldMetadata( "f" + member, "J", true, name ) );
 			}
-			generator.emitHostMethods( writer, type, fields, fields, Set.of(), types.size() );
+			generator.emitHostMethods( writer, type, fields, fields, Set.of() );
 			writer.visitEnd();
 			write( hosts, name, writer.toByteArray() );
 			types.add( type );
@@ -119,7 +118,7 @@ class AsmAotGeneratorTest {
 				parameters.add( new AotParameterMetadata( "arg", "D", true ) );
 			overloads.add( new AotConstructorMetadata( constructorHost, constructorHost, descriptor, parameters ) );
 		}
-		generator.emitHostMethods( constructorWriter, constructorType, Set.of(), Set.of(), overloads, types.size() );
+		generator.emitHostMethods( constructorWriter, constructorType, Set.of(), Set.of(), overloads );
 		constructorWriter.visitEnd();
 		write( hosts, constructorHost, constructorWriter.toByteArray() );
 		types.add( constructorType );
@@ -127,7 +126,7 @@ class AsmAotGeneratorTest {
 			// Non-public hosts need their bridges in the same defining classloader.
 			write( entry.getKey().endsWith( "$$HibernateAccessorBridge" ) ? hosts : application, entry.getKey(), entry.getValue() );
 		}
-		for ( Class<?> support : List.of( RuntimeHooks.class, RuntimeProbe.class, RuntimeProbe.Checked.class ) ) {
+		for ( Class<?> support : List.of( RuntimeProbe.class, RuntimeProbe.Checked.class ) ) {
 			write( hosts, support.getName(), bytes( support ) );
 		}
 		String core = Path.of( AccessorFactory.class.getProtectionDomain().getCodeSource().getLocation().toURI() ).toString();

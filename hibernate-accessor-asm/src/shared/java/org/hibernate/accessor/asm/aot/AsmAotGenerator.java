@@ -13,7 +13,7 @@ import org.objectweb.asm.Type;
  * Build-time emission for entity-injected accessors with host/member double dispatch.
  * This generator neither discovers members nor defines classes. Callers select readers and writers;
  * the host visitor makes requested fields writable and emits host methods after enhancement.
- * Generated code needs core accessor APIs and the supplied runtime hooks, but no ASM or generator classes.
+ * Generated code needs core accessor APIs, but no ASM or generator classes.
  * Public dispatch methods expose registered members; callers own classloader and module access.
  */
 public final class AsmAotGenerator {
@@ -35,29 +35,27 @@ public final class AsmAotGenerator {
 	 * methods at visitEnd. Fields must be declared by the host; record fields cannot have writers.
 	 * Reader methods must take no parameters and return a value; writer methods must take exactly one
 	 * parameter; every method's returnDescriptor must agree with its descriptor.
-	 * The downstream writer must compute frames/maxima for generated methods. The host index must match
-	 * its position in the list passed to {@link #generateClasses}. Input metadata is copied; enhanced method
+	 * The downstream writer must compute frames/maxima for generated methods. Input metadata is copied; enhanced method
 	 * readers can be supplied through {@link AotHostClassVisitor#addMethodReader} before visitEnd.
 	 */
 	public AotHostClassVisitor hostVisitor(ClassVisitor visitor, AotTypeMetadata host, Set<AotMemberMetadata> readers,
-			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors, int hostIndex) {
+			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors) {
 		validateReaders( host, readers );
 		validateWriters( host, writers );
-		return new AotHostClassVisitor( this, visitor, host, readers, writers, constructors, hostIndex );
+		return new AotHostClassVisitor( this, visitor, host, readers, writers, constructors );
 	}
 
 	/** Emits methods before the downstream visitor's visitEnd. The writer must compute frames/maxima.
-	 * The host index must match its position in the list passed to generateClasses.
 	 * Members are sorted once for matching dispatch and lookup indexes; caller collections are not mutated.
 	 * This low-level emitter does not transform field declarations; use {@link #hostVisitor} when transforming
 	 * an existing class. Fields must be declared by the host and writable fields must already be non-final.
 	 * Reader and writer methods are validated for arity and descriptor consistency as in {@link #hostVisitor}.
 	 */
 	public void emitHostMethods(ClassVisitor visitor, AotTypeMetadata host, Set<AotMemberMetadata> readers,
-			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors, int hostIndex) {
+			Set<AotMemberMetadata> writers, Set<AotConstructorMetadata> constructors) {
 		validateReaders( host, readers );
 		validateWriters( host, writers );
-		new HostEmitter( visitor, host, readers, writers, constructors, hostIndex, names.runtimeHooks(), chunks ).emit();
+		new HostEmitter( visitor, host, readers, writers, constructors, chunks ).emit();
 	}
 
 	/**
