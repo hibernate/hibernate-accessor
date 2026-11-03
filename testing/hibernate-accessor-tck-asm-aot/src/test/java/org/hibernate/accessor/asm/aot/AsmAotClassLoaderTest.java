@@ -31,11 +31,14 @@ class AsmAotClassLoaderTest implements Opcodes {
 			Map<String, byte[]> classes = generate( chunkSize, withFallback );
 			ClassLoader foreign = loader( classes );
 			Map<String, byte[]> hosts = new LinkedHashMap<>( classes );
-			byte[] factoryBytes = hosts.remove( "generated.Factory" );
+			Map<String, byte[]> application = new LinkedHashMap<>();
+			for ( String role : List.of( "Factory", "Reader", "Writer", "Instantiator" ) ) {
+				String name = "generated." + role;
+				application.put( name, hosts.remove( name ) );
+			}
 			ClassLoader registered = loader( hosts );
 			// The factory is deliberately in a child loader: delegation to a host's loader is valid.
-			ClassLoader factoryLoader = loader( Map.of( "generated.Factory", factoryBytes ), registered );
-			RuntimeHooks.loader = factoryLoader;
+			ClassLoader factoryLoader = loader( application, registered );
 			List<Member> delegated = new ArrayList<>();
 			ValueReader<?> reader = target -> "fallback";
 			ValueWriter writer = (target, value) -> {};
@@ -78,6 +81,77 @@ class AsmAotClassLoaderTest implements Opcodes {
 		}
 	}
 
+	@ParameterizedTest
+	@ValueSource(ints = { 1, 256 })
+	void independentApplicationsAndRenumberedHosts(int chunkSize) throws Exception {
+		Map<String, byte[]> original = generate( chunkSize, false );
+		Map<String, byte[]> hostBytes = new LinkedHashMap<>( original );
+		for ( String role : List.of( "Factory", "Reader", "Writer", "Instantiator" ) ) {
+			hostBytes.remove( "generated." + role );
+		}
+		ClassWriter earlier = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
+		earlier.visit( GeneratorConstants.GENERATED_CLASS_VERSION, ACC_PUBLIC, "identity/A000", null, "java/lang/Object", null );
+		new AsmAotGenerator( new GenerationNames( "generated.Factory", "generated.Reader", "generated.Writer", "generated.Instantiator" ) )
+				.emitHostMethods( earlier, new AotTypeMetadata( "identity", "identity.A000", "identity.A000", true, false ),
+						Set.of(), Set.of(), Set.of() );
+		earlier.visitEnd();
+		hostBytes.put( "identity.A000", earlier.toByteArray() );
+		ClassLoader parent = loader( hostBytes );
+		List<AotTypeMetadata> metadata = new ArrayList<>();
+		for ( String name : List.of( "AaAa", "AaBB", "BBAa", "BBBB" ) ) {
+			int index = metadata.size();
+			metadata.add( new AotTypeMetadata( "identity", "identity." + name, "identity." + name,
+					index % 2 == 0, index >= 2 ) );
+		}
+		List<AccessorFactory> factories = new ArrayList<>();
+		List<ClassLoader> children = new ArrayList<>();
+		ClassLoader previous = null;
+		for ( int application = 0; application < 3; application++ ) {
+			if ( application == 2 ) {
+				// Reuse the transformed parent hosts, but shift every application class index.
+				metadata.add( 0, new AotTypeMetadata( "identity", "identity.A000", "identity.A000", true, false ) );
+			}
+			var generator = new AsmAotGenerator( new GenerationNames( "generated.Factory", "generated.Reader",
+					"generated.Writer", "generated.Instantiator" ),
+					new AotChunkSizes( 1, 1, 1, 1, 1, 1, chunkSize, 1 ) );
+			Map<String, byte[]> output = generator.generateClasses( metadata, false );
+			output.keySet().removeIf( hostBytes::containsKey );
+			ClassLoader child = loader( output, parent );
+			assertThat( child ).isNotSameAs( previous );
+			previous = child;
+			AccessorFactory factory = (AccessorFactory) child.loadClass( "generated.Factory" ).getMethod( "create" ).invoke( null );
+			factories.add( factory );
+			children.add( child );
+			for ( String name : List.of( "AaAa", "AaBB" ) ) {
+				Class<?> host = parent.loadClass( "identity." + name );
+				Object target = factory.instantiator( host.getDeclaredConstructor() ).create();
+				var reader = factory.valueReader( host.getDeclaredField( "value" ) );
+				assertThat( reader.getClass().getClassLoader() ).isSameAs( child );
+				factory.valueWriter( host.getDeclaredField( "value" ) ).set( target, "application" + application );
+				assertThat( reader.get( target ) ).isEqualTo( "application" + application );
+				assertThat( factory.valueReader( host.getDeclaredMethod( "get" ) ).get( target ) ).isNull();
+				factory.valueWriter( host.getDeclaredMethod( "set", Object.class ) ).set( target, "ignored" );
+				assertThat( host.getMethod( GeneratorConstants.METHOD_NAME_FIELD_READER_INDEX, String.class )
+						.getReturnType() ).isSameAs( int.class );
+			}
+		}
+		// All applications remain usable after the others have initialized their factories.
+		Class<?> host = parent.loadClass( "identity.AaAa" );
+		for ( int i = 0; i < factories.size(); i++ ) {
+			AccessorFactory factory = factories.get( i );
+			var instantiator = factory.instantiator( host.getDeclaredConstructor() );
+			var reader = factory.valueReader( host.getDeclaredField( "value" ) );
+			var writer = factory.valueWriter( host.getDeclaredField( "value" ) );
+			assertThat( instantiator.getClass().getClassLoader() ).isSameAs( children.get( i ) );
+			assertThat( reader.getClass().getClassLoader() ).isSameAs( children.get( i ) );
+			assertThat( writer.getClass().getClassLoader() ).isSameAs( children.get( i ) );
+			Object target = instantiator.create();
+			writer.set( target, i );
+			assertThat( reader.get( target ) ).isEqualTo( i );
+		}
+
+	}
+
 	private static void check(Lookup lookup, Object fallback, boolean withFallback) throws Exception {
 		if ( withFallback ) {
 			assertThat( lookup.get() ).isSameAs( fallback );
@@ -111,7 +185,7 @@ class AsmAotClassLoaderTest implements Opcodes {
 
 	private static Map<String, byte[]> generate(int chunkSize, boolean withFallback) {
 		var names = new GenerationNames( "generated.Factory", "generated.Reader", "generated.Writer",
-				"generated.Instantiator", RuntimeHooks.class.getName() );
+				"generated.Instantiator" );
 		var generator = new AsmAotGenerator( names,
 				new AotChunkSizes( 256, 256, 256, 256, 256, 256, chunkSize, 256 ) );
 		Map<String, byte[]> classes = new LinkedHashMap<>();
@@ -160,7 +234,7 @@ class AsmAotClassLoaderTest implements Opcodes {
 				mv.visitEnd();
 				constructors = Set.of( new AotConstructorMetadata( name, name, "()V", List.of() ) );
 			}
-			generator.emitHostMethods( cw, host, readers, writers, constructors, hosts.size() );
+			generator.emitHostMethods( cw, host, readers, writers, constructors );
 			cw.visitEnd();
 			classes.put( name, cw.toByteArray() );
 			hosts.add( host );

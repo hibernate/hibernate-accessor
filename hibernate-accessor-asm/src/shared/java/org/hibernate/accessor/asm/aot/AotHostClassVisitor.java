@@ -26,12 +26,11 @@ public final class AotHostClassVisitor extends ClassVisitor {
 	private final Set<AotFieldMetadata> fieldWriters;
 	// Field members still waiting for a matching declaration; emptied as visitField reports them.
 	private final Set<AotFieldMetadata> unmatchedFields;
-	private final int hostIndex;
 	private boolean ended;
 
 	AotHostClassVisitor(AsmAotGenerator generator, ClassVisitor visitor, AotTypeMetadata host,
 			Set<AotMemberMetadata> readers, Set<AotMemberMetadata> writers,
-			Set<AotConstructorMetadata> constructors, int hostIndex) {
+			Set<AotConstructorMetadata> constructors) {
 		super( Opcodes.ASM9, visitor );
 		this.generator = generator;
 		this.host = host;
@@ -43,7 +42,6 @@ public final class AotHostClassVisitor extends ClassVisitor {
 		// Sorted for a stable message when several are missing.
 		this.unmatchedFields = Stream.concat( fields( readers ), fields( writers ) )
 				.collect( Collectors.toCollection( TreeSet::new ) );
-		this.hostIndex = hostIndex;
 	}
 
 	/**
@@ -97,7 +95,7 @@ public final class AotHostClassVisitor extends ClassVisitor {
 					+ " does not declare registered field(s): " + missing );
 		}
 		ended = true;
-		generator.emitHostMethods( cv, host, readers, writers, constructors, hostIndex );
+		generator.emitHostMethods( cv, host, readers, writers, constructors );
 		super.visitEnd();
 	}
 }

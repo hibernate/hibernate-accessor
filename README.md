@@ -216,12 +216,13 @@ See [AOT dispatch benchmarks](performance/benchmark-aot/README.md) for fixed-wor
 sweeps, configurable entity/field counts, and HotSpot inlining diagnostics.
 
 The caller supplies descriptor-based host/member metadata and `GenerationNames` (binary names of
-four output classes and a runtime hooks class). `generateClasses(hosts, withFallback)` returns a
+four output classes). `generateClasses(hosts, withFallback)` returns a
 map of binary class names to bytes: public bridges for non-public hosts, shared reader/writer/
 instantiator implementations, and an `AccessorFactory` implementation. Individual `generateBridge`, `generateReader`, `generateWriter`, `generateInstantiator` and
 `generateFactory` methods are also available for integrations that publish these pieces separately.
 The host's position in
-`hosts` is its class index. `emitHostMethods(visitor, host, readers, writers, constructors, index)`
+`hosts` is its class index in the factory and shared implementations only.
+`emitHostMethods(visitor, host, readers, writers, constructors)`
 adds lookup and dispatch methods before the downstream visitor's `visitEnd`; use a writer that
 computes stack frames and maxima. Member indexes use a consistent sorted order. Accessors dispatch
 first by host index, then by member index inside the transformed host, allowing private member access.
@@ -232,21 +233,32 @@ emitting host methods. Do not supply writers for fields that remain final. Keep 
 runtime package and classloader. Injected public methods expose registered private members; this API
 is for trusted framework integration and does not establish module reads or exports.
 
-The runtime hooks class must expose public static `Object createReader(int, int)`,
-`Object createWriter(int, int)` and `Object createInstantiator(int, int)` methods. Each creates the
-corresponding generated implementation through its `(int, int)` constructor. Initialize these hooks
-before requesting accessors. This indirection permits parent-loaded hosts to use implementations in
-an application classloader. Initialize the generated factory with `create()`, or
-`create(AccessorFactory fallback)` when fallback generation is enabled. Both are first-call-wins:
-the factory is a singleton initialized under double-checked locking, so only the first call builds
-it and honours the `fallback` it was given. Later calls return that same instance and silently
-discard their own `fallback` argument, and there is no way to replace it afterwards. Install the
-intended fallback on the first call, before anything else can request the factory.
+Host lookup methods use an `Index` suffix (for example, `$__hibernateAccessor_fieldReaderIndex`)
+and return an integer member index, or `-1` for an unknown key; zero is valid.
+The generated factory validates declaring-class identity, calls the lookup and directly constructs
+one of the three shared implementations with its application class index and the returned member index.
+Hosts reference neither generated implementation classes nor runtime creation hooks. This lets independent
+application classloaders use the same parent-loaded host, even when regenerating the application changes
+its class indexes. Identical host bytes, member registrations and generator settings produce identical
+transformed host bytes regardless of unrelated hosts being added, removed or reordered. Bridges forward
+these integer lookups and must still be defined alongside their hosts.
+
+GenerationNames specifies four generated class names. hostVisitor and emitHostMethods generate host 
+lookup methods without requiring a host index. Injected lookup methods use an Index suffix and return
+a member index via a (String)int descriptor. Generated factories use that index to construct accessors.
+Hosts, bridges, implementations, and factories must be generated together. The same contract applies to
+the Byte Buddy AOT API.
+
+Initialize the generated factory with `create()`, or `create(AccessorFactory fallback)` when fallback
+generation is enabled. Both are first-call-wins: the factory is a singleton initialized under double-checked
+locking, so only the first call builds it and honours the `fallback` it was given. Later calls return that
+same instance and silently discard their own `fallback` argument, and there is no way to replace it afterwards.
+Install the intended fallback on the first call, before anything else can request the factory.
 
 Generated code depends on the JDK, the core `hibernate-accessor` artifact (including its validation
-SPI), registered application classes and the supplied runtime hooks. It has no dependency on ASM,
-Byte Buddy, or either generator artifact: those dependencies can be removed after augmentation.
-Generation does not define classes or resolve application classes through reflection.
+SPI) and registered application classes. It has no dependency on ASM, Byte Buddy, or either generator
+artifact: those dependencies can be removed after augmentation. Generation does not define classes or
+resolve application classes through reflection.
 
 Single-member writers and constructors support the library's primitive widening rules; narrowing
 is rejected and constructor argument counts are checked. Both multi-value methods deliberately throw

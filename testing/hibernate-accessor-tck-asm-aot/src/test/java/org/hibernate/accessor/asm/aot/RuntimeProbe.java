@@ -8,10 +8,11 @@ import java.util.Arrays;
 import org.hibernate.accessor.AccessorFactory;
 import org.hibernate.accessor.MultiValueAccessorGenerationException;
 
-/** Runs with only core accessor APIs, transformed hosts and a framework-owned runtime bridge. */
+/** Runs with only core accessor APIs, transformed hosts and generated application accessors. */
 public final class RuntimeProbe {
 	public static void main(String[] args) throws Exception {
 		for ( String forbidden : new String[] {
+				"org.hibernate.accessor.asm.aot.RuntimeHooks",
 				"org.objectweb.asm.ClassReader",
 				"net.bytebuddy.ByteBuddy",
 				"org.hibernate.accessor.asm.aot.AsmAotGenerator",
@@ -25,7 +26,6 @@ public final class RuntimeProbe {
 		}
 		try ( URLClassLoader application = new URLClassLoader( new URL[] { Path.of( args[0] ).toUri().toURL() },
 				RuntimeProbe.class.getClassLoader() ) ) {
-			RuntimeHooks.loader = application;
 			AccessorFactory factory = (AccessorFactory) application.loadClass( "generated.Factory" ).getMethod( "create" ).invoke( null );
 			Class<?> bean = Class.forName( AotBean.class.getName() );
 			var noArgs = factory.instantiator( bean.getDeclaredConstructor() );

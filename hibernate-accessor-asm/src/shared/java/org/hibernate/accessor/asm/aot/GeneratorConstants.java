@@ -31,12 +31,13 @@ public final class GeneratorConstants {
 	static final String MULTI_VALUE_READER_INTERFACE_INTERNAL = fqcnToName( MultiValueReader.class.getName() );
 	static final String MULTI_VALUE_WRITER_INTERFACE_INTERNAL = fqcnToName( MultiValueWriter.class.getName() );
 	static final String MULTI_VALUE_GENERATION_EXCEPTION_INTERNAL = fqcnToName( MultiValueAccessorGenerationException.class.getName() );
+	static final String MEMBER_LOOKUP_DESCRIPTOR = "(Ljava/lang/String;)I";
 	static final String METHOD_NAME_HOST_CLASS = "$$__hibernateAccessor_hostClass";
-	static final String METHOD_NAME_FIELD_READER_ACCESSOR = "$$__hibernateAccessor_fieldReader";
-	static final String METHOD_NAME_METHOD_READER_ACCESSOR = "$$__hibernateAccessor_methodReader";
-	static final String METHOD_NAME_FIELD_WRITER_ACCESSOR = "$$__hibernateAccessor_fieldWriter";
-	static final String METHOD_NAME_METHOD_WRITER_ACCESSOR = "$$__hibernateAccessor_methodWriter";
-	static final String METHOD_NAME_INSTANTIATOR_ACCESSOR = "$$__hibernateAccessor_instantiator";
+	static final String METHOD_NAME_FIELD_READER_INDEX = "$$__hibernateAccessor_fieldReaderIndex";
+	static final String METHOD_NAME_METHOD_READER_INDEX = "$$__hibernateAccessor_methodReaderIndex";
+	static final String METHOD_NAME_FIELD_WRITER_INDEX = "$$__hibernateAccessor_fieldWriterIndex";
+	static final String METHOD_NAME_METHOD_WRITER_INDEX = "$$__hibernateAccessor_methodWriterIndex";
+	static final String METHOD_NAME_INSTANTIATOR_INDEX = "$$__hibernateAccessor_instantiatorIndex";
 
 	static final String PREFIX_READ_METHOD = "$$__hibernateAccessor_read";
 	static final String PREFIX_WRITE_METHOD = "$$__hibernateAccessor_write";

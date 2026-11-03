@@ -47,8 +47,7 @@ public final class AsmDispatchModel implements Opcodes {
 		if ( types <= 0 || members <= 0 || constructorCount <= 0 || constructorCount > 64 ) {
 			throw new IllegalArgumentException( "Positive counts required; constructor count must be <= 64" );
 		}
-		var names = new GenerationNames( "dispatch.Factory", "dispatch.Reader", "dispatch.Writer",
-				"dispatch.Instantiator", "dispatch.Hooks" );
+		var names = new GenerationNames( "dispatch.Factory", "dispatch.Reader", "dispatch.Writer", "dispatch.Instantiator" );
 		var generator = new AsmAotGenerator( names, chunks );
 		List<AotTypeMetadata> hosts = new ArrayList<>();
 		for ( int t = 0; t < types; t++ ) {
@@ -84,28 +83,12 @@ public final class AsmDispatchModel implements Opcodes {
 					parameters.add( new AotParameterMetadata( "p" + a, "Ljava/lang/Object;", false ) );
 				ctors.add( new AotConstructorMetadata( name, name, descriptor, parameters ) );
 			}
-			generator.emitHostMethods( cw, host, properties, properties, ctors, t );
+			generator.emitHostMethods( cw, host, properties, properties, ctors );
 			cw.visitEnd();
 			bytecode.put( name, cw.toByteArray() );
 			hosts.add( host );
 		}
 		bytecode.putAll( generator.generateClasses( hosts, false ) );
-		ClassWriter hooks = new ClassWriter( ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS );
-		hooks.visit( GENERATED_CLASS_VERSION, ACC_PUBLIC, "dispatch/Hooks", null, "java/lang/Object", null );
-		for ( String role : List.of( "Reader", "Writer", "Instantiator" ) ) {
-			var mv = hooks.visitMethod( ACC_PUBLIC | ACC_STATIC, "create" + role, "(II)Ljava/lang/Object;", null, null );
-			mv.visitCode();
-			mv.visitTypeInsn( NEW, "dispatch/" + role );
-			mv.visitInsn( DUP );
-			mv.visitVarInsn( ILOAD, 0 );
-			mv.visitVarInsn( ILOAD, 1 );
-			mv.visitMethodInsn( INVOKESPECIAL, "dispatch/" + role, "<init>", "(II)V", false );
-			mv.visitInsn( ARETURN );
-			mv.visitMaxs( 0, 0 );
-			mv.visitEnd();
-		}
-		hooks.visitEnd();
-		bytecode.put( "dispatch.Hooks", hooks.toByteArray() );
 		loader = new ClassLoader( getClass().getClassLoader() ) {
 			@Override
 			protected Class<?> findClass(String name) throws ClassNotFoundException {
