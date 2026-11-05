@@ -14,6 +14,7 @@ import org.hibernate.accessor.tck.util.TckHelper;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -84,4 +85,36 @@ public class AccessorExceptionPropagationTest {
 		);
 		assertSame( ThrowingBean.SETTER_CHECKED_FAILURE, thrown );
 	}
+
+	public static class ErrorBean {
+		public static final Error FAILURE = new AssertionError( "accessor failure" );
+
+		public String getValue() {
+			throw FAILURE;
+		}
+
+		public void setValue(String value) {
+			throw FAILURE;
+		}
+	}
+
+	@Test
+	void errorsPropagateUnchanged() throws Exception {
+		var bean = new ErrorBean();
+		var reader = factory.valueReader( ErrorBean.class.getMethod( "getValue" ) );
+		var writer = factory.valueWriter( ErrorBean.class.getMethod( "setValue", String.class ) );
+		assertSame( ErrorBean.FAILURE, assertThrows( Error.class, () -> reader.get( bean ) ) );
+		assertSame( ErrorBean.FAILURE, assertThrows( Error.class, () -> writer.set( bean, "value" ) ) );
+	}
+
+	@Test
+	@Tag("multi-accessor")
+	void multiValueErrorsPropagateUnchanged() throws Exception {
+		var bean = new ErrorBean();
+		var reader = factory.multiValueReader( ErrorBean.class, ErrorBean.class.getMethod( "getValue" ) );
+		var writer = factory.multiValueWriter( ErrorBean.class, ErrorBean.class.getMethod( "setValue", String.class ) );
+		assertSame( ErrorBean.FAILURE, assertThrows( Error.class, () -> reader.get( bean ) ) );
+		assertSame( ErrorBean.FAILURE, assertThrows( Error.class, () -> writer.set( bean, new Object[] { "value" } ) ) );
+	}
+
 }

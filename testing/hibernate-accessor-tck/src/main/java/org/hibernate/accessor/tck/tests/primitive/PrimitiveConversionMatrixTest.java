@@ -47,20 +47,24 @@ public class PrimitiveConversionMatrixTest {
 				catch (IllegalArgumentException e) {
 					accepted = false;
 				}
-				var bean = new PrimitiveFieldBean();
 				if ( accepted ) {
+					var bean = new PrimitiveFieldBean();
 					fieldWriter.set( bean, source );
 					assertEquals( field.get( expected ), field.get( bean ) );
+					bean = new PrimitiveFieldBean();
 					methodWriter.set( bean, source );
 					assertEquals( field.get( expected ), field.get( bean ) );
 					if ( bulk ) {
+						bean = new PrimitiveFieldBean();
 						multiFieldWriter.set( bean, new Object[] { source } );
 						assertEquals( field.get( expected ), field.get( bean ) );
+						bean = new PrimitiveFieldBean();
 						multiMethodWriter.set( bean, new Object[] { source } );
 						assertEquals( field.get( expected ), field.get( bean ) );
 					}
 				}
 				else {
+					var bean = new PrimitiveFieldBean();
 					assertThrows( RuntimeException.class, () -> fieldWriter.set( bean, source ) );
 					assertThrows( RuntimeException.class, () -> methodWriter.set( bean, source ) );
 					if ( bulk ) {

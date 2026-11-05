@@ -16,14 +16,39 @@ public class ConstructorFailureTest {
 		}
 	}
 
+	public static class CheckedFailingBean {
+		public static final Exception FAILURE = new Exception( "checked constructor failure" );
+
+		public CheckedFailingBean() throws Exception {
+			throw FAILURE;
+		}
+	}
+
+	public static class ErrorFailingBean {
+		public static final Error FAILURE = new AssertionError( "constructor error" );
+
+		public ErrorFailingBean() {
+			throw FAILURE;
+		}
+	}
+
 	@Test
-	void constructorFailureRetainsTheOriginalCause() throws Exception {
+	void checkedConstructorFailurePropagatesUnchanged() throws Exception {
+		var instantiator = TckHelper.factory().instantiator( CheckedFailingBean.class.getConstructor() );
+		Throwable thrown = assertThrows( Exception.class, instantiator::create );
+		assertSame( CheckedFailingBean.FAILURE, thrown );
+	}
+
+	@Test
+	void runtimeConstructorFailurePropagatesUnchanged() throws Exception {
 		var instantiator = TckHelper.factory().instantiator( FailingBean.class.getConstructor() );
 		Throwable thrown = assertThrows( RuntimeException.class, instantiator::create );
-
-		while ( thrown.getCause() != null ) {
-			thrown = thrown.getCause();
-		}
 		assertSame( FailingBean.FAILURE, thrown );
+	}
+
+	@Test
+	void constructorErrorPropagatesUnchanged() throws Exception {
+		var instantiator = TckHelper.factory().instantiator( ErrorFailingBean.class.getConstructor() );
+		assertSame( ErrorFailingBean.FAILURE, assertThrows( Error.class, instantiator::create ) );
 	}
 }
