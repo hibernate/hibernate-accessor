@@ -1,10 +1,9 @@
 package org.hibernate.accessor.methodhandle.impl;
 
 import java.lang.invoke.MethodHandle;
-import java.util.Arrays;
 
 import org.hibernate.accessor.Instantiator;
-import org.hibernate.accessor.logging.impl.CoreLog;
+import org.hibernate.accessor.impl.AccessorThrowables;
 
 public class MethodHandleInstantiator<T> implements Instantiator<T> {
 
@@ -21,10 +20,7 @@ public class MethodHandleInstantiator<T> implements Instantiator<T> {
 			return (T) target.invoke( args );
 		}
 		catch (Throwable t) {
-			if ( t instanceof Error ) {
-				throw (Error) t;
-			}
-			throw CoreLog.INSTANCE.errorInvokingHandle( target, Arrays.toString( args ), t, t.getMessage() );
+			throw AccessorThrowables.sneakyThrow( t );
 		}
 	}
 }

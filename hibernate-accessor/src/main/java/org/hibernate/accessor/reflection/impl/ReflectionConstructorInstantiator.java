@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import org.hibernate.accessor.Instantiator;
+import org.hibernate.accessor.impl.AccessorThrowables;
 import org.hibernate.accessor.logging.impl.CoreLog;
 import org.hibernate.accessor.spi.AccessContext;
 
@@ -28,12 +29,10 @@ public class ReflectionConstructorInstantiator<T> implements Instantiator<T> {
 		}
 		catch (InvocationTargetException e) {
 			Throwable thrown = e.getCause();
-			if ( thrown instanceof Error ) {
-				throw (Error) thrown;
+			if ( thrown == null ) {
+				throw CoreLog.INSTANCE.errorInvokingMember( constructor, Arrays.toString( args ), e, e.getMessage() );
 			}
-			else {
-				throw CoreLog.INSTANCE.errorInvokingMember( constructor, Arrays.toString( args ), thrown, thrown.getMessage() );
-			}
+			throw AccessorThrowables.sneakyThrow( thrown );
 		}
 	}
 
