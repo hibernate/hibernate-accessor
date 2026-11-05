@@ -1,7 +1,7 @@
 package org.hibernate.accessor.impl;
 
 /**
- * Internal utilities for propagating throwables raised by user-supplied getters and setters.
+ * Internal utilities for propagating throwables raised by user-supplied getters, setters, and constructors.
  *
  * <p>This package is intentionally not exported: it is an implementation detail shared by the
  * reflection, method-handle and lambda accessor strategies.
@@ -13,7 +13,7 @@ public final class AccessorThrowables {
 
 	/**
 	 * Rethrows the given throwable unchanged, without wrapping it and without requiring the caller
-	 * to declare it. This preserves the exact throwable instance raised by a user getter/setter body
+	 * to declare it. This preserves the exact throwable instance raised by a user getter, setter, or constructor body
 	 * -- be it an {@link Error}, a {@link RuntimeException} or a checked exception -- so that
 	 * every accessor strategy propagates it identically (the bytecode-based strategies do this for free,
 	 * since the JVM does not enforce checked-exception declarations).
