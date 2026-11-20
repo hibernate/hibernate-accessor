@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 public class ConstructorFailureTest {
 	public static class FailingBean {
-		public static final RuntimeException FAILURE = new IllegalStateException( "constructor failure" );
+		public static final RuntimeException FAILURE = new IllegalArgumentException( "constructor failure" );
 
 		public FailingBean() {
 			throw FAILURE;

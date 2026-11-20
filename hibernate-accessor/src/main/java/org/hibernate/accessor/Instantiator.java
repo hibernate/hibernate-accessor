@@ -19,8 +19,9 @@ public interface Instantiator<T> {
 	 *
 	 * @param args the constructor arguments
 	 * @return a new instance of {@code T}
-	 * @throws AccessorException if the accessor infrastructure itself fails (as opposed to
-	 * the constructor body throwing, which propagates unchanged)
+	 * @throws AccessorException if the argument count does not match the constructor's
+	 *         parameter count or the accessor infrastructure itself fails (as opposed to
+	 * 	       the constructor body throwing, which propagates unchanged)
 	 */
 	T create(Object... args);
 }

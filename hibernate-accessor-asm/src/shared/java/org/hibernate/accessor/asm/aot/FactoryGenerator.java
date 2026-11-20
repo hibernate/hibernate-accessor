@@ -418,7 +418,7 @@ class FactoryGenerator implements Opcodes {
 	}
 
 	/** Consumes a member index and leaves an accessor or null for fallback handling. */
-	private void emitAccessorConstruction(MethodVisitor mv, String host, String method) {
+	private void emitAccessorConstruction(MethodVisitor mv, String host, String method, int reflectedMemberSlot) {
 		String implementation = switch ( method ) {
 			case METHOD_NAME_INSTANTIATOR_INDEX -> names.instantiator();
 			case METHOD_NAME_FIELD_READER_INDEX, METHOD_NAME_METHOD_READER_INDEX -> names.reader();
@@ -436,7 +436,14 @@ class FactoryGenerator implements Opcodes {
 		mv.visitInsn( POP2 );
 		pushIntConst( mv, classIndexes.get( host ) );
 		mv.visitInsn( SWAP );
-		mv.visitMethodInsn( INVOKESPECIAL, implementation, "<init>", "(II)V", false );
+		String constructorDescriptor = "(II)V";
+		if ( METHOD_NAME_INSTANTIATOR_INDEX.equals( method ) ) {
+			mv.visitVarInsn( ALOAD, reflectedMemberSlot );
+			mv.visitTypeInsn( CHECKCAST, "java/lang/reflect/Constructor" );
+			mv.visitMethodInsn( INVOKEVIRTUAL, "java/lang/reflect/Constructor", "getParameterCount", "()I", false );
+			constructorDescriptor = "(III)V";
+		}
+		mv.visitMethodInsn( INVOKESPECIAL, implementation, "<init>", constructorDescriptor, false );
 		mv.visitJumpInsn( GOTO, done );
 		mv.visitLabel( missing );
 		mv.visitInsn( POP );
@@ -470,7 +477,7 @@ class FactoryGenerator implements Opcodes {
 			caseMv.visitVarInsn( ALOAD, 3 );
 			caseMv.visitMethodInsn( INVOKESTATIC, target, hostMethodName,
 					hostMethodDesc, isIface );
-			emitAccessorConstruction( caseMv, className, hostMethodName );
+			emitAccessorConstruction( caseMv, className, hostMethodName, 1 );
 			caseMv.visitInsn( DUP );
 			Label notNull = new Label();
 			caseMv.visitJumpInsn( IFNONNULL, notNull );
@@ -605,7 +612,7 @@ class FactoryGenerator implements Opcodes {
 			caseMv.visitVarInsn( ALOAD, 1 );
 			caseMv.visitMethodInsn( INVOKESTATIC, target, hostMethodName,
 					hostMethodDesc, isIface );
-			emitAccessorConstruction( caseMv, className, hostMethodName );
+			emitAccessorConstruction( caseMv, className, hostMethodName, 2 );
 			caseMv.visitInsn( ARETURN );
 		} );
 
@@ -637,7 +644,7 @@ class FactoryGenerator implements Opcodes {
 	//         case "example.Model": {
 	//             if (constructor.getDeclaringClass() != Model.class) break;
 	//             int memberIndex = Model.$$__hibernateAccessor_instantiatorIndex(key);
-	//             if (memberIndex >= 0) return new GeneratedInstantiator(0, memberIndex);
+	//             if (memberIndex >= 0) return new GeneratedInstantiator(0, memberIndex, constructor.getParameterCount());
 	//             break;
 	//         }
 	//     }
@@ -690,7 +697,7 @@ class FactoryGenerator implements Opcodes {
 				caseMv.visitVarInsn( ALOAD, 3 );
 				caseMv.visitMethodInsn( INVOKESTATIC, target, METHOD_NAME_INSTANTIATOR_INDEX,
 						hostMethodDesc, isIface );
-				emitAccessorConstruction( caseMv, className, METHOD_NAME_INSTANTIATOR_INDEX );
+				emitAccessorConstruction( caseMv, className, METHOD_NAME_INSTANTIATOR_INDEX, 1 );
 				caseMv.visitInsn( DUP );
 				Label notNull = new Label();
 				caseMv.visitJumpInsn( IFNONNULL, notNull );

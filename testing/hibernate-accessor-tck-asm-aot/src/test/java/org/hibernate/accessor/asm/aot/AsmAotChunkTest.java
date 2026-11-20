@@ -58,8 +58,8 @@ class AsmAotChunkTest {
 					ValueWriter writer = (ValueWriter) model.writers[0].getClass().getConstructor( int.class, int.class )
 							.newInstance( indexes[0], indexes[1] );
 					assertThatThrownBy( () -> writer.set( model.targets[0], "value" ) ).isInstanceOf( IllegalArgumentException.class );
-					Instantiator<?> ctor = (Instantiator<?>) model.constructors[0].getClass().getConstructor( int.class, int.class )
-							.newInstance( indexes[0], indexes[1] );
+					Instantiator<?> ctor = (Instantiator<?>) model.constructors[0].getClass().getConstructor( int.class, int.class, int.class )
+							.newInstance( indexes[0], indexes[1], 0 );
 					assertThatThrownBy( () -> ctor.create() ).isInstanceOf( IllegalArgumentException.class );
 				}
 			}

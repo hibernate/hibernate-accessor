@@ -37,10 +37,12 @@ public class MethodHandleAccessorFactory implements AccessorFactory {
 
 	@Override
 	public <T> Instantiator<T> instantiator(Constructor<T> constructor) {
+		int parameterCount = constructor.getParameterCount();
 		try {
 			return new MethodHandleInstantiator<>(
 					privateLookup( constructor.getDeclaringClass() ).unreflectConstructor( constructor ).asFixedArity()
-							.asSpreader( Object[].class, constructor.getParameterCount() ) );
+							.asSpreader( Object[].class, parameterCount ),
+					parameterCount );
 		}
 		catch (RuntimeException | IllegalAccessException e) {
 			LOG.debugf( e, "Failed to create method-handle instantiator for %s, falling back to reflection", constructor );
