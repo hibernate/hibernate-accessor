@@ -71,7 +71,17 @@ class FrameworkIntegrationTest {
 		) );
 		if ( modular ) {
 			command.addAll( List.of( "--module-path", dependencies + File.pathSeparator + framework
-					+ ( namedEntity ? File.pathSeparator + entities : "" ), "--add-modules", "ALL-MODULE-PATH" ) );
+					+ ( namedEntity ? File.pathSeparator + entities : "" ) ) );
+			List<String> additionalModules = new ArrayList<>();
+			if ( namedEntity ) {
+				additionalModules.add( "integration.entities" );
+			}
+			if ( strategy.equals( "classfile" ) && Runtime.version().feature() < 24 ) {
+				additionalModules.add( "io.smallrye.classfile" );
+			}
+			if ( !additionalModules.isEmpty() ) {
+				command.addAll( List.of( "--add-modules", String.join( ",", additionalModules ) ) );
+			}
 			if ( !namedEntity ) {
 				command.addAll( List.of( "--class-path", entities.toString() ) );
 			}

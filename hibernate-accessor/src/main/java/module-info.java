@@ -1,5 +1,5 @@
 module org.hibernate.accessor {
-	requires static org.jboss.logging;
+	requires org.jboss.logging;
 	requires static org.jboss.logging.annotations;
 	requires static io.smallrye.classfile;
 
