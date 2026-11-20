@@ -24,6 +24,8 @@ import io.smallrye.classfile.ClassFile;
 
 final class ClassFileMultiValueClassGenerator {
 
+	static final String BULK_WRITER_INTERNAL_NAME = "org/hibernate/accessor/classfile/impl/HibernateAccessorMultiBulkWriter";
+
 	private static final ClassDesc CD_READER = classDesc( MultiValueReader.class );
 	private static final ClassDesc CD_WRITER = classDesc( MultiValueWriter.class );
 	private static final ClassDesc CD_BULK_ACCESSOR = classDesc( ClassFileBulkAccessor.class );
@@ -181,8 +183,7 @@ final class ClassFileMultiValueClassGenerator {
 	}
 
 	static byte[] generateBulkWriter(BulkMemberAccess[] accesses, int accessorFieldCount) {
-		String generatedInternalName = "org/hibernate/accessor/classfile/impl/HibernateAccessorMultiBulkWriter";
-		ClassDesc generatedDesc = generatedClassDesc( generatedInternalName );
+		ClassDesc generatedDesc = generatedClassDesc( BULK_WRITER_INTERNAL_NAME );
 
 		return ClassFile.of().build( generatedDesc, clb -> {
 			clb.with( GENERATED_CLASS_MAJOR_VERSION );
