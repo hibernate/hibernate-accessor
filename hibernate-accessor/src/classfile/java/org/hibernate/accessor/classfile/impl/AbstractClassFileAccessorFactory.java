@@ -222,7 +222,7 @@ public abstract class AbstractClassFileAccessorFactory implements AccessorFactor
 				layout.accesses,
 				layout.accessors.length
 		);
-		bytecodeDumper.dump( "org/hibernate/accessor/asm/impl/HibernateAccessorMultiBulkWriter", bytecode );
+		bytecodeDumper.dump( ClassFileMultiValueClassGenerator.BULK_WRITER_INTERNAL_NAME, bytecode );
 		try {
 			final MethodHandles.Lookup hiddenLookup = ACCESSOR_MODULE_LOOKUP.defineHiddenClass( bytecode, true );
 			final Class<?>[] paramTypes = new Class<?>[layout.accessors.length];

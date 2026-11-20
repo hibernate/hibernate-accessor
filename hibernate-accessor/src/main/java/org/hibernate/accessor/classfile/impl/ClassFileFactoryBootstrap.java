@@ -44,11 +44,11 @@ public final class ClassFileFactoryBootstrap {
 	}
 
 	public static AccessorFactory instance(AccessorConfiguration configuration) {
+		MethodHandle constructor = switch ( ClassFileAccessorConfiguration.generationStrategy( configuration ) ) {
+			case BULK_SWITCH -> CONSTRUCTOR;
+			case PER_MEMBER -> PER_MEMBER_CONSTRUCTOR;
+		};
 		try {
-			MethodHandle constructor = switch ( ClassFileAccessorConfiguration.generationStrategy( configuration ) ) {
-				case BULK_SWITCH -> CONSTRUCTOR;
-				case PER_MEMBER -> PER_MEMBER_CONSTRUCTOR;
-			};
 			return (AccessorFactory) constructor.invoke( configuration );
 		}
 		catch (AccessorException e) {
