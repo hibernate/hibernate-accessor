@@ -28,15 +28,21 @@ tasks.withType(Test).configureEach {
 		excludes = ['java.*', 'javax.*', 'jdk.*', 'sun.*', 'com.sun.*']
 	}
 
-	// Run the tests on a specific JDK (e.g. -PtestJavaVersion=28) while Gradle itself runs on another one.
+	// CI selects the exact installation. Local builds can also select a toolchain by version.
+	def testJavaExecutable = providers.gradleProperty("testJavaExecutable").orNull
 	def testJavaVersion = providers.gradleProperty("testJavaVersion").orNull
-	if (testJavaVersion != null) {
+	if (testJavaExecutable != null) {
+		executable = testJavaExecutable
+	}
+	else if (testJavaVersion != null) {
 		javaLauncher = javaToolchains.launcherFor {
 			languageVersion = JavaLanguageVersion.of(testJavaVersion as int)
 		}
+	}
+	if (testJavaExecutable != null || testJavaVersion != null) {
 		doFirst {
 			def launcher = javaLauncher.get()
-			logger.lifecycle("Running tests with JDK ${launcher.metadata.languageVersion} from ${launcher.metadata.installationPath}")
+			logger.lifecycle("Running tests with JDK ${launcher.metadata.languageVersion} (${launcher.metadata.vendor}) from ${launcher.metadata.installationPath}")
 		}
 	}
 }
