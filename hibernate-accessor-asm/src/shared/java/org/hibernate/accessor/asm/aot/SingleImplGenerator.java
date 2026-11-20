@@ -45,7 +45,7 @@ class SingleImplGenerator implements Opcodes {
 				"java/lang/Object", new String[] { READER_INTERFACE_INTERNAL } );
 
 		generateIndexFields( cw );
-		generateIndexConstructor( cw, className );
+		generateIndexConstructor( cw, className, false );
 
 		String methodDesc = "(Ljava/lang/Object;)Ljava/lang/Object;";
 		if ( hostClasses.size() <= chunks.typeRead() ) {
@@ -74,7 +74,7 @@ class SingleImplGenerator implements Opcodes {
 				"java/lang/Object", new String[] { WRITER_INTERFACE_INTERNAL } );
 
 		generateIndexFields( cw );
-		generateIndexConstructor( cw, className );
+		generateIndexConstructor( cw, className, false );
 
 		if ( hostClasses.size() <= chunks.typeWrite() ) {
 			MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "set",
@@ -101,12 +101,14 @@ class SingleImplGenerator implements Opcodes {
 				"java/lang/Object", new String[] { INSTANTIATOR_INTERFACE_INTERNAL } );
 
 		generateIndexFields( cw );
-		generateIndexConstructor( cw, className );
+		cw.visitField( ACC_PRIVATE | ACC_FINAL, "parameterCount", "I", null, null ).visitEnd();
+		generateIndexConstructor( cw, className, true );
 
 		String methodDesc = "([Ljava/lang/Object;)Ljava/lang/Object;";
 		if ( hostClasses.size() <= chunks.typeConstructor() ) {
 			MethodVisitor mv = cw.visitMethod( ACC_PUBLIC | ACC_VARARGS, "create", methodDesc, null, null );
 			mv.visitCode();
+			emitConstructorArityCheck( mv, className );
 			generateDispatchSwitch( mv, className, hostClasses, PREFIX_CREATE_METHOD, "(I[Ljava/lang/Object;)Ljava/lang/Object;",
 					1 );
 			mv.visitMaxs( 0, 0 );
@@ -129,14 +131,14 @@ class SingleImplGenerator implements Opcodes {
 		cw.visitField( ACC_PRIVATE | ACC_FINAL, "memberIndex", "I", null, null ).visitEnd();
 	}
 
-	// Example generated constructor; writers and instantiators use their respective implementation names:
+	// Example generated constructor for readers and writers:
 	// public QuarkusHibernateAccessorValueReaderImpl(int classIndex, int memberIndex) {
 	//     super();
 	//     this.classIndex = classIndex;
 	//     this.memberIndex = memberIndex;
 	// }
-	private static void generateIndexConstructor(ClassWriter cw, String className) {
-		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "<init>", "(II)V", null, null );
+	private static void generateIndexConstructor(ClassWriter cw, String className, boolean instantiator) {
+		MethodVisitor mv = cw.visitMethod( ACC_PUBLIC, "<init>", instantiator ? "(III)V" : "(II)V", null, null );
 		mv.visitCode();
 
 		mv.visitVarInsn( ALOAD, 0 );
@@ -150,9 +152,32 @@ class SingleImplGenerator implements Opcodes {
 		mv.visitVarInsn( ILOAD, 2 );
 		mv.visitFieldInsn( PUTFIELD, className, "memberIndex", "I" );
 
+		if ( instantiator ) {
+			mv.visitVarInsn( ALOAD, 0 );
+			mv.visitVarInsn( ILOAD, 3 );
+			mv.visitFieldInsn( PUTFIELD, className, "parameterCount", "I" );
+		}
+
 		mv.visitInsn( RETURN );
 		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
+	}
+
+	private static void emitConstructorArityCheck(MethodVisitor mv, String className) {
+		mv.visitVarInsn( ALOAD, 1 );
+		mv.visitVarInsn( ALOAD, 0 );
+		mv.visitFieldInsn( GETFIELD, className, "parameterCount", "I" );
+		mv.visitMethodInsn( INVOKESTATIC, "org/hibernate/accessor/spi/MemberValidation",
+				"validateConstructorArity", "([Ljava/lang/Object;I)V", false );
+
+		// The injected host checks the array length and can be loaded independently of core.
+		Label hasArguments = new Label();
+		mv.visitVarInsn( ALOAD, 1 );
+		mv.visitJumpInsn( IFNONNULL, hasArguments );
+		mv.visitInsn( ICONST_0 );
+		mv.visitTypeInsn( ANEWARRAY, "java/lang/Object" );
+		mv.visitVarInsn( ASTORE, 1 );
+		mv.visitLabel( hasArguments );
 	}
 
 	// Example generated code (names, types and indexes depend on the registered members):
@@ -393,12 +418,13 @@ class SingleImplGenerator implements Opcodes {
 	// Helpers check the original class index, including negative or out-of-range indexes.
 	private static void generateImplChunkDispatcher(ClassWriter cw, String className, String publicMethodName,
 			String publicMethodDesc, int chunkCount, boolean returnsVoid, int chunkSize) {
-		int accessFlags = ACC_PUBLIC;
-		if ( publicMethodDesc.startsWith( "([" ) ) {
-			accessFlags |= ACC_VARARGS;
-		}
+		boolean instantiator = "create".equals( publicMethodName );
+		int accessFlags = instantiator ? ACC_PUBLIC | ACC_VARARGS : ACC_PUBLIC;
 		MethodVisitor mv = cw.visitMethod( accessFlags, publicMethodName, publicMethodDesc, null, null );
 		mv.visitCode();
+		if ( instantiator ) {
+			emitConstructorArityCheck( mv, className );
+		}
 
 		Label[] labels = new Label[chunkCount];
 		for ( int i = 0; i < chunkCount; i++ ) {

@@ -10,11 +10,22 @@ import org.hibernate.accessor.AccessorFactory;
 
 /**
  * Shared validation for {@link Member} arguments passed to
- * {@link AccessorFactory} methods.
+ * {@link AccessorFactory} methods and arguments passed to constructor accessors.
  */
 public final class MemberValidation {
 
 	private MemberValidation() {
+	}
+
+	/**
+	 * Validates the argument count before invoking the constructor.
+	 *
+	 * @throws AccessorException if the argument count does not match the constructor's parameter count
+	 */
+	public static void validateConstructorArity(Object[] arguments, int parameterCount) {
+		if ( ( arguments == null ? 0 : arguments.length ) != parameterCount ) {
+			throw new AccessorException( "Expected " + parameterCount + " constructor arguments" );
+		}
 	}
 
 	/**

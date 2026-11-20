@@ -1,10 +1,12 @@
 package org.hibernate.accessor.tck.tests.instantiation;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Set;
 
+import org.hibernate.accessor.AccessorException;
 import org.hibernate.accessor.tck.util.IsolatingClassLoader;
 import org.hibernate.accessor.tck.util.TckHelper;
 
@@ -28,12 +30,15 @@ public class InvocationShapeTest {
 	}
 
 	@Test
-	void constructorsRejectExtraArguments() throws Exception {
+	void constructorsRejectWrongArityWithAccessorException() throws Exception {
 		var factory = TckHelper.factory();
 		var noArgs = factory.instantiator( Bean.class.getConstructor() );
-		assertThrows( RuntimeException.class, () -> noArgs.create( "extra" ) );
+		assertNotNull( noArgs.create( (Object[]) null ) );
+		assertThrows( AccessorException.class, () -> noArgs.create( "extra" ) );
 		var oneArg = factory.instantiator( Bean.class.getConstructor( String[].class ) );
-		assertThrows( RuntimeException.class, () -> oneArg.create( new String[] { "a" }, "extra" ) );
+		assertThrows( AccessorException.class, () -> oneArg.create( new String[] { "a" }, "extra" ) );
+		assertThrows( AccessorException.class, oneArg::create );
+		assertThrows( AccessorException.class, () -> oneArg.create( (Object[]) null ) );
 	}
 
 	@Test
