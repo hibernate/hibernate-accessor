@@ -344,3 +344,10 @@ JVM with generator dependencies absent. Run both backends with:
 ```shell
 ./gradlew :hibernate-accessor-tck-asm-aot:check :hibernate-accessor-tck-bytebuddy-aot:check
 ```
+
+## Further reading
+
+- [The quest for reflection-free access (Part 1)](https://in.relation.to/2026/10/22/quest-for-reflection-free-access/)
+  explains why Hibernate Accessor was created and why existing JDK APIs did not meet its requirements.
+- [A peek behind the curtain of modern runtime codegen (Part 2)](https://in.relation.to/2026/10/28/peek-behind-the-curtain-of-accessor-codegen/)
+  covers the runtime bytecode-generation approach used by several Hibernate Accessor strategies.
